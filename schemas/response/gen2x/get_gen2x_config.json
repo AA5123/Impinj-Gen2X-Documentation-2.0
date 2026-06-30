@@ -1,0 +1,133 @@
+{
+    "title": "get_gen2x_config_response",
+    "description": "Response for get_gen2x_config command — returns current Gen2X configuration",
+    "type": "object",
+    "required": [
+        "command",
+        "command_id",
+        "payload",
+        "response"
+    ],
+    "properties": {
+        "command": {
+            "type": "string",
+            "const": "get_impinjGen2X",
+            "description": "MQTT command name that was executed"
+        },
+        "command_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier correlating this response to the original request"
+        },
+        "payload": {
+            "type": "object",
+            "description": "Current Gen2X configuration. Only previously configured feature objects are included.",
+            "properties": {
+                "fastID": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Whether FastID is enabled"
+                        }
+                    },
+                    "description": "FastID configuration (present only if previously configured)"
+                },
+                "tagProtect": {
+                    "type": "object",
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": [
+                                "enableTagProtection",
+                                "disableTagProtection",
+                                "enableTagVisibility",
+                                "disableTagVisibility"
+                            ],
+                            "description": "Current protection action applied to the tag"
+                        },
+                        "password": {
+                            "type": "string",
+                            "description": "8-character hexadecimal 32-bit password used for tag protection"
+                        },
+                        "tagID": {
+                            "type": "string",
+                            "description": "Hexadecimal EPC of the protected tag"
+                        },
+                        "enableShortRange": {
+                            "type": "boolean",
+                            "description": "Whether short-range protection mode is enabled"
+                        }
+                    },
+                    "description": "Protected Mode configuration (present only if previously configured)"
+                },
+                "tagFocus": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Whether TagFocus is enabled"
+                        }
+                    },
+                    "description": "TagFocus configuration (present only if previously configured)"
+                },
+                "tagQuieting": {
+                    "type": "object",
+                    "properties": {
+                        "basic": {
+                            "type": "object",
+                            "description": "Basic tag quieting settings",
+                            "properties": {
+                                "action": {
+                                    "type": "string",
+                                    "enum": [
+                                        "quiet",
+                                        "unquiet"
+                                    ],
+                                    "description": "Action applied to the specified tags"
+                                },
+                                "tagIDs": {
+                                    "type": "array",
+                                    "description": "List of hexadecimal EPC strings of affected tags",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "description": "Tag quieting configuration (present only if previously configured)"
+                }
+            }
+        },
+        "response": {
+            "type": "string",
+            "enum": [
+                "success",
+                "failure"
+            ],
+            "description": "Response status indicating success or failure"
+        }
+    },
+    "examples": [
+        {
+            "command": "get_impinjGen2X",
+            "command_id": "9d744286-7b97-40b8-9e91-190df0334557",
+            "payload": {
+                "tagQuieting": {
+                    "basic": {
+                        "action": "unquiet",
+                        "tagIDs": [
+                            "e28011b0a5050076c4d751e9",
+                            "e28011b0a5050076c4d77307",
+                            "e28011b0a5050076c4d751ec",
+                            "e28011b0a5050076c4d7530a",
+                            "e28011b0a5050076c4d751e4"
+                        ]
+                    }
+                }
+            },
+            "response": "success"
+        }
+    ]
+}

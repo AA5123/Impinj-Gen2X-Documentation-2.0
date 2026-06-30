@@ -1,0 +1,79 @@
+{
+    "title": "Get Gen2X Configuration Success Response",
+    "description": "Returns the current Gen2X configuration. Only previously configured feature objects are included.",
+    "type": "object",
+    "properties": {
+        "fastID": {
+            "type": "object",
+            "description": "FastID configuration (present only if previously configured)",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Whether FastID is enabled"
+                }
+            },
+            "required": ["enabled"]
+        },
+        "tagProtect": {
+            "type": "object",
+            "description": "Protected Mode configuration (present only if previously configured)",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": ["enableTagProtection", "disableTagProtection", "enableTagVisibility", "disableTagVisibility"],
+                    "description": "Current protection action applied to the tag"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "8-character hexadecimal 32-bit password used for tag protection"
+                },
+                "tagID": {
+                    "type": "string",
+                    "description": "Hexadecimal EPC of the protected tag",
+                    "pattern": "^[0-9A-Fa-f]+$"
+                },
+                "enableShortRange": {
+                    "type": "boolean",
+                    "description": "Whether short-range protection mode is enabled"
+                }
+            }
+        },
+        "tagFocus": {
+            "type": "object",
+            "description": "TagFocus configuration (present only if previously configured)",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Whether TagFocus is enabled"
+                }
+            },
+            "required": ["enabled"]
+        },
+        "tagQuieting": {
+            "type": "object",
+            "description": "Tag quieting configuration (present only if previously configured)",
+            "properties": {
+                "basic": {
+                    "type": "object",
+                    "description": "Basic tag quieting settings",
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": ["quiet", "unquiet"],
+                            "description": "Action applied to the specified tags"
+                        },
+                        "tagIDs": {
+                            "type": "array",
+                            "description": "List of hexadecimal EPC strings of affected tags",
+                            "items": {
+                                "type": "string",
+                                "pattern": "^[0-9A-Fa-f]+$"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "required": []
+}

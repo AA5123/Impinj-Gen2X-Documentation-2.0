@@ -1,0 +1,37 @@
+{
+    "enable_tag_visibility": {
+        "Tested example": "Enable the reader to see protected tags"
+    },
+    "disable_tag_visibility": {
+        "Tested example": "Revoke the reader's ability to see protected tags"
+    },
+    "enable_short_range": {
+        "Tested example": "Protect a tag with short-range mode enabled"
+    },
+    "enable_fastid": {
+        "Tested example": "Enable FastID feature"
+    },
+    "disable_fastid": {
+        "Tested example": "Disable FastID feature"
+    },
+    "enable_tagfocus": {
+        "Tested example": "Enable TagFocus feature"
+    },
+    "disable_tagfocus": {
+        "Tested example": "Disable TagFocus feature"
+    },
+    "quiet_tags": {
+        "Basic": "Quiet tags by EPC list (basic mode)",
+        "Advanced": "Advanced quieting: state-aware SELECT (preSelect, tagQuietMasks, target, stateAwareAction)"
+    },
+    "unquiet_tags": {
+        "Basic": "Unquiet tags by EPC list (basic mode)",
+        "Advanced": "Advanced unquieting: state-aware SELECT (preSelect, tagQuietMasks, target, stateAwareAction)"
+    },
+    "get_gen2x_config": {
+        "Tested example": "Retrieve current Gen2X configuration"
+    },
+    "start": {
+        "Tested example": "Start radio with Gen2X features applied"
+    }
+}

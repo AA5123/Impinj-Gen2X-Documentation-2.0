@@ -1,0 +1,34 @@
+{
+    "title": "get_gen2x_config",
+    "description": "Retrieves the current Gen2X configuration from the reader. Returns an empty object if no Gen2X configuration has been set yet.",
+    "x-tag": "Gen2X Configuration Retrieval",
+    "type": "object",
+    "required": [
+        "command",
+        "command_id",
+        "payload"
+    ],
+    "properties": {
+        "command": {
+            "type": "string",
+            "const": "get_impinjGen2X",
+            "description": "MQTT command name"
+        },
+        "command_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier to correlate request with response"
+        },
+        "payload": {
+            "type": "object",
+            "description": "Empty payload for get commands"
+        }
+    },
+    "examples": [
+        {
+            "command": "get_impinjGen2X",
+            "command_id": "9d744286-7b97-40b8-9e91-190df0334557",
+            "payload": {}
+        }
+    ]
+}
