@@ -1,0 +1,73 @@
+{/* @authoring-guidance — keep this block; it is stripped from the generated page
+   Authoring source for api/mqtt/reference/response-codes.mdx (a @generated page — never edit that file directly).
+   Edit the @slot prose below, then run `npm run gen:reference`.
+
+   GENERATED from the AsyncAPI contract (do NOT hand-write these — they re-emit on every run).
+   The contract at api/mqtt/schema/iotc-rfd40-90-mqtt.asyncapi.json is the STATEMENT OF TRUTH
+   and this page's only data dependency:
+     • The Response Object table   ← #/components/schemas/responseStatus, or, when the contract has
+                                     no such component, the `response` object of the replies
+     • The Response Code Catalog   ← #/components/schemas/statusCode/x-iotc-response-codes/codes, or,
+                                     when the contract has no such component, #/info/x-iotc-response-codes/codes
+     • The Codes by Command matrix ← #/operations/<op>/x-iotc-response-codes/{universal,scoped}
+     • The `{code_range}` token in the page description ← the catalog's codes (above)
+   MANUAL — the @slot prose below (Overview, How to Read a Code, the two table intros, Notes and Caveats).
+
+   REPOINTED 2026-09-08. This block used to name two legacy files as the sources — a response
+   envelope and a response-code table, both under the pre-AsyncAPI tree — and said the catalog
+   was 35 rows. Neither file is read any more, both are being deleted, and the catalog is 38
+   rows. Their names are deliberately not repeated here: a citation is a claim that a file
+   exists, so naming a file in order to say it is gone makes the claim it denies. Keep every
+   statement below traceable to the CONTRACT — and state no number the contract does not
+   carry, because a hand-typed count is exactly what went stale here.
+   @end-authoring-guidance */}
+
+<!-- @meta audience: MQTT API integrators | use: look up any command response.code — its meaning, cause, recommended fix, and which commands return it -->
+
+<!-- @slot Overview -->
+Every reply to a command carries a `response` object with a numeric `code` and a human-readable `description`. This page lists every code: what it means, why it occurs, what to do, and which commands can return it.
+
+`code` is a closed set. Only the values in the catalog are defined, so treat any other value as an unrecognized reply and log it.
+
+Response codes come only from the reader, inside a command reply. They are separate from the return codes that MQTT 3.1.1 defines for CONNACK and SUBACK, and from errors that your MQTT client library raises. Events never carry a response code.
+
+The catalog and the matrix are generated from the MQTT API contract.
+
+<!-- @slot How to Read a Code -->
+Decide the outcome from `response` in this order:
+
+- **`code` is `0`, or `code` is absent and `description` is `"Success"`:** the command succeeded. The contract requires `code`, but readers have been reported to omit it on a successful reply; error replies always include it. See [Success Without a Code](/api-reference/mqtt/protocol-reference/message-envelope#success-omits-code).
+- **`code` is `1`:** the reader accepted the request and is still working on it. Only [`set_os`](/api-reference/mqtt/mgmt/set-os), [`reboot`](/api-reference/mqtt/mgmt/reboot), and [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) return it. See [Asynchronous Commands](/api-reference/mqtt/protocol-reference/message-envelope#async-accept).
+- **`code` is `101`:** a default error, returned when no more specific code applies.
+- **Any other code:** the command did not succeed. Use the code's cause and recommended action in the catalog.
+
+Don't parse `description`: its wording can change between firmware builds.
+
+The catalog gives each code its cause and recommended action. When the fix takes more than one step, these guides walk through it:
+
+| Codes | Where the fix is |
+| --- | --- |
+| `10`, `25`, `26`, `27`, `33`, `35`, `37` (endpoint configuration) | [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints) and [Recover from Configuration Problems](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems) |
+| `15` to `20` (Wi-Fi profiles) | [Configure Wi-Fi](/guides/manage-your-reader/configure-wi-fi) |
+| `9`, `21`, `29`, `30`, `34`, `36` (certificates) | [Install and Manage Certificates](/guides/manage-your-reader/install-and-manage-certificates) |
+| `4`, `8`, `13`, `14` (firmware updates) | [Update Firmware and Restart the Reader](/guides/manage-your-reader/update-firmware-and-restart) and [Recover from Firmware Problems](/guides/diagnose-and-recover/recovery-playbooks/recover-from-firmware-problems) |
+| `5`, `11`, `12`, `22`, `24`, `28` (inventory and radio settings) | [Configure Advanced Radio Settings](/guides/read-tags-and-barcodes/configure-advanced-radio-settings) |
+| `31`, `32` (tag writes) | [Read and Write Tag Memory](/guides/read-tags-and-barcodes/read-and-write-tag-memory) |
+| No reply at all | [Commands Get No Response](/guides/diagnose-and-recover/commands-get-no-response) |
+
+To decide in code what to do with a reply, including when to retry, see [Send Commands and Handle Responses](/guides/build-your-integration/send-commands-and-handle-responses) and [Retry Commands Safely](/guides/build-your-integration/retry-commands-safely).
+
+Before you retry after an error, apply the contract's rule: retry only when the recommended action names a condition that can change without changing your request, such as waiting, stopping an inventory, or charging the reader. Otherwise change the request first. See [Duplicates and Retries](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#idempotency).
+
+<!-- @slot Response Code Catalog -->
+Every code in ascending order, with `101` last. **Kind** follows from the code: `0` is success, `1` is an asynchronous acceptance, `101` is the catch-all, and every other code is an error. **Applies to** lists the commands in this reference that can return the code.
+
+<!-- @slot Codes by Command -->
+The codes each command can return. Every command can also return `0` and `101`, which are included in each row.
+
+<!-- @slot Notes and Caveats -->
+- **Codes `6` and `7`** are defined but no published command returns them. They are kept because response codes are a fixed numeric sequence, and removing one would renumber the rest.
+- **Codes `31` and `32`** concern tag write length in [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode). The cause text for code `31` mentions a certificate, which does not fit a tag write; go by the code's name.
+- **A command with no row-specific codes,** such as [`get_version`](/api-reference/mqtt/mgmt/get-version) or [`config_events`](/api-reference/mqtt/mgmt/config-events), returns only `0` and `101`.
+- **A reply with code `1` is not a result.** Subscribe to the event topic before you send [`set_os`](/api-reference/mqtt/mgmt/set-os) or [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate), and wait for the outcome. [`reboot`](/api-reference/mqtt/mgmt/reboot) sends no outcome event.
+- **No reply is not a code.** A misspelled `command` value, an oversized message, or a full command queue can produce no reply at all. See [What Happens to a Malformed Command](/api-reference/mqtt/protocol-reference/message-envelope#malformed-commands).

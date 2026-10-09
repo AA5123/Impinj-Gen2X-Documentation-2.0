@@ -1,0 +1,90 @@
+---
+id: monitor-reader-connectivity
+title: "Monitor Reader Connectivity"
+sidebar_label: "Monitor Reader Connectivity"
+sidebar_position: 3
+description: "Detect when a reader stops reporting and when its MQTT session changes, using heartBeatEVT and mqttConnEVT together, and track network-interface changes with NETWORK_EVENT alerts."
+sidebar_custom_props: { emoji: "💓", card: "Detect when a reader goes quiet, and when its session changes." }
+doc_type: how-to
+page_meta:
+  - "Audience: Integrators, fleet operators"
+  - "Read time: 8 min"
+  - "Ties to: [heartBeatEVT](/api-reference/mqtt/events/heartbeat-event) and [mqttConnEVT](/api-reference/mqtt/events/mqtt-connection-event)"
+---
+
+Three signals describe a reader's connectivity: [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) arrives at an interval, [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) marks each change of the MQTT session, and [`alerts`](/api-reference/mqtt/events/alerts-event) with `id: NETWORK_EVENT` report changes to a network interface. This page shows how to watch all three.
+
+## 1. Enable the Heartbeat {#enable-heartbeat}
+
+Enable the heartbeat with [`config_events`](/api-reference/mqtt/mgmt/config-events): set `heartbeat` to `true` and choose `heartbeatConfiguration.interval`, an integer of at most 65,535 seconds. Reboot the reader to apply the change. See [Configure Event Reporting](/guides/operate-and-monitor/configure-event-reporting).
+
+A shorter interval detects an outage sooner and produces more traffic. The available sources state no default interval, so set one explicitly.
+
+## 2. Subscribe Before You Watch {#subscribe}
+
+Subscribe to both topics of each reader you monitor, for example:
+
+- `<tenantId>/MGMT/clients/event/<serial>` for `heartBeatEVT` and `alerts`
+- `<tenantId>/MGMT/clients/rfid/<serial>` for `mqttConnEVT`
+
+Every active endpoint publishes its own `mqttConnEVT` on its own `rfid` topic, so a reader with more than one endpoint produces one connection stream per endpoint. To cover a whole tenant, see [Build a Fleet Health View](/guides/operate-and-monitor/build-a-fleet-health-view).
+
+## 3. Detect Missed Heartbeats {#detect-missed-heartbeats}
+
+The reader publishes `heartBeatEVT` at the configured interval while the heartbeat is enabled. When it stops arriving, the reader, its session, or the path to your application needs attention.
+
+- Record the time each heartbeat is received.
+- Treat the reader as unreachable after a number of missed intervals that you choose. `heartBeatEVT` is published at QoS 0, so a single lost heartbeat is not resent and is not, on its own, an outage.
+- Do not rely on `eventNumber` to count missed heartbeats. The contract describes it as a unique identifier or sequence number and documents no rule for gaps, wrap-around or resets.
+
+`upTime` is free text meant for people, for example `"5 days 4hr 3min"`. Do not parse it.
+
+## 4. Follow Session Changes {#follow-session-changes}
+
+The reader publishes a `CONNECTED` `mqttConnEVT` when its session is established:
+
+```json title="mqttConnEVT — event (contract example: Connected event)"
+{
+  "connectionState": "CONNECTED",
+  "timestamp": "2026-06-15T13:09:33.810Z",
+  "deviceModel": "RFD40",
+  "deviceSerialNo": "RFD40-211545201D0034",
+  "apiVersion": 1.21,
+  "mqttVersion": 3.0999999
+}
+```
+
+If the session ends without a clean disconnect, the broker publishes the reader's Last Will: the `DISCONNECTED` form, without a timestamp.
+
+```json title="mqttConnEVT — event (contract example: Disconnected event)"
+{
+  "connectionState": "DISCONNECTED",
+  "deviceModel": "RFD40",
+  "deviceSerialNo": "RFD40-211545201D0034",
+  "apiVersion": 1.21,
+  "mqttVersion": 3.0999999
+}
+```
+
+A clean disconnect suppresses the Will, and the contract does not say whether the reader reports one. The absence of a `DISCONNECTED` message therefore does not mean the reader is connected. `apiVersion` and `mqttVersion` arrive as numbers; do not compare `mqttVersion` with `3.1` for equality. Whether this message is retained is not settled in the contract, so do not rely on a late subscriber receiving the last state.
+
+## 5. Read the Two Signals Together {#read-together}
+
+| Heartbeats | `mqttConnEVT` | What it suggests |
+|---|---|---|
+| Arriving | No change | The reader is reporting |
+| Stopped | `DISCONNECTED` received | The session was lost without a clean disconnect |
+| Stopped | Nothing received | The reader, its session, or the path to your application needs attention; a clean disconnect also produces no Will |
+| Arriving again | `CONNECTED` received | A new session was established. On its own, this does not show that the reader restarted. |
+
+## 6. Watch Network-Interface Changes {#network-events}
+
+Enable the `network` event flag. The reader then publishes `alerts` with `id: NETWORK_EVENT`, whose `alertDetails.networkInfo.networkInterface` lists the Wi-Fi and Ethernet interfaces that changed, with their status and addresses. See [Respond to Alerts](/guides/operate-and-monitor/respond-to-alerts).
+
+The contract defines no Wi-Fi signal-strength field, so the MQTT API cannot tell you how strong the reader's Wi-Fi link is. Use session changes, missed heartbeats and `NETWORK_EVENT` alerts as your connection-quality signals.
+
+## How the Reader Reconnects {#reconnect}
+
+After a lost connection, the reader waits before reconnecting. The wait is bounded by `reconnectDelayMin` and `reconnectDelayMax` in the endpoint's `mqttParams`, both in seconds. The contract does not describe the back-off between those bounds. A fresh `CONNECTED` `mqttConnEVT` marks each successful reconnection, so the number of transitions per reader over time is a measure of how stable its connection is.
+
+**Related:** 📘 [What to Monitor and Why](/guides/operate-and-monitor/what-to-monitor-and-why) · 📙 [Configure Event Reporting](/guides/operate-and-monitor/configure-event-reporting) · 📙 [Recover from Disconnects](/guides/build-your-integration/recover-from-disconnects) · 📕 [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) · 📕 [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event)

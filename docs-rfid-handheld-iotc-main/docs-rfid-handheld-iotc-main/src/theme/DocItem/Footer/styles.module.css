@@ -1,0 +1,308 @@
+/* Swizzled DocItem Footer — compact "Was this helpful?" thumbs widget.
+ *
+ * Shows only:
+ *   - Label  "Was this helpful?"
+ *   - 👍 button + 👎 button
+ *
+ * Clicking a thumb opens the PushFeedback modal (handled by the
+ * <feedback-button> web component) for the user to type a message,
+ * email, optionally attach a screenshot, and submit.
+ *
+ * RESTYLED 2026-09-06 TO docs.pushfeedback.com'S OWN WIDGET. Its markup and inline <style> are
+ * pasted verbatim in .ai-history/067-tasks-01.md; I also loaded the live page and measured what
+ * it RENDERS, because its svg's width and height attributes are overridden by its own CSS:
+ *
+ *     .feedback-widget         flex / align-items:center / gap 4px / margin 16px 0 (h 32.188px)
+ *     .feedback-widget-label   14px / 600 / margin-right 4px (line-height 23.8px)
+ *     .feedback-widget button  32x32  padding 0  border 1px  radius 6px  bg transparent
+ *                              box-sizing border-box
+ *                              transition "background-color 0.15s, color 0.15s, border-color 0.15s"
+ *     button svg               RENDERS 16x16 — its width/height ATTRIBUTES say 20
+ *     host <feedback-button>   display:inline, box 32x20 — it pays for a line box; ours does not
+ *     measured gaps            label -> thumb 8.000   thumb -> thumb 4.000
+ *
+ * GEOMETRY, SPACING AND THE TRANSITION ARE COPIED AS MEASURED. Three things are not, and each is
+ * argued where it lands: every colour, the 6px radius and the 1px border weight (all on
+ * .thumbBtn). Its `margin: 16px 0` is not adopted either — that comes from Docusaurus
+ * `margin-top--md margin-bottom--md` utility classes on its wrapper rather than from the widget,
+ * and .feedbackFooter's 3rem/2rem already does that job here.
+ *
+ * THE SOURCE'S `.selected` RULE IS DELIBERATELY NOT COPIED, recorded so the omission reads as a
+ * decision. It latches the chosen thumb after a submit. Our thumbs are modal TRIGGERS —
+ * index.tsx fires analytics and lets the host open the modal, and nothing in this component ever
+ * adds a `selected` class — so the rule would paint nothing. Latching it means listening for
+ * PushFeedback's submit-success on the host and remembering which of the two fired: new
+ * behaviour rather than a restyle, and not verifiable without live submissions to the real
+ * project id.
+ */
+
+/* THE DIVIDER IS A NON-INTERACTIVE SEPARATOR, so it takes datum's divider role instead of the
+ * Infima emphasis ramp it read until now (--ifm-color-emphasis-200 #E9ECEF light plus a -300
+ * #495057 dark twin). Those are custom.scss's Bootstrap greys — the family the token mapping
+ * exists to leave — three lines from the palette work below, on the visual frame of the element
+ * being restyled. --border-subtle is datum's "Divider, callout edge, non-interactive separator"
+ * (datum/09-implementation/css/semantic.css:51) and flips itself, so the dark rule that used to
+ * sit under this one is gone. Measured against the page: light 1.19:1 -> 1.41:1, dark
+ * 2.31:1 -> 1.64:1. No contrast floor applies — aw-style-guide.md 9.4's 3:1 governs a CONTROL
+ * boundary, and 9.4 itself records that datum's border family "was built on the principle that
+ * borders are quiet". 1px stays: 6.2 makes 2px the default for "every control border", and the
+ * two places it evidences 1px are a mega-menu top edge and a footer divider. */
+.feedbackFooter {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* A ROW, NOT A COLUMN. The source puts the label on the thumbs' own centre line — flex,
+ * align-items:center, gap 4px, plus the 4px margin-right on .label below. Measured here at
+ * devicePixelRatio 1 and 2, at 1280/768/375/320, in both themes (sixteen combinations, all
+ * identical): this widget goes 76.1875px -> 32px and .feedbackFooter 109.1875px -> 65px, so
+ * 44.19px comes off the bottom of every doc page. The two children's vertical centres land
+ * 0.008px apart, which is one line.
+ *
+ * NO `flex-wrap` AND NO BREAKPOINT, because that was measured rather than assumed safe. Row
+ * content is 192.906px (label 116.906 + 8 + 32 + 4 + 32) against a 288px column at a 320px
+ * viewport and 343px at 375px, and documentElement.scrollWidth never exceeded clientWidth at any
+ * of the four widths in either theme. A wrap no measured viewport reaches is a rule with nothing
+ * to do; if the label is ever translated much longer, re-measure and add it then. */
+.feedbackWidget {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);  /* 4px — the source's own gap */
+}
+
+.label {
+  font-weight: 600;
+  /* 0.875rem, and the 1rem it replaces was right for the layout it was written for. That note
+     rejected 0.98rem because 15.68px is on no rung of the ratified scale, and reasoned that a
+     prompt addressed to the reader takes the body step. Neither objection carries to 0.875rem:
+     it IS a rung — --zebra-fs-ui, custom.scss's "14px — nav, buttons, controls" — and the row
+     above changed the premise, because in a column this was a standalone prose prompt while in a
+     row it is the inline label OF a control group, which is what that token names. Measured 14px
+     on a 22.4px line box, against the source's 14px on 23.8px on its own ramp. The 600 above is
+     still what keeps it a widget label rather than prose. */
+  font-size: var(--zebra-fs-ui);
+  color: var(--ifm-heading-color);
+  letter-spacing: 0.005em;
+  /* The source's own label margin. With the row's 4px gap it puts the label 8px off the first
+     thumb while the thumbs sit 4px apart — measured 8.000/4.000 on the source, and 8.000/4.000
+     here at all four widths and both pixel ratios. */
+  margin-right: var(--space-1);
+}
+
+/* THIS ROW RESERVES ITS OWN HEIGHT BEFORE IT HAS ANY CONTENT, and that reservation is what
+ * keeps a reader who refreshes at the bottom of a page at the bottom of that page. The two
+ * <feedback-button> hosts inside it are created in an effect, so on the server this box is
+ * empty and an empty flex row is 0px tall — 75px of the document arrived after the browser had
+ * already restored (and clamped) the scroll offset. index.tsx's header has the measurements
+ * and the reason a re-scroll is the wrong fix. That 75px was the WHOLE widget, back when the
+ * label was imperative too; the row is the only imperative part left, and it is 32px.
+ *
+ * STILL DERIVED FROM THE BUTTON, BUT THE DERIVATION IS A DECLARATION NOW INSTEAD OF A SUM. The
+ * old value was `calc(22px + 2 * 0.5rem + 2 * 1.5px)` = 41px, written out as a sum because the
+ * button's height was CONTENT-derived — a 22px SVG, 0.5rem of vertical padding and a 1.5px
+ * border each side — and it erred 1px tall on purpose because Chrome snapped that 1.5px border
+ * to 1px and settled the button at 40px (re-measured before this edit: 46.375 x 40 at
+ * devicePixelRatio 1 AND 2, against a row held at 41px by that min-height). The 2026-09-06
+ * restyle gives .thumbBtn an explicit 32px height under an explicit `box-sizing: border-box`,
+ * so the padding, the SVG and both borders live INSIDE that 32px and none of them can move it.
+ * --thumb-box is that one number and both readers take it, so the reservation cannot drift from
+ * the box it reserves. Nothing outside this file reads either class (grepped over src/ and
+ * scripts/), which is what makes a bare custom property safe here.
+ *
+ * MEASURED, NOT REASONED. Instrument: read the row's getBoundingClientRect().height populated,
+ * then again with `row.innerHTML = ''` — byte-for-byte the box the server ships — at
+ * devicePixelRatio 1 AND 2, at 1280/768/375/320, in both themes. Sixteen combinations, all
+ * identical:
+ *
+ *     settled 32   reserved 32   slack 0   document.scrollHeight populated == empty
+ *
+ * The same instrument on the shipped file returned settled 41 / reserved 41 / slack 0, so the
+ * row already held; what changes is that the number is exact at both pixel ratios rather than
+ * rounded up off a fractional border, and the +1px of whitespace over the button's own box is
+ * gone. KEEP THE TWO EQUAL — they are, through --thumb-box — and re-run the paragraph above if
+ * anything here moves. */
+.thumbsRow {
+  /* .thumbBtn's box, and the height this row reserves for it. One number, two readers. */
+  --thumb-box: 32px;
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  min-height: var(--thumb-box);
+}
+
+/* THE TOKEN MAP, and it is needed because the source is a Docusaurus site too: every colour in
+ * its rule is an --ifm-* name that also exists here with a DIFFERENT value, so inheriting the
+ * NAMES would import Infima's Bootstrap grey family (custom.scss declares that ramp from
+ * #F8F9FA…#212529, not from datum). Each source colour maps to the datum role that does the same
+ * job. Resolved values, and the contrast each carries on the surface it ACTUALLY paints on — the
+ * rest fill is `transparent` and every ancestor up to <html> is rgba(0,0,0,0), so that surface is
+ * the page, #fff / #111:
+ *
+ *   source                                 here                light           dark
+ *   emphasis-300 border #dadde1 (1.36:1) -> --border-control    5.93:1 on #fff  9.11:1 on #111
+ *   emphasis-600 glyph  #8d949e (3.06:1) -> --text-secondary    5.93:1 on #fff  9.11:1 on #111
+ *   primary      hover  #2563eb          -> --primary-active   12.54:1 wash    13.55:1 wash
+ *   rgba(0,112,244,.08) hover fill        -> --surface-accent    1.05:1 vs page  1.06:1 vs page
+ *   transparent  rest fill                -> transparent, copied verbatim in both themes
+ *
+ * NO [data-theme='dark'] RULE SURVIVES IN THIS BLOCK, and that is the point of moving to datum's
+ * roles. This file needed two dark rules because it picked Infima RUNGS by hand (emphasis-300 ->
+ * -400 for the dark border, plus a dark background and colour twin); every token above flips
+ * itself, so both rules are dead weight and are gone — which also removes the cascade trap where
+ * `[data-theme='dark'] .thumbBtn` and `.thumbBtn:hover` are both (0,2,0) and source order decides
+ * the dark hover border. Verified in the browser with no theme-scoped selector in this file: dark
+ * rest reads rgb(174,181,187) / transparent / rgb(174,181,187), dark hover rgb(201,227,255) /
+ * rgb(11,23,45) / rgb(201,227,255).
+ *
+ * THE REST BORDER IS --border-control BECAUSE 9.4 IS NORMATIVE ABOUT THIS EXACT DECLARATION: an
+ * edge "must clear the 3:1 WCAG 1.4.11 asks of a control boundary", and --border-control "is the
+ * lowest step clearing 3:1 on every shipped surface in both themes" — which is why
+ * design-tokens.scss wires --input to it, and semantic.css:53 names it "the boundary of an
+ * interactive control that must be perceivable on its own … an outlined button". Measured on the
+ * page: --border-default 1.57:1 light / 2.04:1 dark, --border-strong 1.91:1 / 3.04:1. Both fail
+ * light, and --border-strong is datum's "Hovered control border" (semantic.css:54), so it is the
+ * wrong ROLE for a rest edge as well as the wrong value. The floor is applied to BOTH themes; a
+ * floor that governs one theme is not a floor. The consequence is deliberate: --border-control
+ * and --text-secondary are the same primitive, so the ring is exactly as loud as the glyph it
+ * holds rather than louder.
+ *
+ * HOVER TAKES --primary-active, NOT --text-link, BECAUSE 8.2 IS NORMATIVE: "Hover always
+ * increases contrast. There is no dim-on-hover anywhere in the system." --text-link is the bright
+ * brand step and would have DIMMED against the wash — measured 5.93 -> 5.67 light and
+ * 9.11 -> 8.50 dark. --primary-active (= datum's --text-link-hover, semantic.css:48) resolves to
+ * #122f5f light and #c9e3ff dark, i.e. away from the surface in both themes, and measures
+ * 5.93 -> 12.54 (+6.61) light and 9.11 -> 13.55 (+4.44) dark. One source colour still maps to one
+ * token: border and glyph share it here as they do there. The border clears its OUTER neighbour,
+ * the page, at 13.14:1 light / 14.31:1 dark.
+ *
+ * THE HOVER FILL. rgba(0,112,244,.08) is a raw literal and design-tokens.scss's rule 1 is "NO
+ * LITERAL COLOURS", so it has to become a token. Flattened by hand, 0.08*(0,112,244) +
+ * 0.92*#ffffff = #ebf4fe, 1.11:1 against white. --surface-accent is datum's "Accent-tinted panel"
+ * (semantic.css:39) — the only accent-tinted SURFACE role it exposes — and resolves to
+ * rgb(246,250,255) light / rgb(11,23,45) dark, 1.05:1 and 1.06:1 against the page. The same
+ * near-invisible wash, which is the point: in both designs the hover signal is the border and the
+ * glyph, not the fill. --status-info-background resolves to the identical primary-2 and is
+ * rejected on role (an info CONTAINER fill, not a control hover); primary-3 #ebf3ff is the
+ * near-byte match to the source and is off-limits because primary-N is datum's PRIMITIVE layer,
+ * which src/css/datum.scss marks internal. If that difference is ever wanted the fix is a datum
+ * role (--surface-accent-hover on primary-3), not a literal here.
+ *
+ * 6px RADIUS IS REFUSED. aw-style-guide.md 6.1 is NORMATIVE: "square by default, pill when
+ * operable. There is no intermediate radius. A 4px or 8px corner is not a smaller version of this
+ * language — it is a different language." A thumb is operable, so it takes --radius-control
+ * (measured 9999px), and on a 32x32 box that renders a CIRCLE — the most visible departure from
+ * the source in this file. 6px is precisely the intermediate radius that sentence forbids, there
+ * is no 6px token (--radius-indicator, 4px, is the nearest), and lint-shape-language.mjs gates it.
+ *
+ * 1px BORDER IS A DEVIATION FROM 6.2, FLAGGED RATHER THAN JUSTIFIED AWAY. 6.2 is NORMATIVE and
+ * makes 2px "The default. Every control border"; its four evidenced widths are 1/2/4/6px and the
+ * 1px row is a mega-menu edge and a footer divider, not a control. The work order for this change
+ * says to copy the source's styling and the source measures 1px, so 1px ships and the departure
+ * is recorded here. If the owner holds 6.2, the change is this one declaration —
+ * `var(--border-width-control)`, which resolves to 2px — and the reservation does NOT need
+ * recomputing, because a `height` under border-box cannot be moved by a border weight. Either
+ * answer beats the 1.5px this shipped, which is on no rung of 6.2 at all. */
+.thumbBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Declared rather than left to Infima's global reset, so .thumbsRow's reservation arithmetic is
+     self-contained: --thumb-box is the WHOLE box, border included. */
+  box-sizing: border-box;
+  width: var(--thumb-box);
+  height: var(--thumb-box);
+  padding: 0;
+  /* --radius-control, 2026-09-10, AND THIS IS A BROKEN REFERENCE REPAIRED, not a restyle.
+     It read `var(--radius-source-feedback-btn)` — one of six tokens that carried a third-party
+     source's own geometry past the square census. Scale B retired all six in
+     src/css/design-tokens.scss, and this consumer was missed: an undefined custom property makes
+     the whole declaration invalid at computed-value time, so these two buttons fell back to a
+     0px radius. That is the owner's report that "the border radius for the thumbs up and thumbs
+     down icons is no longer there", and it was a dangling reference rather than a design choice.
+     THE ROLE RUNG IS THE RIGHT ANSWER HERE. The retirement note's argument is that each of those
+     four components takes the rung that describes it, and a thumb button is unambiguously a
+     CONTROL: 8px on a 32px border-box button, 2px from the source's measured 6px, and the same
+     radius every other operable box on the site now carries. */
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border-control);
+  background-color: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
+  /* The source's own property list in its order. It declares no timing function, so it computes
+     to `ease`; --motion-base is 0.15s, the duration it measures at. Under
+     prefers-reduced-motion: reduce the site-wide blanket at the foot of custom.scss SHORTENS this
+     to var(--motion-discrete) — measured 0.01s here, not 0s, and the comment above that blanket
+     explains why the difference is load-bearing — so no local reduced-motion rule is wanted. */
+  transition: background-color var(--motion-base) ease, color var(--motion-base) ease,
+    border-color var(--motion-base) ease;
+}
+
+/* HOVER AND PRESS SHARE THE FOREGROUND, so 8.2's "hover always increases contrast" also holds for
+   a keyboard press, which fires :active with no :hover. Measured glyph on the fill each state
+   actually paints: rest 5.93 -> hover 12.54 -> press 10.09 light, and 9.11 -> 13.55 -> 9.93 dark.
+   Press sits below hover because 8.3 deepens the FILL a rung and a dark glyph loses a little on a
+   deeper grey; both states stay above rest in both themes and far above the 4.5:1 floor. */
+.thumbBtn:hover,
+.thumbBtn:active {
+  border-color: var(--primary-active);
+  color: var(--primary-active);
+}
+
+.thumbBtn:hover {
+  background-color: var(--surface-accent);
+}
+
+/* aw-style-guide.md 8.3 takes a pressed control a step further than hover — stated there for a
+   SOLID button, which "goes one shade darker again", so this is that principle applied to an
+   outlined one rather than a rule quoted at it. --surface-element-active is datum's gray-5,
+   "Same, pressed or selected" against --surface-element's "Input, unfilled control, at rest"
+   (semantic.css:36 and :38) — measured rgb(222,226,229) light / rgb(45,49,53) dark, one rung
+   past the hover wash rather than a new colour. It replaces --ifm-color-emphasis-200, the last
+   Infima grey in this block. */
+.thumbBtn:active {
+  background-color: var(--surface-element-active);
+}
+
+/* Not in the source, and it must not go: without it a keyboard reader gets no ring on the only
+   interactive thing in this footer. --focus-ring-color is the site's one ring-colour token, and it
+   resolves to exactly what this rule read before — measured rgb(0,76,186) light /
+   rgb(129,181,255) dark, identical to --ifm-color-primary — so this is a rename onto the shared
+   token, not a repaint. The offset stays 1px rather than the chrome recipe's 2px: the thumbs sit
+   4px apart, so 1px + a 2px ring stops 1px short of the sibling's box while a 2px offset would
+   reach into it (checked in the browser, both themes). */
+.thumbBtn:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 1px;
+}
+
+/* 16px inside the 32px box, which is what the source RENDERS; its width/height attributes say 20
+   and its own CSS overrides them. index.tsx ships 16 in the attributes too, so the two agree. */
+.thumbBtn svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+/* PushFeedback's CSS sets `feedback-button, feedback-modal { visibility: hidden }`
+ * until its Stencil runtime hydrates the component. On this site that
+ * hydration sometimes lags (or doesn't complete at all in certain
+ * environments), which would leave our slotted thumb buttons invisible
+ * along with the host. Override the visibility so the trigger buttons
+ * remain visible regardless of Stencil's bootstrap state — clicking
+ * still works because the click handler lives on the host element.
+ *
+ * `display: inline-block` DOES NOT FIGHT THE FLEX ROW — checked, not assumed, when
+ * .feedbackWidget became one. This host is a child of .thumbsRow, which is `display: flex`, so it
+ * is a flex ITEM and its outer display is blockified: getComputedStyle reports `block` and the
+ * box measures 32 x 32, the button's own box, with no inline strut or descender under it. That is
+ * also why our row settles at 32 while the source's widget settles at 32.188 — the source leaves
+ * its host `display: inline` inside a <span> (measured: box 32 x 20), so it pays for a line box.
+ * Do not "correct" this to flex or block; inline-block is what keeps the host sane if it is ever
+ * used outside a flex row. */
+.feedbackWidget feedback-button {
+  visibility: visible !important;
+  display: inline-block;
+}

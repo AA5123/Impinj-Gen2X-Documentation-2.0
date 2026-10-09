@@ -1,0 +1,24 @@
+---
+id: index
+title: "Alerts"
+sidebar_label: "Alerts"
+sidebar_position: 2
+draft: false
+description: "The alert envelope (type, state, id, priority) and the six alertDetails branches, on the management event topic."
+sidebar_custom_props: { emoji: "🚨", card: "The alert envelope (type, state, id, priority) and the six alertDetails branches." }
+---
+
+
+[`alerts`](/api-reference/mqtt/events/alerts-event) reports a condition change: battery, power, network, firmware update, file download or temperature, in `id`. Each alert carries a `priority` (`CRITICAL`, `HIGH` or `LOW`), a `state` (`SET`, `CLEAR` or `ONESHOT`) and a detail block matching its `id`. Alerts travel at [QoS 1](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#qos), so the same one can arrive twice. The contract states no rule for which alerts latch until cleared.
+
+See [Respond to Alerts](/guides/operate-and-monitor/respond-to-alerts).
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

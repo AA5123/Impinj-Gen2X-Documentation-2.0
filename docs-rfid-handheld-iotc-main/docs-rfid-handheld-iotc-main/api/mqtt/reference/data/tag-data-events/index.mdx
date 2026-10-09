@@ -1,0 +1,24 @@
+---
+id: index
+title: "Tag Data Stream"
+sidebar_label: "Tag Data Stream"
+sidebar_position: 1
+draft: false
+description: "Tag reads during an active inventory — EPC, TID, and USER memory, RSSI telemetry, access results — on the DATA endpoint."
+sidebar_custom_props: { emoji: "🏷️", card: "Tag reads during an active inventory — EPC, TID, and USER memory, RSSI telemetry." }
+---
+
+
+[`dataEVT`](/api-reference/mqtt/data/tag-data-event) carries tag and barcode reads in batches. Each tag record reports one tag since its previous report, with `eventNum` as its only required member; the [operating mode](/api-reference/mqtt/ctrl/set-operating-mode)'s metadata flags decide which other fields it carries. Barcode records carry `decodedBarcode` and `symbology`.
+
+See [Consume Tag Data](/guides/build-your-integration/consume-tag-data) and the [RFID and Barcode Reading](/api-reference/mqtt/schemas/rfid-and-barcode-reading#tag-data) schemas.
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

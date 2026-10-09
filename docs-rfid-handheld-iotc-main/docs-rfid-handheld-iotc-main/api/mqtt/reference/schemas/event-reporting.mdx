@@ -1,0 +1,69 @@
+---
+id: event-reporting
+title: "Event Reporting"
+sidebar_label: "Event Reporting"
+sidebar_position: 4
+draft: false
+description: "The event configuration objects: cfgEventPayload, heartbeatConfiguration, and alertThresholds."
+sidebar_custom_props: { emoji: "🔔", card: "Event configuration schemas: heartbeat and alert thresholds." }
+doc_type: reference
+page_meta:
+  - "Audience: API consumer"
+  - "Use: look up the members, types, defaults, and limits of a configuration object"
+---
+
+## Event Configuration {#event-configuration}
+
+### `cfgEventPayload` {#cfgEventPayload}
+
+The `eventConfiguration` object of [`config_events`](/api-reference/mqtt/mgmt/config-events), and of an endpoint configuration. Every flag is a boolean. A flag marked `reserved` is accepted, stored, and returned in read-backs, but has no effect. The support status is as the API developer states it; the contract does not mark it.
+
+| Field | Type | Firmware support |
+| --- | --- | --- |
+| `antenna` | boolean | `reserved` |
+| `terminalConnection` | boolean | `supported` |
+| `firmwareUpdate` | boolean | `supported` |
+| `gpi` | boolean | `reserved` |
+| `network` | boolean | `supported` |
+| `exceptions` | boolean | `reserved` |
+| `ntp` | boolean | `reserved` |
+| `userApp` | boolean | `reserved` |
+| `heartbeat` | boolean | `supported` |
+| `power` | boolean | `supported` |
+| `battery` | boolean | `supported` |
+| `temperature` | boolean | `reserved` |
+| `fileDownload` | boolean | `supported` |
+| `cpuUsage` | boolean | `reserved` |
+| `flashUsage` | boolean | `reserved` |
+| `ramUsage` | boolean | `reserved` |
+| `heartbeatConfiguration` | object ([`heartbeatConfiguration`](/api-reference/mqtt/schemas/event-reporting#heartbeatConfiguration)) |  |
+| `cpuThreshold` | integer | `reserved` |
+| `ramThreshold` | integer | `reserved` |
+| `flashThreshold` | integer | `reserved` |
+| `temperatureThreshold` | integer | `reserved` |
+
+No member is required.
+
+Changes take effect after the reader reboots. Which configuration wins when `config_events` and an endpoint's `eventConfiguration` disagree is not specified in the available sources.
+
+### `heartbeatConfiguration` {#heartbeatConfiguration}
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `interval` | integer | No |  | max 65535 | Seconds between heartbeats |
+| `inventoryStatus` | boolean | No |  |  | Include inventory status in each heartbeat |
+| `batteryStatus` | boolean | No |  |  | Include battery status in each heartbeat |
+| `userApps` | boolean | No |  |  | Include user-application status in each heartbeat. Not supported: no heartbeat carries it. |
+
+### `alertThresholds` {#alertThresholds}
+
+The four threshold members of `cfgEventPayload`.
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `cpuThreshold` | integer | No |  |  | CPU usage percentage above which an alert is raised. Reserved: accepted but has no effect. |
+| `ramThreshold` | integer | No |  |  | RAM usage percentage above which an alert is raised. Reserved: accepted but has no effect. |
+| `flashThreshold` | integer | No |  |  | Flash usage percentage above which an alert is raised. Reserved: accepted but has no effect. |
+| `temperatureThreshold` | integer | No |  |  | Temperature above which an alert is raised. Reserved: accepted but has no effect. |
+
+**Related:** 📕 [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) · 📕 [`config_events`](/api-reference/mqtt/mgmt/config-events) · 📕 [Connection Parameters](/api-reference/mqtt/protocol-reference/connection-and-session#connection-parameters) · 📕 [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure)

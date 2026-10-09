@@ -1,0 +1,262 @@
+---
+id: connection-and-session
+title: "Connection and Session"
+sidebar_label: "Connection and Session"
+sidebar_position: 1
+draft: false
+description: "How an RFD40 or RFD90 reader reaches your MQTT broker, how its session behaves, and how the connection is authenticated and encrypted."
+sidebar_custom_props: { emoji: "🔐", card: "How the reader reaches your broker, and how the connection is secured." }
+doc_type: reference
+---
+
+
+The reader, not your application, opens the MQTT connection that carries its traffic. You describe that connection in an endpoint configuration on the reader: the broker address, the transport, the credentials, the certificates, and the topics. This page covers the connection and its session; [TLS and Authentication](/api-reference/mqtt/protocol-reference/tls-and-authentication) covers encryption and credentials.
+
+## The Connection Path {#connection-path}
+
+1. **Bootstrap.** Over USB-C, 123RFID Desktop sets the reader's [regulatory region](/api-reference/mqtt/mgmt/get-current-region), its first Wi-Fi profile on a reader that has Wi-Fi, and its first endpoint configuration, and activates that endpoint.
+2. **Configure.** More endpoints can then be added or changed over MQTT with [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint), and read back with [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config). When you activate an endpoint, the reader checks its parameters and, if they are valid, connects to it without a reboot.
+3. **Connect.** For each active endpoint, the IoT Connector opens an MQTT 3.1.1 session to the configured broker and registers its [Last Will](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#retention-and-last-will).
+4. **Announce.** When the session is established, the reader publishes a `CONNECTED` [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) on the endpoint's connection-state topic. See [Topic Slots](/api-reference/mqtt/protocol-reference/topic-structure#topic-slots) for the endpoint types that carry it.
+5. **Exchange.** Your applications connect to the same broker, subscribe to the reader's topics, and publish commands. Before you start an inventory, confirm the regulatory region with [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region).
+
+The sequence below follows the same path end to end, from a new reader to its first tag data, in two parts. The management commands go to the `MDM` endpoint’s command topic, and [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) and [`control_operation`](/api-reference/mqtt/ctrl/control-operation) to the `CTRL` endpoint’s.
+
+### Part 1: From a New Reader to Connected Endpoints {#path-part-1}
+
+Stages 1 to 4: 123RFID Desktop gives the reader its first endpoint, the reader connects, your application exchanges a first command with it, and then adds and activates the `CTRL` and `DATA1` endpoints.
+
+```d2
+vars: {d2-config: {pad: 8}}
+shape: sequence_diagram
+tool: "123RFID\nDesktop"
+reader: Reader
+broker: Broker
+app: "Your\napplications"
+
+bootstrap: "1 · Bootstrap over USB-C" {
+  tool -> reader: "region, Wi-Fi, MDM endpoint"
+}
+connect: "2 · The reader connects" {
+  reader -> broker: "CONNECT + Last Will"
+  reader -> broker: "mqttConnEVT CONNECTED"
+}
+first: "3 · First command" {
+  app -> broker: "SUBSCRIBE MDM resp"
+  app -> broker: "get_version"
+  broker -> reader: "get_version"
+  reader -> broker: "reply, code 0"
+  broker -> app: "reply"
+}
+endpoints: "4 · Add and activate endpoints" {
+  broker."From here on, commands and replies\npass through the broker, as in step 3."
+  app -> reader: "config_endpoint: CTRL, activate"
+  reader -> app: "code 0"
+  reader -> broker: "CONNECT (CTRL)"
+  reader -> broker: "mqttConnEVT CONNECTED"
+  app -> reader: "config_endpoint: DATA1, activate"
+  reader -> app: "code 0"
+  reader -> broker: "CONNECT (DATA1)"
+}
+```
+
+### Part 2: The First Inventory {#path-part-2}
+
+Stage 5: with both endpoints connected, your application checks the region, sets the [operating mode](/api-reference/mqtt/ctrl/set-operating-mode), and starts and stops an inventory while tag data arrives on the `DATA1` topic.
+
+```d2
+vars: {d2-config: {pad: 8}}
+shape: sequence_diagram
+reader: Reader
+broker: Broker
+app: "Your\napplications"
+
+inventory: "5 · First inventory" {
+  broker."Commands and replies pass\nthrough the broker, as in part 1."
+  app -> broker: "SUBSCRIBE DATA1 topic"
+  app -> reader: "get_current_region"
+  reader -> app: "region, code 0"
+  app -> reader: "set_operating_mode"
+  reader -> app: "code 0"
+  app -> reader: "control_operation START"
+  reader -> app: "code 0"
+  reader -> broker: "dataEVT"
+  broker -> app: "dataEVT"
+  app -> reader: "control_operation STOP"
+  reader -> app: "code 0"
+}
+```
+
+<details>
+<summary>In plain words</summary>
+
+Four parties take part. **123RFID Desktop** is a Windows program you use once, over a USB cable, to give a new reader its first settings. **The reader** is the handheld RFID device. **The broker** is a message relay. The reader and your software never talk to each other directly: each drops messages at the broker and collects the ones meant for it, much like a post office. **Your applications** are the software that gives the reader instructions and uses what it reads.
+
+1. **First set-up, by cable.** You tell the reader which part of the world it is in, so its radio follows local rules, how to join the Wi-Fi, and which broker to use.
+2. **The reader checks in.** It connects to the broker and announces that it is online. It also leaves a "last will" with the broker: a message the broker sends on its behalf if it ever disappears without saying goodbye.
+3. **The first conversation.** Your application asks the reader which model and software it has. The question and the answer both travel through the broker, and a reference number on each pairs the answer with its question.
+4. **Opening two more lines.** Your application asks the reader to open one line for control instructions and one for tag data. Each line opens straight away, with no restart.
+5. **Reading tags.** Your application checks the region, chooses how the radio should read, and says "start". The reader sends what it reads, in batches, on the tag-data line until your application says "stop".
+
+</details>
+
+Stages 3 to 5 also appear on their own where each is specified: the first command and its reply in [Correlation and Request/Response Pairing](/api-reference/mqtt/protocol-reference/message-envelope#correlation-and-request-response-pairing), adding endpoints on [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint#overview), and the first inventory on [`control_operation`](/api-reference/mqtt/ctrl/control-operation#overview).
+
+## Broker Connection {#broker-connection}
+
+The reader opens its own MQTT sessions to your broker. Each session belongs to an endpoint: a named connection configuration stored on the reader. This section describes what an endpoint connects to and how its session behaves over time.
+
+### The Reader Is Its Own MQTT Client {#reader-as-client}
+
+The IoT Connector runs in the reader’s firmware. For each active endpoint, it opens an MQTT session to the broker over the reader’s own network connection: Wi-Fi, or Ethernet while the reader sits in a communication cradle. The reader does not need a host application, an SDK or a mobile computer to reach the broker.
+
+The RFD40 Standard has no Wi-Fi radio, so it reaches the broker only through a communication cradle. Its IoT Connector is already active: once its endpoints are configured and it is docked, the cradle gives it a network connection and the IoT Connector connects to the broker.
+
+A reader can be attached to a mobile computer or a PC at the same time, over its host connector, Bluetooth or USB. The IoT Connector keeps answering commands while a terminal is attached: [`get_status`](/api-reference/mqtt/mgmt/get-status) reports the attachment in `deviceStatus.terminalConnection`, and the contract’s own `get_status` example shows a terminal connected over USB. To be told when a terminal connects or disconnects, enable `terminalConnection` with [`config_events`](/api-reference/mqtt/mgmt/config-events).
+
+Apps on an attached terminal, whether Android, iOS or Windows, always have priority over MQTT commands. A user can start an inventory from the terminal while the reader is connected to the broker. What the reader replies to an MQTT command that a terminal app overrides is not specified in the available sources.
+
+### Protocol Version {#protocol-version}
+
+The contract declares MQTT 3.1.1. The endpoint configuration has no field that selects a different protocol version.
+
+The reader reports the protocol version of each session in the `mqttVersion` field of [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event). The field is a number, which current firmware sends as `3.0999999`. Don't compare it with `3.1` for equality.
+
+Whether the reader supports any other MQTT version is not specified in the available sources.
+
+### Endpoints {#endpoints}
+
+An endpoint is a named configuration of the reader's MQTT client for one broker session. You manage endpoints with [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) and read them back with [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config).
+
+- **The name identifies the endpoint.** `endpointName` holds up to 15 characters. Together with `epType`, it selects the endpoint that an `update` or `delete` changes.
+- **Only an active endpoint connects.** The reader makes a connection for an endpoint only when `activate` is `true`. The default is `false`, so an endpoint added without `activate: true` is saved and never connects.
+- **Activating connects without a reboot.** With `activate: true`, the reader checks the endpoint's parameters. If they are valid, it disconnects from the current configuration and connects to the new endpoint.
+- **A reader can hold several endpoints.** Endpoints can point at the same broker or at different brokers, so management, control, and tag-data traffic can be split across brokers.
+- **Endpoints survive a reboot.** After a [`reboot`](/api-reference/mqtt/mgmt/reboot), saved and active endpoints are restored, and the reader reconnects to the broker it was connected to.
+
+All endpoint fields, with their types and defaults, are listed in [MQTT Endpoints](/api-reference/mqtt/schemas/mqtt-endpoints#endpointConfiguration).
+
+### Endpoint Types {#endpoint-types}
+
+`epType` sets the class of traffic that an endpoint carries.
+
+| `epType` | Traffic |
+| --- | --- |
+| `MGMT` | Management commands, their responses, and management events |
+| `MGMT_EVT` | Management events on a separate endpoint |
+| `CTRL` | RFID control commands and their responses |
+| `DATA1` | Tag and barcode data, first data channel |
+| `DATA2` | Tag and barcode data, second data channel. Currently not supported |
+| `MDM` | A mobile-device-management form of the management endpoint |
+
+The contract does not include an example of a `MGMT_EVT` or `DATA2` endpoint. `DATA2` is currently not supported.
+
+The operation pages in this reference place management commands on the management endpoint and control commands on the `CTRL` endpoint. Whether an endpoint accepts commands outside its type is not specified in the available sources.
+
+Which topic carries which traffic depends on the position of each topic in the endpoint configuration. See [Topic Slots](/api-reference/mqtt/protocol-reference/topic-structure#topic-slots).
+
+### Broker Address, Port, and Transport {#address-port-transport}
+
+| Field | What it sets |
+| --- | --- |
+| `url` | The broker address. Every published example is a bare host name or IPv4 address with no scheme, and the port is set separately. Treat the value as a host, not as a full URI. |
+| `port` | The broker's TCP port, from `1` to `65535`. |
+| `protocol` | `MQTT` for a plaintext connection, or `MQTT_TLS` for a TLS connection. See [TLS and Authentication](/api-reference/mqtt/protocol-reference/tls-and-authentication). |
+
+The contract uses port `1883` for plaintext MQTT and `8883` for MQTT over TLS, and advises TLS on any untrusted network. The reader does not check that `protocol` and `port` match: an endpoint with `protocol: MQTT` and `port: 8883` is accepted and then fails to connect.
+
+### Session Lifecycle {#connection-lifecycle}
+
+1. **Connect.** For each active endpoint, the reader sends an MQTT CONNECT packet with its client ID, its credentials if any, its keep-alive interval, and its clean-session flag. See [Connection Parameters](/api-reference/mqtt/protocol-reference/connection-and-session#connection-parameters).
+2. **Register the Last Will.** In the same CONNECT packet, the reader registers a Last Will: the `DISCONNECTED` form of [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event), which carries no timestamp. See [Last Will](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#last-will).
+3. **Announce the connection.** When the session is established, the reader publishes a `CONNECTED` `mqttConnEVT` with a timestamp on the endpoint's connection-state topic. The contract says every active endpoint does this, but its topic-slot table lists `mqttConnEVT` only for `MGMT`, `MDM`, and `CTRL` endpoints; see [Topic Slots](/api-reference/mqtt/protocol-reference/topic-structure#topic-slots).
+4. **Lose the connection.** If the session ends without a clean MQTT disconnect, for example because the broker receives nothing within one and a half keep-alive intervals, the broker publishes the Last Will. A clean disconnect suppresses the Last Will. Whether the reader publishes anything when it disconnects cleanly is not specified in the available sources.
+5. **Reconnect.** The reader waits between `reconnectDelayMin` and `reconnectDelayMax` seconds before it reconnects. How the delay grows between those limits is not specified in the available sources.
+
+The order in which the reader subscribes to its command topic and announces the connection is not specified in the available sources.
+
+### Confirming a Connection {#confirming-a-connection}
+
+Each signal answers a different question:
+
+| Signal | What it shows |
+| --- | --- |
+| A `CONNECTED` [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) | A new session was established for that endpoint. On its own, it does not show that the reader restarted, because a network reconnect produces the same message. |
+| A `DISCONNECTED` `mqttConnEVT` | The broker published the Last Will because the session ended without a clean disconnect. Because the broker detects the loss through keep-alive, the message can arrive some time after the connection was lost. |
+| No `DISCONNECTED` message | Nothing. A clean disconnect suppresses the Last Will, so the absence of a `DISCONNECTED` message does not mean the reader is connected. |
+| The endpoint listed under `activeEndpoints` in [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) | The reader stores the endpoint as active. It does not show that the endpoint connected. |
+| A reply to a command sent on the endpoint | The endpoint's session is up, and the reader is processing commands on it. |
+
+For ongoing liveness monitoring, use [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event); see [Reader Availability](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#reader-availability).
+
+### Changing an Endpoint {#changing-an-endpoint}
+
+- **A reply is not a connection.** A [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) reply with [code `0`](/api-reference/mqtt/response-codes#code-0) means that the reader accepted and saved the configuration. It does not show that the endpoint connected: confirm the connection with the signals above.
+- **Active endpoints can refuse changes.** `config_endpoint` returns [code `35`](/api-reference/mqtt/response-codes#code-35) when you modify an endpoint that is active; the recommended action is to deactivate the endpoint first. How to deactivate an endpoint without modifying it is not specified in the available sources.
+- **You can cut off your own session.** Changing the broker `url`, `port`, or `protocol` of the endpoint that carries your command session, or deleting that endpoint, can sever the session you are using. Adding an endpoint of a different type does not affect it.
+
+The full list of codes that `config_endpoint` can return is in [Codes by Command](/api-reference/mqtt/response-codes#codes-by-command).
+
+**Related:** 📕 [Connection Parameters](/api-reference/mqtt/protocol-reference/connection-and-session#connection-parameters) · 📕 [TLS and Authentication](/api-reference/mqtt/protocol-reference/tls-and-authentication) · 📕 [Authentication and Tenancy](/api-reference/mqtt/protocol-reference/tls-and-authentication#authentication-and-tenancy) · 📕 [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) · 📕 [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) · 📕 [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure)
+
+## Connection Parameters {#connection-parameters}
+
+These fields control how the reader's MQTT client behaves for one endpoint. They sit in the endpoint's `configuration` object and in its `configuration.mqttParams` object, which you send with [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint). Complete type information for every field is in [MQTT Endpoints](/api-reference/mqtt/schemas/mqtt-endpoints#mqttParams).
+
+### Required Fields When You Add an Endpoint {#required-fields}
+
+The contract requires the same seven fields in `configuration` for every [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) operation: `endpointName`, `epType`, `protocol`, `activate`, `url`, `verificationType` and `port`. Its own `delete` example sends only `endpointName` and `epType`, and its `update` example omits `verificationType` and `port`; see [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint#request-semantics).
+
+`qosCommon` and `tenantId` are optional. What the reader uses when you omit them is not specified in the available sources; in the reader's default endpoint configurations, the tenant ID is empty and every topic uses [QoS `0`](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#qos).
+
+### Session Fields {#session-fields}
+
+| Field | Limits | If omitted | What it controls |
+| --- | --- | --- | --- |
+| `mqttParams.clientId` | None in the contract | Not specified | The client identifier the reader sends in its CONNECT packet |
+| `mqttParams.keepAlive` | Up to `65535` seconds | Not specified | The longest interval the reader allows between its own control packets |
+| `mqttParams.cleanSession` | `true` or `false` | `true` | Whether the broker discards the reader's previous session when it connects |
+| `mqttParams.reconnectDelayMin` | Seconds; none in the contract | Not specified | The shortest wait before the reader reconnects after losing the connection |
+| `mqttParams.reconnectDelayMax` | Seconds; none in the contract | Not specified | The longest wait before the reader reconnects |
+| `activate` | `true` or `false` | `false` | Whether the reader connects for this endpoint at all |
+
+The contract's server description uses a keep-alive of `300` seconds, and its [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) examples send `300`. Its [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) read-back examples report `96`, which is also the keep-alive in the reader's default endpoint configurations. The contract states no default.
+
+#### Client ID {#client-id}
+
+- **Portability.** MQTT 3.1.1 guarantees only that a broker accepts client IDs of 1 to 23 characters from `0-9`, `a-z`, and `A-Z`. A longer ID, or one that contains `.`, `_`, `:`, or `-`, works only on brokers that allow it.
+- **Empty client ID.** An empty `clientId` is valid only with `cleanSession: true`. MQTT 3.1.1 requires a broker to reject an empty client ID combined with a persistent session, and a broker may reject an empty client ID in any case.
+- **What the reader sends when you omit it** is not specified in the available sources.
+
+#### Clean Session {#clean-session}
+
+- With `cleanSession: true`, the default, the broker discards any previous session for the client ID when the reader connects. Commands published while the reader was offline are not delivered to it later.
+- With `cleanSession: false` and a stable `clientId`, the broker keeps the session, including queued [QoS 1](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#qos) and 2 messages and subscriptions, so the reader can receive commands that were sent while it was offline.
+
+Before you choose `false`, note that the reader carries out every command it receives. Commands that the broker queued while the reader was offline are carried out when it reconnects, however long it was away. See [Duplicates and Retries](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#idempotency).
+
+#### Keep-Alive {#keep-alive}
+
+With a non-zero `keepAlive`, if the broker receives nothing from the reader for one and a half keep-alive intervals, the broker closes the connection and publishes the reader's Last Will. A `keepAlive` of `0` turns the keep-alive mechanism off.
+
+#### Reconnect Delays {#reconnect-delays}
+
+`reconnectDelayMin` must be less than or equal to `reconnectDelayMax`. The schema cannot enforce this relation, so check it before you send the configuration. The published examples use the pairs `5`/`60`, `10`/`120`, `50`/`500`, and `5`/`512`; the last is also the pair in the reader's default endpoint configurations.
+
+### Credentials and Certificates {#credentials}
+
+`mqttParams.username` and `mqttParams.password` set the user name and password in the reader's CONNECT packet. The endpoint's `securityParams` names the installed certificates that the reader uses for TLS. See [Authentication and Tenancy](/api-reference/mqtt/protocol-reference/tls-and-authentication#authentication-and-tenancy) and [TLS and Authentication](/api-reference/mqtt/protocol-reference/tls-and-authentication).
+
+### Topics and QoS {#topics-and-qos}
+
+`tenantId`, [`mqttParams.publishTopics`](/api-reference/mqtt/protocol-reference/endpoints-and-topic-slots), and `mqttParams.subscribeTopics` set the topics for the endpoint, and `qosCommon` sets the endpoint's default QoS. See [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure) and [Delivery and Retry Semantics](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics).
+
+### Parameters You Cannot Set {#parameters-you-cannot-set}
+
+| Parameter | Status |
+| --- | --- |
+| MQTT protocol version | No field. The contract declares MQTT 3.1.1. |
+| Last Will message, QoS, and retain flag | No field. The Last Will topic is the endpoint's `publishTopics[2]`, and the reader registers the Last Will itself; see [Last Will](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#last-will). |
+| TLS version and cipher suites | No field. See [TLS and Authentication](/api-reference/mqtt/protocol-reference/tls-and-authentication#tls-versions). |
+
+**Related:** 📕 [Broker Connection](/api-reference/mqtt/protocol-reference/connection-and-session#broker-connection) · 📕 [MQTT Endpoints](/api-reference/mqtt/schemas/mqtt-endpoints) · 📕 [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint)

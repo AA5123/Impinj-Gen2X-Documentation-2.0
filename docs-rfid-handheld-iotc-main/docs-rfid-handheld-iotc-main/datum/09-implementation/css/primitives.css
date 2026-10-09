@@ -1,0 +1,1253 @@
+/* =============================================================================
+   COLOR PRIMITIVES — GENERATED, DO NOT EDIT
+   Layer 1 of 3: primitives -> semantic -> component.
+
+   Source of truth:  03-tokens/primitives/color.json
+   Generator:        tools/build-tokens.py
+   Raw input:        00-source/upstream/color-type-system/colors/   (never edited in place)
+
+   Seven 12-step scales, each generated at radix-ui.com/colors/custom from one
+   seed color, with Gray #6C757D and Background #FFFFFF (light) / #111111 (dark)
+   held constant across every run so the scales harmonize.
+
+     role        seed       generator prefix   source folder
+     primary     #004CBA    --blue-*           00-source/upstream/color-type-system/colors/primary/
+     note        #6C757D    --custom-*         00-source/upstream/color-type-system/colors/note/
+     tip         #198754    --green-*          00-source/upstream/color-type-system/colors/tip/
+     caution     #82204A    --pink-*           00-source/upstream/color-type-system/colors/caution/
+     warning     #FFC107    --yellow-*         00-source/upstream/color-type-system/colors/ffc107/
+     critical    #C94F1F    --red-*            00-source/upstream/color-type-system/colors/c94f1f/
+     teal        #12A594    --teal-*           00-source/upstream/color-type-system/colors/12a594/
+     gray        #6C757D    --gray-*           (identical in all seven runs)
+
+   Prefixes are republished under role names. Only the prefix changes; every
+   value is byte-for-byte from the generator output. The rename is required, not
+   cosmetic: the generator emits `--custom-*` for any unnamed hue, so a second
+   custom scale would silently collide, and `--pink-*` misdescribes a wine red.
+
+   Structure, per scale per theme:
+     12 solid steps   --primary-1  ... --primary-12
+     12 alpha steps   --primary-a1 ... --primary-a12
+      4 utility       -contrast  -surface  -indicator  -track
+   Plus one --color-background per theme.  898 declarations total.
+
+   Step semantics (Radix scale contract — see 02-foundations/color/01-primitives.md):
+      1 app bg          5 active/selected bg    9 solid bg         12 high-contrast text
+      2 subtle bg       6 subtle border        10 hovered solid bg
+      3 UI element bg   7 border / focus ring  11 low-contrast text
+      4 hovered UI bg   8 hovered border
+
+   Two gamuts per theme. The sRGB hex block is the universal fallback; the
+   @supports/@media block upgrades to oklch + display-p3 on wide-gamut displays.
+   Both are required — do not delete the fallback.
+
+   ORDER IS LOAD-BEARING: the light block must precede the dark block. Both
+   `:root` and `.dark` have specificity (0,1,0), so source order decides.
+
+   PRIMITIVES ARE INTERNAL. No component may reference --primary-*, --gray-* or
+   any other name in this file. Consume 09-implementation/css/semantic.css instead.
+   The scale has 12 steps per color and only some combinations are legal.
+
+   DARK-MODE CAVEAT: this run pinned step 9 to the seed in BOTH themes. For
+   `primary` and `caution` — whose seeds are dark — the step-9 solid therefore
+   sits at only 2.47:1 and 2.03:1 against the #111 page. Filled controls in dark
+   mode need step 8, or a step-8 border.
+   See 02-foundations/color/01-primitives.md §3.
+
+   OMITTED FROM SOURCE: the upstream background files also targeted
+   `.radix-themes` (light) and
+   `:is(.dark, .dark-theme) :where(.radix-themes:not(.light, .light-theme))` (dark).
+   Those selectors exist only for the Radix Themes npm package, which this system
+   does not use. Custom properties inherit from :root / .dark, so behavior is
+   unchanged. Re-add them if Radix Themes is ever installed.
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   LIGHT THEME — sRGB fallback
+   ----------------------------------------------------------------------------- */
+
+:root, .light, .light-theme, [data-theme='light'] {
+  /* PRIMARY — seed #004CBA — Brand accent · DITA `important` */
+
+  /*   solid 1-12 */
+  --primary-1:  #fcfdfe;
+  --primary-2:  #f6faff;
+  --primary-3:  #ebf3ff;
+  --primary-4:  #dcebff;
+  --primary-5:  #cae0ff;
+  --primary-6:  #b5d3ff;
+  --primary-7:  #9dc1fc;
+  --primary-8:  #7aa8f4;
+  --primary-9:  #004cba;
+  --primary-10: #003ba8;
+  --primary-11: #195ece;
+  --primary-12: #122f5f;
+
+  /*   alpha 1-12 */
+  --primary-a1:  #0055aa03;
+  --primary-a2:  #0072ff09;
+  --primary-a3:  #0066ff14;
+  --primary-a4:  #006eff23;
+  --primary-a5:  #006aff35;
+  --primary-a6:  #0168ff4a;
+  --primary-a7:  #005ef862;
+  --primary-a8:  #0059ea85;
+  --primary-a9:  #004cba;
+  --primary-a10: #003ba8;
+  --primary-a11: #004dc9e6;
+  --primary-a12: #001f53ed;
+
+  /*   utility    */
+  --primary-contrast:  #fff;
+  --primary-surface:   #f4f9ffcc;
+  --primary-indicator: #004cba;
+  --primary-track:     #004cba;
+
+  /* NOTE — seed #6C757D — DITA `note` · neutral information */
+
+  /*   solid 1-12 */
+  --note-1:  #fbfdfe;
+  --note-2:  #f8f9fa;
+  --note-3:  #eef0f2;
+  --note-4:  #e5e8eb;
+  --note-5:  #dce1e4;
+  --note-6:  #d3d8dd;
+  --note-7:  #c5cdd3;
+  --note-8:  #b0bac2;
+  --note-9:  #6c757d;
+  --note-10: #61686d;
+  --note-11: #5e656b;
+  --note-12: #202428;
+
+  /*   alpha 1-12 */
+  --note-a1:  #0080c004;
+  --note-a2:  #00254907;
+  --note-a3:  #001e3c11;
+  --note-a4:  #001e3b1a;
+  --note-a5:  #00253b23;
+  --note-a6:  #001d3a2c;
+  --note-a7:  #00243e3a;
+  --note-a8:  #00213b4f;
+  --note-a9:  #00101e93;
+  --note-a10: #000c149e;
+  --note-a11: #000b15a1;
+  --note-a12: #000509df;
+
+  /*   utility    */
+  --note-contrast:  #fff;
+  --note-surface:   #f6f8f9cc;
+  --note-indicator: #6c757d;
+  --note-track:     #6c757d;
+
+  /* TIP — seed #198754 — DITA `tip` · positive improvement */
+
+  /*   solid 1-12 */
+  --tip-1:  #fbfefc;
+  --tip-2:  #f5fbf7;
+  --tip-3:  #e6f6ec;
+  --tip-4:  #d7f0e0;
+  --tip-5:  #c6e8d2;
+  --tip-6:  #b1dcc1;
+  --tip-7:  #93cda9;
+  --tip-8:  #67b789;
+  --tip-9:  #198754;
+  --tip-10: #007947;
+  --tip-11: #09804e;
+  --tip-12: #1f3a2a;
+
+  /*   alpha 1-12 */
+  --tip-a1:  #00c04004;
+  --tip-a2:  #0099330a;
+  --tip-a3:  #00a43e19;
+  --tip-a4:  #00a03a28;
+  --tip-a5:  #00993639;
+  --tip-a6:  #008d354e;
+  --tip-a7:  #0089346c;
+  --tip-a8:  #00873998;
+  --tip-a9:  #007a41e6;
+  --tip-a10: #007947;
+  --tip-a11: #007b48f6;
+  --tip-a12: #001f0de0;
+
+  /*   utility    */
+  --tip-contrast:  #fff;
+  --tip-surface:   #f3faf5cc;
+  --tip-indicator: #198754;
+  --tip-track:     #198754;
+
+  /* CAUTION — seed #82204A — DITA `caution` · consequential */
+
+  /*   solid 1-12 */
+  --caution-1:  #fffcfd;
+  --caution-2:  #fff7f9;
+  --caution-3:  #ffe8ef;
+  --caution-4:  #ffdbe5;
+  --caution-5:  #fdcddb;
+  --caution-6:  #f8bdce;
+  --caution-7:  #f1a9bf;
+  --caution-8:  #e98fad;
+  --caution-9:  #82204a;
+  --caution-10: #6f093b;
+  --caution-11: #b14c71;
+  --caution-12: #6d0539;
+
+  /*   alpha 1-12 */
+  --caution-a1:  #ff005503;
+  --caution-a2:  #ff004008;
+  --caution-a3:  #ff004e17;
+  --caution-a4:  #ff004724;
+  --caution-a5:  #f5004832;
+  --caution-a6:  #e4004242;
+  --caution-a7:  #d6004256;
+  --caution-a8:  #cd004570;
+  --caution-a9:  #700030df;
+  --caution-a10: #6a0034f6;
+  --caution-a11: #900035b3;
+  --caution-a12: #6a0035fa;
+
+  /*   utility    */
+  --caution-contrast:  #fff;
+  --caution-surface:   #fff5f8cc;
+  --caution-indicator: #82204a;
+  --caution-track:     #82204a;
+
+  /* WARNING — seed #FFC107 — Status warning · ANSI Z535.6 caution signal */
+
+  /*   solid 1-12 */
+  --warning-1:  #fefdfb;
+  --warning-2:  #fffae8;
+  --warning-3:  #fff2be;
+  --warning-4:  #ffe99c;
+  --warning-5:  #fd7;
+  --warning-6:  #fed16f;
+  --warning-7:  #ecc061;
+  --warning-8:  #daa82e;
+  --warning-9:  #ffc600;
+  --warning-10: #fbbd00;
+  --warning-11: #9c6f00;
+  --warning-12: #47391c;
+
+  /*   alpha 1-12 */
+  --warning-a1:  #c0800004;
+  --warning-a2:  #ffc80017;
+  --warning-a3:  #ffcc0041;
+  --warning-a4:  #ffc70063;
+  --warning-a5:  #ffc00088;
+  --warning-a6:  #feae0090;
+  --warning-a7:  #e19a009e;
+  --warning-a8:  #d29500d1;
+  --warning-a9:  #ffc600;
+  --warning-a10: #fbbd00;
+  --warning-a11: #9c6f00;
+  --warning-a12: #302100e3;
+
+  /*   utility    */
+  --warning-contrast:  #2a2009;
+  --warning-surface:   #fff9e2cc;
+  --warning-indicator: #ffc600;
+  --warning-track:     #ffc600;
+
+  /* CRITICAL — seed #C94F1F — Status critical · ANSI Z535.6 warning signal */
+
+  /*   solid 1-12 */
+  --critical-1:  #fefcfb;
+  --critical-2:  #fff6f3;
+  --critical-3:  #ffebe3;
+  --critical-4:  #ffd8c7;
+  --critical-5:  #ffc9b3;
+  --critical-6:  #ffbda5;
+  --critical-7:  #f4ab92;
+  --critical-8:  #e99376;
+  --critical-9:  #c94f1f;
+  --critical-10: #ba4109;
+  --critical-11: #ca5020;
+  --critical-12: #562e20;
+
+  /*   alpha 1-12 */
+  --critical-a1:  #c0400004;
+  --critical-a2:  #ff40000c;
+  --critical-a3:  #ff49001c;
+  --critical-a4:  #ff4e0038;
+  --critical-a5:  #ff4a004c;
+  --critical-a6:  #ff45015a;
+  --critical-a7:  #e63b006d;
+  --critical-a8:  #d6360089;
+  --critical-a9:  #c23700e0;
+  --critical-a10: #b73a00f6;
+  --critical-a11: #c23700df;
+  --critical-a12: #3e1000df;
+
+  /*   utility    */
+  --critical-contrast:  #fff;
+  --critical-surface:   #fff4f0cc;
+  --critical-indicator: #c94f1f;
+  --critical-track:     #c94f1f;
+
+  /* TEAL — seed #12A594 — json-type-badge `object` · schema-table */
+
+  /*   solid 1-12 */
+  --teal-1:  #fafefd;
+  --teal-2:  #f3fbf9;
+  --teal-3:  #dff8f3;
+  --teal-4:  #ccf3eb;
+  --teal-5:  #b7ebe1;
+  --teal-6:  #a1ded3;
+  --teal-7:  #83cdc0;
+  --teal-8:  #54b9a9;
+  --teal-9:  #12a594;
+  --teal-10: #009888;
+  --teal-11: #008071;
+  --teal-12: #0f3d36;
+
+  /*   alpha 1-12 */
+  --teal-a1:  #00cc9905;
+  --teal-a2:  #00aa800c;
+  --teal-a3:  #00c8a020;
+  --teal-a4:  #00c39b33;
+  --teal-a5:  #00b99548;
+  --teal-a6:  #00a6885e;
+  --teal-a7:  #00997e7c;
+  --teal-a8:  #00977fab;
+  --teal-a9:  #009e8ced;
+  --teal-a10: #009888;
+  --teal-a11: #008071;
+  --teal-a12: #003129f0;
+
+  /*   utility    */
+  --teal-contrast:  #fff;
+  --teal-surface:   #f0faf8cc;
+  --teal-indicator: #12a594;
+  --teal-track:     #12a594;
+
+  /* GRAY — seed #6C757D — neutral: surfaces, borders, body text */
+
+  /*   solid 1-12 */
+  --gray-1:  #fafdff;
+  --gray-2:  #f6f9fc;
+  --gray-3:  #edf1f4;
+  --gray-4:  #e5e9ec;
+  --gray-5:  #dee2e5;
+  --gray-6:  #d6dadd;
+  --gray-7:  #cacfd3;
+  --gray-8:  #b7bcc1;
+  --gray-9:  #848d96;
+  --gray-10: #7a838b;
+  --gray-11: #5d656b;
+  --gray-12: #172029;
+
+  /*   alpha 1-12 */
+  --gray-a1:  #0099ff05;
+  --gray-a2:  #0055aa09;
+  --gray-a3:  #00396412;
+  --gray-a4:  #0028451a;
+  --gray-a5:  #001f3721;
+  --gray-a6:  #00192c29;
+  --gray-a7:  #00192c35;
+  --gray-a8:  #00122448;
+  --gray-a9:  #0113267b;
+  --gray-a10: #00122185;
+  --gray-a11: #000d16a2;
+  --gray-a12: #000a14e8;
+
+  /*   utility    */
+  --gray-contrast:  #FFFFFF;
+  --gray-surface:   #ffffffcc;
+  --gray-indicator: #848d96;
+  --gray-track:     #848d96;
+
+  /* PAGE BACKGROUND */
+  --color-background: #fff;
+}
+
+/* -----------------------------------------------------------------------------
+   LIGHT THEME — wide gamut (oklch / display-p3)
+   ----------------------------------------------------------------------------- */
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    :root, .light, .light-theme, [data-theme='light'] {
+      /* PRIMARY — seed #004CBA — Brand accent · DITA `important` */
+
+      /*   solid 1-12 */
+      --primary-1:  oklch(99.4% 0.0016 260.1);
+      --primary-2:  oklch(98.3% 0.0086 260.1);
+      --primary-3:  oklch(96.1% 0.0184 260.1);
+      --primary-4:  oklch(93.5% 0.0363 260.1);
+      --primary-5:  oklch(90.3% 0.0549 260.1);
+      --primary-6:  oklch(86.3% 0.0766 260.1);
+      --primary-7:  oklch(80.7% 0.0932 260.1);
+      --primary-8:  oklch(73% 0.1215 260.1);
+      --primary-9:  oklch(45.2% 0.1854 260.1);
+      --primary-10: oklch(39.8% 0.1854 260.1);
+      --primary-11: oklch(51% 0.1854 260.1);
+      --primary-12: oklch(31.3% 0.0918 260.1);
+
+      /*   alpha 1-12 */
+      --primary-a1:  color(display-p3 0.0235 0.349 0.6745 / 0.012);
+      --primary-a2:  color(display-p3 0.0196 0.3882 0.8784 / 0.032);
+      --primary-a3:  color(display-p3 0.0078 0.3725 0.949 / 0.075);
+      --primary-a4:  color(display-p3 0.0078 0.3804 0.9412 / 0.126);
+      --primary-a5:  color(display-p3 0.0078 0.3529 0.9412 / 0.193);
+      --primary-a6:  color(display-p3 0.0039 0.3412 0.9451 / 0.267);
+      --primary-a7:  color(display-p3 0.0039 0.3098 0.9137 / 0.357);
+      --primary-a8:  color(display-p3 0.0039 0.2863 0.8627 / 0.483);
+      --primary-a9:  color(display-p3 0 0.2 0.6627 / 0.883);
+      --primary-a10: color(display-p3 0 0.1529 0.6 / 0.914);
+      --primary-a11: color(display-p3 0 0.2235 0.7333 / 0.82);
+      --primary-a12: color(display-p3 0 0.0902 0.2902 / 0.902);
+
+      /*   utility    */
+      --primary-contrast:  #fff;
+      --primary-surface:   color(display-p3 0.9608 0.9765 1 / 0.8);
+      --primary-indicator: oklch(45.2% 0.1854 260.1);
+      --primary-track:     oklch(45.2% 0.1854 260.1);
+
+      /* NOTE — seed #6C757D — DITA `note` · neutral information */
+
+      /*   solid 1-12 */
+      --note-1:  oklch(99.3% 0.0022 244.9);
+      --note-2:  oklch(98.1% 0.0023 244.9);
+      --note-3:  oklch(95.5% 0.0037 244.9);
+      --note-4:  oklch(93% 0.005 244.9);
+      --note-5:  oklch(90.7% 0.0069 244.9);
+      --note-6:  oklch(88% 0.0091 244.9);
+      --note-7:  oklch(84.3% 0.0123 244.9);
+      --note-8:  oklch(78.3% 0.0168 244.9);
+      --note-9:  oklch(55.8% 0.0165 244.9);
+      --note-10: oklch(51.2% 0.0124 244.9);
+      --note-11: oklch(50.3% 0.0124 244.9);
+      --note-12: oklch(25.9% 0.0092 244.9);
+
+      /*   alpha 1-12 */
+      --note-a1:  color(display-p3 0.0235 0.5137 0.7569 / 0.016);
+      --note-a2:  color(display-p3 0.0235 0.1608 0.302 / 0.028);
+      --note-a3:  color(display-p3 0.0078 0.1255 0.2392 / 0.067);
+      --note-a4:  color(display-p3 0.0118 0.0902 0.2078 / 0.099);
+      --note-a5:  color(display-p3 0.0078 0.1255 0.2118 / 0.134);
+      --note-a6:  color(display-p3 0.0039 0.098 0.1882 / 0.169);
+      --note-a7:  color(display-p3 0.0039 0.1255 0.2157 / 0.224);
+      --note-a8:  color(display-p3 0.0039 0.1059 0.1961 / 0.302);
+      --note-a9:  color(display-p3 0 0.051 0.098 / 0.569);
+      --note-a10: color(display-p3 0 0.0392 0.0667 / 0.616);
+      --note-a11: color(display-p3 0 0.0392 0.0706 / 0.628);
+      --note-a12: color(display-p3 0 0.0157 0.0314 / 0.871);
+
+      /*   utility    */
+      --note-contrast:  #fff;
+      --note-surface:   color(display-p3 0.9647 0.9725 0.9765 / 0.8);
+      --note-indicator: oklch(55.8% 0.0165 244.9);
+      --note-track:     oklch(55.8% 0.0165 244.9);
+
+      /* TIP — seed #198754 — DITA `tip` · positive improvement */
+
+      /*   solid 1-12 */
+      --tip-1:  oklch(99.4% 0.004 157);
+      --tip-2:  oklch(98.2% 0.0085 157);
+      --tip-3:  oklch(95.9% 0.0213 157);
+      --tip-4:  oklch(93.3% 0.0338 157);
+      --tip-5:  oklch(90% 0.046 157);
+      --tip-6:  oklch(85.7% 0.0598 157);
+      --tip-7:  oklch(79.8% 0.0778 157);
+      --tip-8:  oklch(71.4% 0.1042 157);
+      --tip-9:  oklch(55.2% 0.1234 157);
+      --tip-10: oklch(50.6% 0.1234 157);
+      --tip-11: oklch(52.9% 0.1234 157);
+      --tip-12: oklch(32.2% 0.0439 157);
+
+      /*   alpha 1-12 */
+      --tip-a1:  color(display-p3 0.0235 0.6745 0.0235 / 0.012);
+      --tip-a2:  color(display-p3 0.0235 0.5647 0.1294 / 0.036);
+      --tip-a3:  color(display-p3 0.0118 0.5529 0.1922 / 0.087);
+      --tip-a4:  color(display-p3 0.0078 0.549 0.149 / 0.138);
+      --tip-a5:  color(display-p3 0.0078 0.5255 0.1255 / 0.197);
+      --tip-a6:  color(display-p3 0.0039 0.4824 0.1333 / 0.271);
+      --tip-a7:  color(display-p3 0.0039 0.4627 0.1373 / 0.377);
+      --tip-a8:  color(display-p3 0 0.4431 0.1451 / 0.522);
+      --tip-a9:  color(display-p3 0 0.3608 0.1255 / 0.75);
+      --tip-a10: color(display-p3 0 0.3294 0.1137 / 0.797);
+      --tip-a11: color(display-p3 0 0.349 0.1255 / 0.777);
+      --tip-a12: color(display-p3 0 0.0902 0.0275 / 0.855);
+
+      /*   utility    */
+      --tip-contrast:  #fff;
+      --tip-surface:   color(display-p3 0.9569 0.9804 0.9608 / 0.8);
+      --tip-indicator: oklch(55.2% 0.1234 157);
+      --tip-track:     oklch(55.2% 0.1234 157);
+
+      /* CAUTION — seed #82204A — DITA `caution` · consequential */
+
+      /*   solid 1-12 */
+      --caution-1:  oklch(99.4% 0.0043 359.1);
+      --caution-2:  oklch(98.3% 0.01 359.1);
+      --caution-3:  oklch(95.4% 0.0292 359.1);
+      --caution-4:  oklch(92.5% 0.0444 359.1);
+      --caution-5:  oklch(89.3% 0.0578 359.1);
+      --caution-6:  oklch(85.5% 0.0712 359.1);
+      --caution-7:  oklch(80.9% 0.0887 359.1);
+      --caution-8:  oklch(75.2% 0.1136 359.1);
+      --caution-9:  oklch(41.5% 0.1371 359.1);
+      --caution-10: oklch(35.7% 0.1371 359.1);
+      --caution-11: oklch(55.7% 0.1371 359.1);
+      --caution-12: oklch(35% 0.1371 359.1);
+
+      /*   alpha 1-12 */
+      --caution-a1:  color(display-p3 0.6745 0.0235 0.349 / 0.012);
+      --caution-a2:  color(display-p3 0.8784 0.0196 0.2667 / 0.032);
+      --caution-a3:  color(display-p3 0.8235 0.0118 0.2824 / 0.087);
+      --caution-a4:  color(display-p3 0.8314 0.0078 0.2627 / 0.138);
+      --caution-a5:  color(display-p3 0.7961 0.0078 0.2549 / 0.189);
+      --caution-a6:  color(display-p3 0.7529 0.0039 0.2353 / 0.251);
+      --caution-a7:  color(display-p3 0.702 0.0039 0.2314 / 0.326);
+      --caution-a8:  color(display-p3 0.6784 0.0039 0.2353 / 0.424);
+      --caution-a9:  color(display-p3 0.3725 0 0.1529 / 0.844);
+      --caution-a10: color(display-p3 0.3373 0 0.1529 / 0.914);
+      --caution-a11: color(display-p3 0.4784 0 0.1725 / 0.679);
+      --caution-a12: color(display-p3 0.3373 0 0.1569 / 0.926);
+
+      /*   utility    */
+      --caution-contrast:  #fff;
+      --caution-surface:   color(display-p3 0.9961 0.9608 0.9725 / 0.8);
+      --caution-indicator: oklch(41.5% 0.1371 359.1);
+      --caution-track:     oklch(41.5% 0.1371 359.1);
+
+      /* WARNING — seed #FFC107 — Status warning · ANSI Z535.6 caution signal */
+
+      /*   solid 1-12 */
+      --warning-1:  oklch(99.4% 0.0031 84.93);
+      --warning-2:  oklch(98.6% 0.0246 84.93);
+      --warning-3:  oklch(97% 0.0717 84.93);
+      --warning-4:  oklch(94.6% 0.1076 84.93);
+      --warning-5:  oklch(91.9% 0.1366 84.93);
+      --warning-6:  oklch(88.1% 0.1271 84.93);
+      --warning-7:  oklch(82.8% 0.1239 84.93);
+      --warning-8:  oklch(75.9% 0.1421 84.93);
+      --warning-9:  oklch(86.4% 0.1833 84.93);
+      --warning-10: oklch(83.3% 0.1722 84.93);
+      --warning-11: oklch(57% 0.1451 84.93);
+      --warning-12: oklch(35.3% 0.0483 84.93);
+
+      /*   alpha 1-12 */
+      --warning-a1:  color(display-p3 0.7569 0.5137 0.0235 / 0.016);
+      --warning-a2:  color(display-p3 0.9529 0.7647 0.0078 / 0.083);
+      --warning-a3:  color(display-p3 0.9686 0.7804 0.0039 / 0.232);
+      --warning-a4:  color(display-p3 0.9569 0.7686 0.0039 / 0.353);
+      --warning-a5:  color(display-p3 0.9529 0.7294 0.0039 / 0.475);
+      --warning-a6:  color(display-p3 0.9412 0.6588 0 / 0.506);
+      --warning-a7:  color(display-p3 0.8196 0.5765 0 / 0.561);
+      --warning-a8:  color(display-p3 0.7529 0.5373 0 / 0.718);
+      --warning-a9:  color(display-p3 0.9529 0.7059 0 / 0.734);
+      --warning-a10: color(display-p3 0.9255 0.6627 0 / 0.746);
+      --warning-a11: color(display-p3 0.5176 0.3529 0 / 0.863);
+      --warning-a12: color(display-p3 0.1647 0.1176 0 / 0.875);
+
+      /*   utility    */
+      --warning-contrast:  #2a2009;
+      --warning-surface:   color(display-p3 1 0.9765 0.898 / 0.8);
+      --warning-indicator: oklch(86.4% 0.1833 84.93);
+      --warning-track:     oklch(86.4% 0.1833 84.93);
+
+      /* CRITICAL — seed #C94F1F — Status critical · ANSI Z535.6 warning signal */
+
+      /*   solid 1-12 */
+      --critical-1:  oklch(99.3% 0.0024 39.67);
+      --critical-2:  oklch(98% 0.0113 39.67);
+      --critical-3:  oklch(95.7% 0.0277 39.67);
+      --critical-4:  oklch(92.2% 0.0617 39.67);
+      --critical-5:  oklch(89.1% 0.082 39.67);
+      --critical-6:  oklch(85.6% 0.0878 39.67);
+      --critical-7:  oklch(80.5% 0.0936 39.67);
+      --critical-8:  oklch(74.4% 0.1122 39.67);
+      --critical-9:  oklch(58.3% 0.1661 39.67);
+      --critical-10: oklch(53.9% 0.1661 39.67);
+      --critical-11: oklch(58.5% 0.1661 39.67);
+      --critical-12: oklch(34.9% 0.0629 39.67);
+
+      /*   alpha 1-12 */
+      --critical-a1:  color(display-p3 0.7569 0.2667 0.0235 / 0.016);
+      --critical-a2:  color(display-p3 0.8392 0.2667 0.0235 / 0.048);
+      --critical-a3:  color(display-p3 0.8902 0.298 0.0039 / 0.106);
+      --critical-a4:  color(display-p3 0.8902 0.298 0.0039 / 0.212);
+      --critical-a5:  color(display-p3 0.8941 0.2902 0.0039 / 0.287);
+      --critical-a6:  color(display-p3 0.8863 0.2706 0.0039 / 0.338);
+      --critical-a7:  color(display-p3 0.7922 0.2314 0.0039 / 0.412);
+      --critical-a8:  color(display-p3 0.7412 0.2078 0 / 0.514);
+      --critical-a9:  color(display-p3 0.6745 0.1922 0 / 0.816);
+      --critical-a10: color(display-p3 0.6275 0.1843 0 / 0.875);
+      --critical-a11: color(display-p3 0.6784 0.1922 0 / 0.812);
+      --critical-a12: color(display-p3 0.2078 0.0588 0 / 0.863);
+
+      /*   utility    */
+      --critical-contrast:  #fff;
+      --critical-surface:   color(display-p3 0.9961 0.9569 0.9412 / 0.8);
+      --critical-indicator: oklch(58.3% 0.1661 39.67);
+      --critical-track:     oklch(58.3% 0.1661 39.67);
+
+      /* TEAL — seed #12A594 — json-type-badge `object` · schema-table */
+
+      /*   solid 1-12 */
+      --teal-1:  oklch(99.4% 0.0047 182);
+      --teal-2:  oklch(98.1% 0.009 182);
+      --teal-3:  oklch(96.1% 0.027 182);
+      --teal-4:  oklch(93.5% 0.0419 182);
+      --teal-5:  oklch(90% 0.0542 182);
+      --teal-6:  oklch(85.6% 0.0643 182);
+      --teal-7:  oklch(79.7% 0.0764 182);
+      --teal-8:  oklch(72.1% 0.0973 182);
+      --teal-9:  oklch(64.9% 0.1136 182);
+      --teal-10: oklch(60.9% 0.1097 182);
+      --teal-11: oklch(53% 0.1136 182);
+      --teal-12: oklch(32.7% 0.0505 182);
+
+      /*   alpha 1-12 */
+      --teal-a1:  color(display-p3 0.0235 0.7569 0.5137 / 0.016);
+      --teal-a2:  color(display-p3 0.0196 0.6471 0.4667 / 0.044);
+      --teal-a3:  color(display-p3 0.0039 0.7059 0.5569 / 0.106);
+      --teal-a4:  color(display-p3 0.0039 0.702 0.5373 / 0.169);
+      --teal-a5:  color(display-p3 0.0039 0.6588 0.5098 / 0.24);
+      --teal-a6:  color(display-p3 0.0039 0.5686 0.4588 / 0.318);
+      --teal-a7:  color(display-p3 0.0039 0.5176 0.4118 / 0.42);
+      --teal-a8:  color(display-p3 0 0.502 0.4039 / 0.565);
+      --teal-a9:  color(display-p3 0 0.4863 0.4039 / 0.702);
+      --teal-a10: color(display-p3 0 0.4431 0.3686 / 0.738);
+      --teal-a11: color(display-p3 0 0.3569 0.2902 / 0.785);
+      --teal-a12: color(display-p3 0 0.1373 0.1098 / 0.887);
+
+      /*   utility    */
+      --teal-contrast:  #fff;
+      --teal-surface:   color(display-p3 0.9451 0.9804 0.9725 / 0.8);
+      --teal-indicator: oklch(64.9% 0.1136 182);
+      --teal-track:     oklch(64.9% 0.1136 182);
+
+      /* GRAY — seed #6C757D — neutral: surfaces, borders, body text */
+
+      /*   solid 1-12 */
+      --gray-1:  oklch(99.2% 0.0043 244.9);
+      --gray-2:  oklch(98.1% 0.0044 244.9);
+      --gray-3:  oklch(95.5% 0.0058 244.9);
+      --gray-4:  oklch(93.1% 0.0057 244.9);
+      --gray-5:  oklch(90.9% 0.0064 244.9);
+      --gray-6:  oklch(88.5% 0.0065 244.9);
+      --gray-7:  oklch(85.1% 0.0071 244.9);
+      --gray-8:  oklch(79.3% 0.0086 244.9);
+      --gray-9:  oklch(64% 0.0175 244.9);
+      --gray-10: oklch(60.5% 0.0165 244.9);
+      --gray-11: oklch(50.1% 0.0138 244.9);
+      --gray-12: oklch(24% 0.0214 244.9);
+
+      /*   alpha 1-12 */
+      --gray-a1:  color(display-p3 0.0235 0.5137 1 / 0.016);
+      --gray-a2:  color(display-p3 0.0196 0.2667 0.6353 / 0.032);
+      --gray-a3:  color(display-p3 0.0078 0.1843 0.3569 / 0.067);
+      --gray-a4:  color(display-p3 0.0118 0.1294 0.251 / 0.099);
+      --gray-a5:  color(display-p3 0.0078 0.098 0.1922 / 0.126);
+      --gray-a6:  color(display-p3 0.0039 0.0784 0.1529 / 0.157);
+      --gray-a7:  color(display-p3 0.0039 0.0784 0.1569 / 0.204);
+      --gray-a8:  color(display-p3 0.0039 0.0588 0.1176 / 0.279);
+      --gray-a9:  color(display-p3 0.0039 0.0588 0.1255 / 0.475);
+      --gray-a10: color(display-p3 0 0.0549 0.1098 / 0.514);
+      --gray-a11: color(display-p3 0 0.0431 0.0745 / 0.632);
+      --gray-a12: color(display-p3 0 0.0314 0.0667 / 0.902);
+
+      /*   utility    */
+      --gray-contrast:  #FFFFFF;
+      --gray-surface:   color(display-p3 1 1 1 / 80%);
+      --gray-indicator: oklch(64% 0.0175 244.9);
+      --gray-track:     oklch(64% 0.0175 244.9);
+    }
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   DARK THEME — sRGB fallback
+   ----------------------------------------------------------------------------- */
+
+.dark, .dark-theme, [data-theme='dark'] {
+  /* PRIMARY — seed #004CBA — Brand accent · DITA `important` */
+
+  /*   solid 1-12 */
+  --primary-1:  #071122;
+  --primary-2:  #0b172d;
+  --primary-3:  #022259;
+  --primary-4:  #00297b;
+  --primary-5:  #003491;
+  --primary-6:  #0041a4;
+  --primary-7:  #034ebc;
+  --primary-8:  #005cdf;
+  --primary-9:  #004cba;
+  --primary-10: #003da0;
+  --primary-11: #81b5ff;
+  --primary-12: #c9e3ff;
+
+  /*   alpha 1-12 */
+  --primary-a1:  #0011f613;
+  --primary-a2:  #0044ff1e;
+  --primary-a3:  #0049fd4e;
+  --primary-a4:  #0047ff72;
+  --primary-a5:  #0052fe8a;
+  --primary-a6:  #005fff9e;
+  --primary-a7:  #0065feb8;
+  --primary-a8:  #0068ffdd;
+  --primary-a9:  #0064feb6;
+  --primary-a10: #005afe9a;
+  --primary-a11: #81b5ff;
+  --primary-a12: #c9e3ff;
+
+  /*   utility    */
+  --primary-contrast:  #fff;
+  --primary-surface:   #061d4980;
+  --primary-indicator: #004cba;
+  --primary-track:     #004cba;
+
+  /* NOTE — seed #6C757D — DITA `note` · neutral information */
+
+  /*   solid 1-12 */
+  --note-1:  #101113;
+  --note-2:  #17191b;
+  --note-3:  #202326;
+  --note-4:  #262a2e;
+  --note-5:  #2d3236;
+  --note-6:  #353b40;
+  --note-7:  #42494f;
+  --note-8:  #59626a;
+  --note-9:  #6c757d;
+  --note-10: #5f6870;
+  --note-11: #aeb5bb;
+  --note-12: #eceef0;
+
+  /*   alpha 1-12 */
+  --note-a1:  #0011bb03;
+  --note-a2:  #9dcbf90b;
+  --note-a3:  #b8d9fa17;
+  --note-a4:  #b9d9f920;
+  --note-a5:  #c4e4fd28;
+  --note-a6:  #c5e3fc33;
+  --note-a7:  #cbe6fd43;
+  --note-a8:  #d0e8fd60;
+  --note-a9:  #daedff74;
+  --note-a10: #d4ebff66;
+  --note-a11: #ecf5feb7;
+  --note-a12: #fbfdffef;
+
+  /*   utility    */
+  --note-contrast:  #fff;
+  --note-surface:   #1d212580;
+  --note-indicator: #6c757d;
+  --note-track:     #6c757d;
+
+  /* TIP — seed #198754 — DITA `tip` · positive improvement */
+
+  /*   solid 1-12 */
+  --tip-1:  #0b130e;
+  --tip-2:  #111b15;
+  --tip-3:  #0e2e1d;
+  --tip-4:  #033d23;
+  --tip-5:  #044b2c;
+  --tip-6:  #0a5a36;
+  --tip-7:  #0e6b41;
+  --tip-8:  #08804d;
+  --tip-9:  #198754;
+  --tip-10: #007947;
+  --tip-11: #6dcf97;
+  --tip-12: #a3f5c4;
+
+  /*   alpha 1-12 */
+  --tip-a1:  #00bb0003;
+  --tip-a2:  #12f96e0b;
+  --tip-a3:  #00f97120;
+  --tip-a4:  #00fb7130;
+  --tip-a5:  #00fc7f3f;
+  --tip-a6:  #00fd894f;
+  --tip-a7:  #0afd8f61;
+  --tip-a8:  #00ff9277;
+  --tip-a9:  #21fd977f;
+  --tip-a10: #00fd8c70;
+  --tip-a11: #84ffb9cc;
+  --tip-a12: #a9fecbf5;
+
+  /*   utility    */
+  --tip-contrast:  #fff;
+  --tip-surface:   #11251980;
+  --tip-indicator: #198754;
+  --tip-track:     #198754;
+
+  /* CAUTION — seed #82204A — DITA `caution` · consequential */
+
+  /*   solid 1-12 */
+  --caution-1:  #170e11;
+  --caution-2:  #211217;
+  --caution-3:  #3b1222;
+  --caution-4:  #52082b;
+  --caution-5:  #620f34;
+  --caution-6:  #731c41;
+  --caution-7:  #8d2b53;
+  --caution-8:  #b8386d;
+  --caution-9:  #82204a;
+  --caution-10: #6b143b;
+  --caution-11: #ff8ab7;
+  --caution-12: #ffd0e0;
+
+  /*   alpha 1-12 */
+  --caution-a1:  #ec001207;
+  --caution-a2:  #f4206612;
+  --caution-a3:  #ff17722d;
+  --caution-a4:  #fe007046;
+  --caution-a5:  #ff0c7857;
+  --caution-a6:  #ff2c8669;
+  --caution-a7:  #ff439085;
+  --caution-a8:  #ff4994b3;
+  --caution-a9:  #fd31887a;
+  --caution-a10: #fd187f61;
+  --caution-a11: #ff8ab7;
+  --caution-a12: #ffd0e0;
+
+  /*   utility    */
+  --caution-contrast:  #fff;
+  --caution-surface:   #31131d80;
+  --caution-indicator: #82204a;
+  --caution-track:     #82204a;
+
+  /* WARNING — seed #FFC107 — Status warning · ANSI Z535.6 caution signal */
+
+  /*   solid 1-12 */
+  --warning-1:  #14110b;
+  --warning-2:  #1c180f;
+  --warning-3:  #2d2208;
+  --warning-4:  #3c2900;
+  --warning-5:  #493300;
+  --warning-6:  #574006;
+  --warning-7:  #6a521a;
+  --warning-8:  #866924;
+  --warning-9:  #ffc107;
+  --warning-10: #f4b700;
+  --warning-11: #ffca2c;
+  --warning-12: #ffe7b5;
+
+  /*   alpha 1-12 */
+  --warning-a1:  #d1110004;
+  --warning-a2:  #fba6000c;
+  --warning-a3:  #ffa2001e;
+  --warning-a4:  #fb94002f;
+  --warning-a5:  #ffa2003c;
+  --warning-a6:  #ffb1004b;
+  --warning-a7:  #fdbd2960;
+  --warning-a8:  #fdc3377e;
+  --warning-a9:  #ffc107;
+  --warning-a10: #febe00f4;
+  --warning-a11: #ffca2c;
+  --warning-a12: #ffe7b5;
+
+  /*   utility    */
+  --warning-contrast:  #2a2009;
+  --warning-surface:   #271f0e80;
+  --warning-indicator: #ffc107;
+  --warning-track:     #ffc107;
+
+  /* CRITICAL — seed #C94F1F — Status critical · ANSI Z535.6 warning signal */
+
+  /*   solid 1-12 */
+  --critical-1:  #15100e;
+  --critical-2:  #1e1512;
+  --critical-3:  #36190f;
+  --critical-4:  #4a1b09;
+  --critical-5:  #59230f;
+  --critical-6:  #692f1b;
+  --critical-7:  #814029;
+  --critical-8:  #a65437;
+  --critical-9:  #c94f1f;
+  --critical-10: #a65437;
+  --critical-11: #ff9873;
+  --critical-12: #f7d6ca;
+
+  /*   alpha 1-12 */
+  --critical-a1:  #de000005;
+  --critical-a2:  #fe5a240e;
+  --critical-a3:  #fd440528;
+  --critical-a4:  #fc3b003e;
+  --critical-a5:  #fd4c0b4e;
+  --critical-a6:  #fd612c5f;
+  --critical-a7:  #ff754478;
+  --critical-a8:  #ff7c4ea0;
+  --critical-a9:  #fe6123c6;
+  --critical-a10: #ff7c4ea0;
+  --critical-a11: #ff9873;
+  --critical-a12: #fedcd0f7;
+
+  /*   utility    */
+  --critical-contrast:  #fff;
+  --critical-surface:   #2b191380;
+  --critical-indicator: #c94f1f;
+  --critical-track:     #c94f1f;
+
+  /* TEAL — seed #12A594 — json-type-badge `object` · schema-table */
+
+  /*   solid 1-12 */
+  --teal-1:  #0b1311;
+  --teal-2:  #111c1a;
+  --teal-3:  #0e2d28;
+  --teal-4:  #043b34;
+  --teal-5:  #0b4840;
+  --teal-6:  #16574e;
+  --teal-7:  #1e695f;
+  --teal-8:  #217f72;
+  --teal-9:  #12a594;
+  --teal-10: #009888;
+  --teal-11: #55d2c0;
+  --teal-12: #aaf0e3;
+
+  /*   alpha 1-12 */
+  --teal-a1:  #00bb1103;
+  --teal-a2:  #12fbd10c;
+  --teal-a3:  #00ffd51e;
+  --teal-a4:  #00ffd82d;
+  --teal-a5:  #00ffdd3b;
+  --teal-a6:  #23ffe14b;
+  --teal-a7:  #34fde25f;
+  --teal-a8:  #34ffe376;
+  --teal-a9:  #13ffe49f;
+  --teal-a10: #00ffe391;
+  --teal-a11: #65ffe9cf;
+  --teal-a12: #b4fff1ef;
+
+  /*   utility    */
+  --teal-contrast:  #fff;
+  --teal-surface:   #11272380;
+  --teal-indicator: #12a594;
+  --teal-track:     #12a594;
+
+  /* GRAY — seed #6C757D — neutral: surfaces, borders, body text */
+
+  /*   solid 1-12 */
+  --gray-1:  #101113;
+  --gray-2:  #17191b;
+  --gray-3:  #202325;
+  --gray-4:  #272a2d;
+  --gray-5:  #2d3135;
+  --gray-6:  #353a3f;
+  --gray-7:  #42484e;
+  --gray-8:  #596269;
+  --gray-9:  #666f77;
+  --gray-10: #747d84;
+  --gray-11: #aeb5bb;
+  --gray-12: #eceef0;
+
+  /*   alpha 1-12 */
+  --gray-a1:  #0011bb03;
+  --gray-a2:  #9dcbf90b;
+  --gray-a3:  #bfe2f916;
+  --gray-a4:  #cce6ff1e;
+  --gray-a5:  #c9e3fd27;
+  --gray-a6:  #c9e2fc32;
+  --gray-a7:  #cee5fd42;
+  --gray-a8:  #d2eafd5f;
+  --gray-a9:  #d6ebfd6e;
+  --gray-a10: #ddeffd7c;
+  --gray-a11: #ecf5feb7;
+  --gray-a12: #fbfdffef;
+
+  /*   utility    */
+  --gray-contrast:  #FFFFFF;
+  --gray-surface:   rgba(0, 0, 0, 0.05);
+  --gray-indicator: #666f77;
+  --gray-track:     #666f77;
+
+  /* PAGE BACKGROUND */
+  --color-background: #111;
+}
+
+/* -----------------------------------------------------------------------------
+   DARK THEME — wide gamut (oklch / display-p3)
+   ----------------------------------------------------------------------------- */
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    .dark, .dark-theme, [data-theme='dark'] {
+      /* PRIMARY — seed #004CBA — Brand accent · DITA `important` */
+
+      /*   solid 1-12 */
+      --primary-1:  oklch(17.8% 0.0384 260.1);
+      --primary-2:  oklch(20.8% 0.046 260.1);
+      --primary-3:  oklch(27.2% 0.1054 260.1);
+      --primary-4:  oklch(31.8% 0.1468 260.1);
+      --primary-5:  oklch(36.3% 0.1626 260.1);
+      --primary-6:  oklch(40.8% 0.171 260.1);
+      --primary-7:  oklch(45.9% 0.1854 260.1);
+      --primary-8:  oklch(51.7% 0.2125 260.1);
+      --primary-9:  oklch(45.2% 0.1854 260.1);
+      --primary-10: oklch(39.8% 0.171 260.1);
+      --primary-11: oklch(77.4% 0.1937 260.1);
+      --primary-12: oklch(91% 0.0686 260.1);
+
+      /*   alpha 1-12 */
+      --primary-a1:  color(display-p3 0 0.0706 0.9922 / 0.068);
+      --primary-a2:  color(display-p3 0 0.2824 0.9961 / 0.11);
+      --primary-a3:  color(display-p3 0 0.2863 1 / 0.29);
+      --primary-a4:  color(display-p3 0.0314 0.2784 1 / 0.425);
+      --primary-a5:  color(display-p3 0.0745 0.3255 1 / 0.517);
+      --primary-a6:  color(display-p3 0.1137 0.3765 1 / 0.593);
+      --primary-a7:  color(display-p3 0.1529 0.4078 1 / 0.69);
+      --primary-a8:  color(display-p3 0.1647 0.4157 1 / 0.832);
+      --primary-a9:  color(display-p3 0.1451 0.4039 1 / 0.681);
+      --primary-a10: color(display-p3 0.102 0.3608 1 / 0.576);
+      --primary-a11: color(display-p3 0.5647 0.7255 1 / 0.975);
+      --primary-a12: color(display-p3 0.8196 0.898 1 / 0.988);
+
+      /*   utility    */
+      --primary-contrast:  #fff;
+      --primary-surface:   color(display-p3 0.0431 0.1098 0.2667 / 0.5);
+      --primary-indicator: oklch(45.2% 0.1854 260.1);
+      --primary-track:     oklch(45.2% 0.1854 260.1);
+
+      /* NOTE — seed #6C757D — DITA `note` · neutral information */
+
+      /*   solid 1-12 */
+      --note-1:  oklch(17.8% 0.0041 244.9);
+      --note-2:  oklch(21.3% 0.0045 244.9);
+      --note-3:  oklch(25.4% 0.0066 244.9);
+      --note-4:  oklch(28.4% 0.0086 244.9);
+      --note-5:  oklch(31.3% 0.0095 244.9);
+      --note-6:  oklch(34.8% 0.0113 244.9);
+      --note-7:  oklch(40% 0.0136 244.9);
+      --note-8:  oklch(49.2% 0.0176 244.9);
+      --note-9:  oklch(55.8% 0.0165 244.9);
+      --note-10: oklch(51.2% 0.0176 244.9);
+      --note-11: oklch(76.9% 0.012 244.9);
+      --note-12: oklch(94.8% 0.0034 244.9);
+
+      /*   alpha 1-12 */
+      --note-a1:  color(display-p3 0 0.0667 0.9412 / 0.009);
+      --note-a2:  color(display-p3 0.6157 0.8 0.9804 / 0.043);
+      --note-a3:  color(display-p3 0.7725 0.8627 0.9922 / 0.089);
+      --note-a4:  color(display-p3 0.7765 0.8706 1 / 0.122);
+      --note-a5:  color(display-p3 0.7961 0.898 1 / 0.156);
+      --note-a6:  color(display-p3 0.8157 0.9176 1 / 0.194);
+      --note-a7:  color(display-p3 0.8314 0.9216 0.9961 / 0.257);
+      --note-a8:  color(display-p3 0.851 0.9255 1 / 0.37);
+      --note-a9:  color(display-p3 0.8784 0.9412 1 / 0.45);
+      --note-a10: color(display-p3 0.8627 0.9333 1 / 0.395);
+      --note-a11: color(display-p3 0.9373 0.9725 1 / 0.711);
+      --note-a12: color(display-p3 0.9843 0.9922 1 / 0.937);
+
+      /*   utility    */
+      --note-contrast:  #fff;
+      --note-surface:   color(display-p3 0.1176 0.1255 0.1412 / 0.5);
+      --note-indicator: oklch(55.8% 0.0165 244.9);
+      --note-track:     oklch(55.8% 0.0165 244.9);
+
+      /* TIP — seed #198754 — DITA `tip` · positive improvement */
+
+      /*   solid 1-12 */
+      --tip-1:  oklch(17.8% 0.0163 157);
+      --tip-2:  oklch(21.1% 0.0205 157);
+      --tip-3:  oklch(27.1% 0.0498 157);
+      --tip-4:  oklch(31.8% 0.0735 157);
+      --tip-5:  oklch(36.5% 0.0847 157);
+      --tip-6:  oklch(41.3% 0.094 157);
+      --tip-7:  oklch(46.7% 0.1063 157);
+      --tip-8:  oklch(52.7% 0.1234 157);
+      --tip-9:  oklch(55.2% 0.1234 157);
+      --tip-10: oklch(50.6% 0.1234 157);
+      --tip-11: oklch(78% 0.1234 157);
+      --tip-12: oklch(90.5% 0.1062 157);
+
+      /*   alpha 1-12 */
+      --tip-a1:  color(display-p3 0 0.9412 0 / 0.009);
+      --tip-a2:  color(display-p3 0.251 0.9804 0.4353 / 0.043);
+      --tip-a3:  color(display-p3 0.2667 1 0.502 / 0.118);
+      --tip-a4:  color(display-p3 0.2196 1 0.502 / 0.181);
+      --tip-a5:  color(display-p3 0.298 1 0.5569 / 0.24);
+      --tip-a6:  color(display-p3 0.3529 1 0.5882 / 0.303);
+      --tip-a7:  color(display-p3 0.3961 1 0.6196 / 0.37);
+      --tip-a8:  color(display-p3 0.4118 1 0.6157 / 0.458);
+      --tip-a9:  color(display-p3 0.4431 1 0.6353 / 0.488);
+      --tip-a10: color(display-p3 0.3882 1 0.5961 / 0.429);
+      --tip-a11: color(display-p3 0.6471 1 0.749 / 0.79);
+      --tip-a12: color(display-p3 0.7412 1 0.8196 / 0.95);
+
+      /*   utility    */
+      --tip-contrast:  #fff;
+      --tip-surface:   color(display-p3 0.0784 0.1412 0.0941 / 0.5);
+      --tip-indicator: oklch(55.2% 0.1234 157);
+      --tip-track:     oklch(55.2% 0.1234 157);
+
+      /* CAUTION — seed #82204A — DITA `caution` · consequential */
+
+      /*   solid 1-12 */
+      --caution-1:  oklch(17.8% 0.0163 359.1);
+      --caution-2:  oklch(20.5% 0.0247 359.1);
+      --caution-3:  oklch(25.5% 0.0682 359.1);
+      --caution-4:  oklch(29.2% 0.1076 359.1);
+      --caution-5:  oklch(33.2% 0.1192 359.1);
+      --caution-6:  oklch(38.2% 0.1242 359.1);
+      --caution-7:  oklch(45% 0.1371 359.1);
+      --caution-8:  oklch(54.2% 0.1694 359.1);
+      --caution-9:  oklch(41.5% 0.1371 359.1);
+      --caution-10: oklch(35.7% 0.1242 359.1);
+      --caution-11: oklch(78.7% 0.1694 359.1);
+      --caution-12: oklch(90.9% 0.0618 359.1);
+
+      /*   alpha 1-12 */
+      --caution-a1:  color(display-p3 0.9608 0 0.0667 / 0.022);
+      --caution-a2:  color(display-p3 1 0.2 0.4667 / 0.059);
+      --caution-a3:  color(display-p3 1 0.1686 0.4941 / 0.156);
+      --caution-a4:  color(display-p3 1 0.051 0.4706 / 0.244);
+      --caution-a5:  color(display-p3 1 0.1451 0.502 / 0.307);
+      --caution-a6:  color(display-p3 1 0.2549 0.5608 / 0.374);
+      --caution-a7:  color(display-p3 1 0.3412 0.6039 / 0.475);
+      --caution-a8:  color(display-p3 1 0.3686 0.6235 / 0.643);
+      --caution-a9:  color(display-p3 1 0.2745 0.5725 / 0.433);
+      --caution-a10: color(display-p3 1 0.1961 0.5412 / 0.341);
+      --caution-a11: color(display-p3 1 0.6 0.7569 / 0.937);
+      --caution-a12: color(display-p3 1 0.8471 0.902 / 0.971);
+
+      /*   utility    */
+      --caution-contrast:  #fff;
+      --caution-surface:   color(display-p3 0.1647 0.0784 0.1098 / 0.5);
+      --caution-indicator: oklch(41.5% 0.1371 359.1);
+      --caution-track:     oklch(41.5% 0.1371 359.1);
+
+      /* WARNING — seed #FFC107 — Status warning · ANSI Z535.6 caution signal */
+
+      /*   solid 1-12 */
+      --warning-1:  oklch(17.8% 0.0122 84.93);
+      --warning-2:  oklch(21.1% 0.0173 84.93);
+      --warning-3:  oklch(25.7% 0.0423 84.93);
+      --warning-4:  oklch(29.6% 0.0689 84.93);
+      --warning-5:  oklch(33.7% 0.0784 84.93);
+      --warning-6:  oklch(38.7% 0.0757 84.93);
+      --warning-7:  oklch(45.3% 0.0789 84.93);
+      --warning-8:  oklch(53.6% 0.093 84.93);
+      --warning-9:  oklch(84.4% 0.1722 84.93);
+      --warning-10: oklch(81.2% 0.1722 84.93);
+      --warning-11: oklch(87.1% 0.1692 84.93);
+      --warning-12: oklch(93.5% 0.0691 84.93);
+
+      /*   alpha 1-12 */
+      --warning-a1:  color(display-p3 0.9412 0.0667 0 / 0.009);
+      --warning-a2:  color(display-p3 0.9804 0.7059 0 / 0.043);
+      --warning-a3:  color(display-p3 0.9961 0.6745 0 / 0.11);
+      --warning-a4:  color(display-p3 0.9961 0.6471 0 / 0.169);
+      --warning-a5:  color(display-p3 1 0.6824 0 / 0.223);
+      --warning-a6:  color(display-p3 1 0.7451 0.1098 / 0.278);
+      --warning-a7:  color(display-p3 1 0.7922 0.2784 / 0.358);
+      --warning-a8:  color(display-p3 1 0.8078 0.3333 / 0.471);
+      --warning-a9:  color(display-p3 1 0.7961 0.2745 / 0.958);
+      --warning-a10: color(display-p3 1 0.7882 0.2667 / 0.916);
+      --warning-a11: color(display-p3 0.9961 0.8235 0.3255 / 0.967);
+      --warning-a12: color(display-p3 1 0.9255 0.7451 / 0.984);
+
+      /*   utility    */
+      --warning-contrast:  #2a2009;
+      --warning-surface:   color(display-p3 0.1412 0.1176 0.0588 / 0.5);
+      --warning-indicator: oklch(84.4% 0.1722 84.93);
+      --warning-track:     oklch(84.4% 0.1722 84.93);
+
+      /* CRITICAL — seed #C94F1F — Status critical · ANSI Z535.6 warning signal */
+
+      /*   solid 1-12 */
+      --critical-1:  oklch(17.8% 0.0106 39.67);
+      --critical-2:  oklch(20.5% 0.0158 39.67);
+      --critical-3:  oklch(25.2% 0.0497 39.67);
+      --critical-4:  oklch(29% 0.0773 39.67);
+      --critical-5:  oklch(33.1% 0.0862 39.67);
+      --critical-6:  oklch(38.1% 0.089 39.67);
+      --critical-7:  oklch(44.9% 0.0959 39.67);
+      --critical-8:  oklch(54% 0.1168 39.67);
+      --critical-9:  oklch(58.3% 0.1661 39.67);
+      --critical-10: oklch(53.9% 0.1168 39.67);
+      --critical-11: oklch(78.4% 0.1394 39.67);
+      --critical-12: oklch(90% 0.0412 39.67);
+
+      /*   alpha 1-12 */
+      --critical-a1:  color(display-p3 0.9725 0 0 / 0.013);
+      --critical-a2:  color(display-p3 0.9922 0.3765 0.1451 / 0.051);
+      --critical-a3:  color(display-p3 1 0.3216 0.0667 / 0.139);
+      --critical-a4:  color(display-p3 1 0.3059 0.0157 / 0.215);
+      --critical-a5:  color(display-p3 1 0.3686 0.1255 / 0.274);
+      --critical-a6:  color(display-p3 1 0.4471 0.2392 / 0.341);
+      --critical-a7:  color(display-p3 1 0.5137 0.3255 / 0.437);
+      --critical-a8:  color(display-p3 1 0.549 0.3725 / 0.58);
+      --critical-a9:  color(display-p3 1 0.451 0.2314 / 0.715);
+      --critical-a10: color(display-p3 1 0.549 0.3725 / 0.58);
+      --critical-a11: color(display-p3 1 0.651 0.502 / 0.942);
+      --critical-a12: color(display-p3 1 0.8863 0.8431 / 0.946);
+
+      /*   utility    */
+      --critical-contrast:  #fff;
+      --critical-surface:   color(display-p3 0.149 0.0941 0.0706 / 0.5);
+      --critical-indicator: oklch(58.3% 0.1661 39.67);
+      --critical-track:     oklch(58.3% 0.1661 39.67);
+
+      /* TEAL — seed #12A594 — json-type-badge `object` · schema-table */
+
+      /*   solid 1-12 */
+      --teal-1:  oklch(17.8% 0.0123 182);
+      --teal-2:  oklch(21.5% 0.0169 182);
+      --teal-3:  oklch(27.3% 0.0378 182);
+      --teal-4:  oklch(31.7% 0.0546 182);
+      --teal-5:  oklch(36.2% 0.0601 182);
+      --teal-6:  oklch(41.4% 0.0654 182);
+      --teal-7:  oklch(47.3% 0.074 182);
+      --teal-8:  oklch(53.9% 0.0867 182);
+      --teal-9:  oklch(64.9% 0.1136 182);
+      --teal-10: oklch(60.9% 0.1136 182);
+      --teal-11: oklch(78.9% 0.1136 182);
+      --teal-12: oklch(90.5% 0.0722 182);
+
+      /*   alpha 1-12 */
+      --teal-a1:  color(display-p3 0 0.9412 0.0667 / 0.009);
+      --teal-a2:  color(display-p3 0.2353 0.9882 0.8196 / 0.047);
+      --teal-a3:  color(display-p3 0.2392 0.9961 0.8588 / 0.114);
+      --teal-a4:  color(display-p3 0.2039 0.9961 0.8627 / 0.173);
+      --teal-a5:  color(display-p3 0.3294 1 0.8824 / 0.227);
+      --teal-a6:  color(display-p3 0.4078 1 0.8941 / 0.29);
+      --teal-a7:  color(display-p3 0.4588 1 0.9137 / 0.362);
+      --teal-a8:  color(display-p3 0.4667 1 0.9059 / 0.454);
+      --teal-a9:  color(display-p3 0.4431 0.9961 0.902 / 0.614);
+      --teal-a10: color(display-p3 0.4196 1 0.902 / 0.559);
+      --teal-a11: color(display-p3 0.5725 1 0.9294 / 0.799);
+      --teal-a12: color(display-p3 0.7765 1 0.9529 / 0.929);
+
+      /*   utility    */
+      --teal-contrast:  #fff;
+      --teal-surface:   color(display-p3 0.0784 0.149 0.1333 / 0.5);
+      --teal-indicator: oklch(64.9% 0.1136 182);
+      --teal-track:     oklch(64.9% 0.1136 182);
+
+      /* GRAY — seed #6C757D — neutral: surfaces, borders, body text */
+
+      /*   solid 1-12 */
+      --gray-1:  oklch(17.8% 0.0043 244.9);
+      --gray-2:  oklch(21.3% 0.0043 244.9);
+      --gray-3:  oklch(25.4% 0.0059 244.9);
+      --gray-4:  oklch(28.3% 0.0076 244.9);
+      --gray-5:  oklch(31.2% 0.0087 244.9);
+      --gray-6:  oklch(34.7% 0.0103 244.9);
+      --gray-7:  oklch(39.8% 0.0124 244.9);
+      --gray-8:  oklch(49% 0.0161 244.9);
+      --gray-9:  oklch(53.8% 0.0165 244.9);
+      --gray-10: oklch(58.4% 0.0156 244.9);
+      --gray-11: oklch(76.8% 0.0117 244.9);
+      --gray-12: oklch(94.9% 0.003 244.9);
+
+      /*   alpha 1-12 */
+      --gray-a1:  color(display-p3 0 0.0667 0.9412 / 0.009);
+      --gray-a2:  color(display-p3 0.6157 0.8 0.9804 / 0.043);
+      --gray-a3:  color(display-p3 0.8039 0.898 0.9882 / 0.085);
+      --gray-a4:  color(display-p3 0.8314 0.898 1 / 0.118);
+      --gray-a5:  color(display-p3 0.8157 0.8941 0.9961 / 0.152);
+      --gray-a6:  color(display-p3 0.8314 0.9137 0.9961 / 0.19);
+      --gray-a7:  color(display-p3 0.8431 0.9216 0.9961 / 0.253);
+      --gray-a8:  color(display-p3 0.8588 0.9373 1 / 0.366);
+      --gray-a9:  color(display-p3 0.8706 0.9333 1 / 0.425);
+      --gray-a10: color(display-p3 0.8941 0.9529 1 / 0.479);
+      --gray-a11: color(display-p3 0.9373 0.9725 1 / 0.711);
+      --gray-a12: color(display-p3 0.9843 0.9922 1 / 0.937);
+
+      /*   utility    */
+      --gray-contrast:  #FFFFFF;
+      --gray-surface:   color(display-p3 0 0 0 / 5%);
+      --gray-indicator: oklch(53.8% 0.0165 244.9);
+      --gray-track:     oklch(53.8% 0.0165 244.9);
+    }
+  }
+}

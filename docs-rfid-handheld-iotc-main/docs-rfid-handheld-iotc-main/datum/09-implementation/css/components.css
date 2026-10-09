@@ -1,0 +1,670 @@
+/* =============================================================================
+   COMPONENT COLOR TOKENS — GENERATED, DO NOT EDIT
+   Layer 3 of 3: primitives -> semantic -> component.
+
+   Source of truth:  03-tokens/components/*.json
+   Generator:        tools/build-tokens.py
+   Spec:             02-foundations/color/03-component-colors.md
+
+   Load AFTER 09-implementation/css/semantic.css. Every value here is a var()
+   reference to a SEMANTIC token — never to a primitive.
+
+   A component token exists only when a component needs a name for a decision
+   the semantic layer already made. It never introduces a new color. If a
+   component needs a color the semantic layer does not have, the answer is to
+   add a semantic token, not a component one.
+   ============================================================================= */
+
+:root, .light, .light-theme, [data-theme='light'] {
+
+  /* ACCORDION — disclosure, native <details>/<summary> */
+  --accordion-border:                         var(--border-subtle);  /* Divider between stacked accordion items */
+  --accordion-trigger-text:                   var(--text-primary);  /* Summary label, every state — expanded/collapsed is communicated by the marker and aria-expanded, not by a text color change */
+  --accordion-trigger-background-hover:       var(--surface-element-hover);  /* Summary row fill, hovered */
+  --accordion-trigger-focus-ring:             var(--border-focus);  /* Focus-visible ring on the summary row */
+  --accordion-trigger-text-disabled:          var(--text-disabled);  /* Disabled summary label */
+  --accordion-body-text:                      var(--text-primary);  /* Body copy inside an expanded panel */
+  --accordion-surface-background:             var(--surface-subtle);  /* Bounded-card fill for the .accordion--surface variant — identical pairing panel.json's own container background uses */
+  --accordion-surface-border:                 var(--border-subtle);  /* Bounded-card edge for the .accordion--surface variant */
+
+  /* AVATAR — initials fallback */
+  --avatar-fallback-background:               var(--action-secondary);  /* Initials-fallback fill */
+  --avatar-fallback-text:                     var(--action-secondary-text);  /* Initials label, default tone */
+  --avatar-tone-accent-text:                  var(--text-link);  /* Initials label, accent tone, on the shared neutral fallback background */
+  --avatar-tone-accent-soft-background:       var(--surface-accent);  /* Fallback fill, accent tone + soft variant — same pairing button.json's soft.accent uses */
+  --avatar-tone-success-text:                 var(--status-success-icon);  /* Initials label, success tone */
+  --avatar-tone-success-soft-background:      var(--status-success-background);  /* Fallback fill, success tone + soft variant */
+  --avatar-tone-warning-text:                 var(--status-warning-icon);  /* Initials label, warning tone */
+  --avatar-tone-warning-soft-background:      var(--status-warning-background);  /* Fallback fill, warning tone + soft variant */
+  --avatar-tone-danger-text:                  var(--status-error-icon);  /* Initials label, danger tone */
+  --avatar-tone-danger-soft-background:       var(--status-error-background);  /* Fallback fill, danger tone + soft variant */
+  --avatar-tone-default-soft-background:      var(--surface-subtle);  /* Fallback fill, default tone + soft variant — lighter than the shared non-soft fallback background */
+
+  /* BADGE — neutral, success, info, error, warning */
+  --badge-neutral-background:                 var(--surface-subtle);  /* Neutral badge fill -- same pairing callout's `note` type and panel already ship */
+  --badge-neutral-border:                     var(--border-subtle);  /* Neutral badge edge */
+  --badge-neutral-text:                       var(--text-secondary);  /* Neutral badge label */
+  --badge-success-background:                 var(--status-success-background);  /* Success badge fill */
+  --badge-success-border:                     var(--status-success-border);  /* Success badge edge */
+  --badge-success-text:                       var(--status-success-icon);  /* Success badge label */
+  --badge-info-background:                    var(--status-info-background);  /* Info badge fill */
+  --badge-info-border:                        var(--status-info-border);  /* Info badge edge */
+  --badge-info-text:                          var(--status-info-icon);  /* Info badge label */
+  --badge-error-background:                   var(--status-error-background);  /* Error badge fill */
+  --badge-error-border:                       var(--status-error-border);  /* Error badge edge */
+  --badge-error-text:                         var(--status-error-icon);  /* Error badge label */
+  --badge-warning-background:                 var(--status-warning-background);  /* Warning badge fill */
+  --badge-warning-border:                     var(--status-warning-border);  /* Warning badge edge */
+  --badge-warning-text:                       var(--status-warning-icon);  /* Warning badge label */
+
+  /* BREADCRUMB — path trail, current item non-interactive */
+  --breadcrumb-item-text:                     var(--text-link);  /* A linked crumb, rest */
+  --breadcrumb-item-text-hover:               var(--text-link-hover);  /* A linked crumb, hovered */
+  --breadcrumb-item-text-current:             var(--text-primary);  /* The current page — not a link, aria-current="page". Text-only distinction is reinforced by an attribute, not color alone: see breadcrumb.md §4. */
+  --breadcrumb-item-focus-ring:               var(--border-focus);  /* Focus-visible ring on a linked crumb */
+  --breadcrumb-separator:                     var(--text-secondary);  /* Decorative CSS-drawn separator between crumbs — de-emphasized, the same role tabs.json's unselected label already uses, never the same weight as the links it sits between */
+
+  /* BUTTON — solid, outline, ghost */
+  --button-solid-accent-background:           var(--action-primary);  /* Solid accent button, rest */
+  --button-solid-accent-background-hover:     var(--action-primary-hover);  /* Solid accent button, hovered */
+  --button-solid-accent-text:                 var(--action-primary-text);  /* Label on a solid accent button */
+  --button-solid-neutral-background:          var(--action-secondary);  /* Solid neutral button, rest */
+  --button-solid-neutral-background-hover:    var(--action-secondary-hover);  /* Solid neutral button, hovered */
+  --button-solid-neutral-text:                var(--action-secondary-text);  /* Label on a solid neutral button */
+  --button-solid-neutral-border:              var(--border-default);  /* Solid neutral button, edge */
+  --button-solid-danger-background:           var(--action-danger);  /* Solid danger button, rest */
+  --button-solid-danger-background-hover:     var(--action-danger-hover);  /* Solid danger button, hovered */
+  --button-solid-danger-text:                 var(--action-danger-text);  /* Label on a solid danger button */
+  --button-soft-accent-background:            var(--surface-accent);  /* Soft accent button fill, rest — an accent-tinted panel repurposed as an interactive fill, not a status container */
+  --button-soft-accent-text:                  var(--text-link);  /* Label on a soft accent button — accent-colored text, the same role link text already uses */
+  --button-soft-neutral-background:           var(--surface-subtle);  /* Soft neutral button fill, rest — identical pairing chip.json's own neutral tone uses */
+  --button-soft-neutral-background-hover:     var(--surface-element);  /* Soft neutral button fill, hovered — the next step in the same surface family, not a tone-specific invention */
+  --button-soft-neutral-text:                 var(--text-secondary);  /* Label on a soft neutral button */
+  --button-soft-neutral-border:               var(--border-subtle);  /* Soft neutral button edge — chip.neutral's own choice, needed for the same reason: a step-2 fill does not self-delimit against the page */
+  --button-soft-danger-background:            var(--status-error-background);  /* Soft danger button fill, rest */
+  --button-soft-danger-text:                  var(--status-error-icon);  /* Label on a soft danger button */
+  --button-outline-text:                      var(--text-primary);  /* Outline button label, every state */
+  --button-outline-border:                    var(--border-default);  /* Outline button edge, rest */
+  --button-outline-border-hover:              var(--border-strong);  /* Outline button edge, hovered */
+  --button-outline-background-hover:          var(--surface-element-hover);  /* Outline button fill, hovered — rest has no fill at all */
+  --button-ghost-text:                        var(--text-primary);  /* Ghost button label, every state */
+  --button-ghost-background-hover:            var(--surface-element-hover);  /* Ghost button fill, hovered — rest and disabled have no fill and no border at all */
+  --button-disabled-text:                     var(--text-disabled);  /* Label on any disabled button, any style */
+  --button-focus-ring:                        var(--border-focus);  /* Focus-visible ring on any button, any style */
+
+  /* CALLOUT — DITA note / tip / important / caution */
+  --callout-note-surface:                     var(--surface-subtle);  /* DITA note — neutral information */
+  --callout-note-border:                      var(--border-subtle);  /* DITA note edge */
+  --callout-note-accent:                      var(--text-secondary);  /* DITA note icon and type label */
+  --callout-tip-surface:                      var(--status-success-background);  /* DITA tip — positive improvement */
+  --callout-tip-border:                       var(--status-success-border);  /* DITA tip edge */
+  --callout-tip-accent:                       var(--status-success-icon);  /* DITA tip icon and type label */
+  --callout-important-surface:                var(--status-info-background);  /* DITA important — authority, must-not-miss */
+  --callout-important-border:                 var(--status-info-border);  /* DITA important edge */
+  --callout-important-accent:                 var(--status-info-icon);  /* DITA important icon and type label */
+  --callout-caution-surface:                  var(--status-error-background);  /* DITA caution — consequential, irreversible */
+  --callout-caution-border:                   var(--status-error-border);  /* DITA caution edge */
+  --callout-caution-accent:                   var(--status-error-icon);  /* DITA caution icon and type label */
+  --callout-text:                             var(--text-primary);  /* Body copy in every callout — never the accent color */
+
+  /* CARD — bounded content surface with header/body/footer slots */
+  --card-surface:                             var(--surface-subtle);  /* Card fill */
+  --card-border:                              var(--border-subtle);  /* Card outer edge */
+  --card-divider:                             var(--border-subtle);  /* Rule between the header/footer slots and the body — a quiet, non-interactive divider, the same role Separator uses */
+  --card-secondary-surface:                   var(--surface-element);  /* Fill for .card--secondary — one step more prominent than the default surface.subtle fill */
+  --card-tertiary-surface:                    var(--surface-element-hover);  /* Fill for .card--tertiary — one step more prominent again */
+  --card-description-text:                    var(--text-secondary);  /* Muted subtitle text inside .card__header, alongside .card__title */
+
+  /* CHIP — neutral, success, info, error, warning; interactive and removable */
+  --chip-neutral-background:                  var(--surface-subtle);  /* Neutral chip fill -- identical pairing badge.json's own neutral tone uses */
+  --chip-neutral-border:                      var(--border-subtle);  /* Neutral chip edge */
+  --chip-neutral-text:                        var(--text-secondary);  /* Neutral chip label */
+  --chip-success-background:                  var(--status-success-background);  /* Success chip fill */
+  --chip-success-border:                      var(--status-success-border);  /* Success chip edge */
+  --chip-success-text:                        var(--status-success-icon);  /* Success chip label */
+  --chip-info-background:                     var(--status-info-background);  /* Info chip fill */
+  --chip-info-border:                         var(--status-info-border);  /* Info chip edge */
+  --chip-info-text:                           var(--status-info-icon);  /* Info chip label */
+  --chip-error-background:                    var(--status-error-background);  /* Error chip fill */
+  --chip-error-border:                        var(--status-error-border);  /* Error chip edge */
+  --chip-error-text:                          var(--status-error-icon);  /* Error chip label */
+  --chip-warning-background:                  var(--status-warning-background);  /* Warning chip fill */
+  --chip-warning-border:                      var(--status-warning-border);  /* Warning chip edge */
+  --chip-warning-text:                        var(--status-warning-icon);  /* Warning chip label */
+  --chip-focus-ring:                          var(--border-focus);  /* Interactive chip's focus-visible ring — one role, not five, since focus feedback is never tone-specific anywhere else in this system (Button, Tabs, Menubar all use the same border.focus regardless of tone) */
+
+  /* COMMAND — palette shell, reuses modal's surface and tabs' selected-state accent */
+  --command-surface:                          var(--surface-subtle);  /* Palette modal fill — same pairing modal.json already uses */
+  --command-border:                           var(--border-subtle);  /* Palette modal edge */
+  --command-text:                             var(--text-primary);  /* Palette heading/result label copy */
+  --command-text-secondary:                   var(--text-secondary);  /* Result meta/hint copy (e.g. a keyboard shortcut label) */
+  --command-input-background:                 var(--surface-element);  /* Filter input fill — the same role input.json names --input-background */
+  --command-input-border:                     var(--border-default);  /* Filter input edge */
+  --command-input-placeholder:                var(--text-placeholder);  /* Filter input placeholder */
+  --command-divider:                          var(--border-subtle);  /* Rule between the filter input and the result list, and between result groups — the same interior-separation role card.json's --card-divider names */
+  --command-item-text-hover:                  var(--text-primary);  /* Result row label, hovered/highlighted */
+  --command-item-background-active:           var(--surface-element-active);  /* Selected/active result row fill */
+  --command-item-accent-active:               var(--action-primary);  /* Selected result row's left accent bar — reuses the same fill tabs.json's --tabs-tab-indicator-selected already names for 'this is the active thing', not a new accent decision */
+  --command-item-text-disabled:               var(--text-disabled);  /* Disabled/unselectable result row label */
+  --command-focus-ring:                       var(--border-focus);  /* Focus-visible ring on the filter input, same role input.json/tabs.json already name */
+
+  /* CONTEXT MENU — pointer-positioned menu, item states only */
+  --context-menu-surface:                     var(--surface-subtle);  /* Menu panel fill — same container-surface decision as modal.json/panel.json/menubar.json */
+  --context-menu-border:                      var(--border-subtle);  /* Menu panel edge */
+  --context-menu-item-text:                   var(--text-primary);  /* Menuitem label, rest */
+  --context-menu-item-surface-hover:          var(--surface-element-hover);  /* Menuitem background, hovered/highlighted — same step menubar.json already uses for the identical role */
+  --context-menu-item-focus-ring:             var(--border-focus);  /* Focus-visible ring on a menuitem */
+  --context-menu-item-text-disabled:          var(--text-disabled);  /* Disabled menuitem label */
+  --context-menu-separator:                   var(--border-subtle);  /* Divider between groups of menuitems */
+
+  /* FORM CONTROL — checkbox, radio, switch */
+  --form-control-border:                      var(--border-default);  /* Unchecked control edge, rest — same role input.border already carries */
+  --form-control-border-hover:                var(--border-strong);  /* Unchecked control edge, hovered — same role input.border-hover already carries */
+  --form-control-background:                  var(--surface-element);  /* Unchecked control fill, rest — same role input.background already carries */
+  --form-control-background-hover:            var(--surface-element-hover);  /* Unchecked control fill, hovered */
+  --form-control-checked-background:          var(--action-primary);  /* Checked/on fill — checkbox box, radio dot, switch track. Same fill a solid accent button uses. */
+  --form-control-checked-background-hover:    var(--action-primary-hover);  /* Checked/on fill, hovered */
+  --form-control-checked-mark:                var(--action-primary-text);  /* Checkmark / indeterminate dash, drawn on top of the checked fill — same pairing action.primary-text already guarantees against action.primary */
+  --form-control-thumb:                       var(--border-strong);  /* Switch thumb, off position — a mid-contrast neutral, not the checked fill, so an off switch does not read as half-on */
+  --form-control-disabled-text:               var(--text-disabled);  /* Label text on any disabled checkbox/radio/switch — same role button.disabled.text and input.disabled-text already carry */
+  --form-control-focus-ring:                  var(--border-focus);  /* Focus-visible ring on any checkbox/radio/switch */
+  --form-control-error-border:                var(--status-error-border);  /* Control edge, invalid — same mechanism input.error.border already carries */
+  --form-control-error-text:                  var(--status-error-text);  /* Error message below the control group — same mechanism input.error.text already carries */
+
+  /* HOVER CARD — rich preview panel, reuses card's container pairing */
+  --hover-card-surface:                       var(--surface-subtle);  /* Hover card panel fill — the same surface.subtle + border.subtle pairing card.json ships, not tooltip.json's inverse-surface chip */
+  --hover-card-border:                        var(--border-subtle);  /* Hover card panel edge */
+  --hover-card-text:                          var(--text-primary);  /* Hover card title/body copy */
+  --hover-card-text-secondary:                var(--text-secondary);  /* Hover card supporting/meta copy — the same secondary text weight this palette caps at (08-ai/ai-rules.md's gap table: only two AA-safe text weights) */
+
+  /* INPUT — text field, single line */
+  --input-background:                         var(--surface-element);  /* Input fill, rest */
+  --input-background-hover:                   var(--surface-element-hover);  /* Input fill, hovered */
+  --input-border:                             var(--border-default);  /* Input edge, rest */
+  --input-border-hover:                       var(--border-strong);  /* Input edge, hovered */
+  --input-text:                               var(--text-primary);  /* Input value text */
+  --input-placeholder:                        var(--text-placeholder);  /* Input placeholder text */
+  --input-disabled-text:                      var(--text-disabled);  /* Value text on a disabled input */
+  --input-focus-ring:                         var(--border-focus);  /* Focus-visible ring */
+  --input-error-border:                       var(--status-error-border);  /* Input edge, invalid */
+  --input-error-text:                         var(--status-error-text);  /* Error message below the input */
+  --input-success-border:                     var(--status-success-border);  /* Input edge, validated */
+  --input-success-text:                       var(--status-success-text);  /* Success message below the input */
+
+  /* JSON TYPE BADGE — eight schema types, one required-field indicator */
+  --json-type-badge-string-background:        var(--status-success-background);  /* string badge fill */
+  --json-type-badge-string-text:              var(--status-success-icon);  /* string badge label. Restored to the ICON rung 2026-08-30 after a same-day round trip that is worth recording so nobody repeats it. The family was briefly moved to .text so that every badge read one rung and so that string/number matched utility.syntax-*, which sat on step 12. That did make them equal - and equal to something invisible: step 12 across these hues is #1f3a2a, #132f5f, #47391c, near-black to the eye against the #172029 plain code ink beside it, so the type colour scheme stopped reading as colour at all. The rung was right and the DIRECTION was wrong: step 11 is the scale's low-contrast TEXT rung, it is chromatic, and it clears 4.5:1 on the code plane. So the badges came back here and the syntax roles moved UP to meet them. tip-11 #09804e measures 4.72:1 on --surface-subtle and 4.99:1 on white, and is now byte-identical to utility.syntax-string. */
+  --json-type-badge-integer-background:       var(--status-info-background);  /* integer badge fill */
+  --json-type-badge-integer-text:             var(--status-info-icon);  /* integer badge label. Restored to the ICON rung 2026-08-30 after a same-day round trip that is worth recording so nobody repeats it. The family was briefly moved to .text so that every badge read one rung and so that string/number matched utility.syntax-*, which sat on step 12. That did make them equal - and equal to something invisible: step 12 across these hues is #1f3a2a, #132f5f, #47391c, near-black to the eye against the #172029 plain code ink beside it, so the type colour scheme stopped reading as colour at all. The rung was right and the DIRECTION was wrong: step 11 is the scale's low-contrast TEXT rung, it is chromatic, and it clears 4.5:1 on the code plane. So the badges came back here and the syntax roles moved UP to meet them. primary-11 #195ece measures 5.62:1 on --surface-subtle, and is now byte-identical to utility.syntax-number. */
+  --json-type-badge-number-background:        var(--status-info-background);  /* number badge fill */
+  --json-type-badge-number-text:              var(--status-info-icon);  /* number badge label. Same token as integer above: JSON has one numeric type and the schema's integer/number split is a JSON Schema distinction, not a JSON one. */
+  --json-type-badge-boolean-background:       var(--status-warning-background);  /* boolean badge fill */
+  --json-type-badge-boolean-text:             var(--status-warning-text);  /* boolean badge label. Reuses status.warning verbatim (warning/yellow) -- matches utility.syntax-boolean, the color json-block.md already renders for a JSON boolean literal. */
+  --json-type-badge-null-background:          var(--surface-subtle);  /* null badge fill */
+  --json-type-badge-null-text:                var(--text-secondary);  /* null badge label. Aliases the plain surface.subtle / text.secondary pair directly -- no data-type.json entry needed. json-block.md §4 already treats null the same way (collapsed onto text.secondary, no syntax-* color of its own); tools/verify-color.py's dE measurement between color.note and color.gray (0.0070, under the ~0.02 JND) also ruled out color.note as a *visually distinct* neutral -- it is gray in practice, so this reuses gray's own established semantic name instead of inventing a same-looking one. */
+  --json-type-badge-array-background:         var(--status-critical-background);  /* array badge fill */
+  --json-type-badge-array-text:               var(--status-critical-text);  /* array badge label. Reuses status.critical verbatim (critical/red-orange). No existing syntax-* role covers structural array-ness distinctly from object, so this claims the one status family json-block's four roles (string/number/boolean/punctuation) leave unclaimed by a badge-shaped concept. */
+  --json-type-badge-object-background:        var(--data-type-object-background);  /* object badge fill */
+  --json-type-badge-object-text:              var(--data-type-object-text);  /* object badge label. Consumes color.teal (data-type.object) -- a real 7th Radix scale (seed #12A594) added specifically for this slot on 2026-08-27, generated at radix-ui.com/colors/custom and downloaded into 00-source/upstream/color-type-system/colors/12a594/ exactly like the existing six scales. No hue within those original six sat within 30 degrees of teal without colliding with a type already assigned above, which is why a real 7th scale was added rather than reusing a mismatched or merely-adjacent one. See json-type-badge-and-asterisk-colors-resolved.md for the full derivation. */
+  --json-type-badge-enum-background:          var(--status-error-background);  /* enum badge fill */
+  --json-type-badge-enum-text:                var(--status-error-icon);  /* enum badge label. Restored to the ICON rung 2026-08-30 after a same-day round trip that is worth recording so nobody repeats it. The family was briefly moved to .text so that every badge read one rung and so that string/number matched utility.syntax-*, which sat on step 12. That did make them equal - and equal to something invisible: step 12 across these hues is #1f3a2a, #132f5f, #47391c, near-black to the eye against the #172029 plain code ink beside it, so the type colour scheme stopped reading as colour at all. The rung was right and the DIRECTION was wrong: step 11 is the scale's low-contrast TEXT rung, it is chromatic, and it clears 4.5:1 on the code plane. So the badges came back here and the syntax roles moved UP to meet them. caution-11 #b14c71 measures 4.79:1 on --surface-subtle. enum has no syntax counterpart - it is a schema constraint, not a JSON type - so this one only has to satisfy the family, and step 11 is where the family lives. */
+  --json-type-badge-required-indicator:       var(--utility-required-indicator);  /* Required-field asterisk (*), rendered next to a field name, not inside a badge -- see schema-table.md's legend. Not one of the eight type badges above; kept in this file because it is the other json-type-badge-and-asterisk-colors-resolved.md concern schema-table renders. */
+
+  /* KBD — keyboard-key label */
+  --kbd-surface:                              var(--utility-code-highlight);  /* Key-cap fill */
+  --kbd-border:                               var(--border-subtle);  /* Key-cap edge */
+  --kbd-text:                                 var(--technical-code);  /* Key label — the same role inline code text already carries */
+
+  /* MENUBAR — desktop-app-style menu bar + flyout menus, item states only */
+  --menubar-surface:                          var(--surface-subtle);  /* The menubar's own bar background — same bounded-surface decision panel.json already made */
+  --menubar-border:                           var(--border-subtle);  /* Bottom rule under the bar */
+  --menubar-item-text:                        var(--text-primary);  /* Menuitem label, rest (top-level bar item or a row inside a flyout) */
+  --menubar-item-surface-hover:               var(--surface-element-hover);  /* Menuitem background, hovered — same step surface.json already names for 'input, unfilled control, hovered' */
+  --menubar-item-surface-open:                var(--surface-element-active);  /* Top-level menuitem background while its flyout is open (aria-expanded="true") — reuses the same step tabs/button already use for 'pressed or selected', not a new fill */
+  --menubar-item-focus-ring:                  var(--border-focus);  /* Focus-visible ring on a menuitem */
+  --menubar-item-text-disabled:               var(--text-disabled);  /* Disabled menuitem label */
+  --menubar-menu-surface:                     var(--surface-subtle);  /* Flyout menu panel fill — same container-surface decision as the bar itself and as modal.json/panel.json */
+  --menubar-menu-border:                      var(--border-subtle);  /* Flyout menu panel edge */
+  --menubar-separator:                        var(--border-subtle);  /* Divider between groups of menuitems inside a flyout */
+
+  /* MODAL — modal surface, no scrim token yet */
+  --modal-surface:                            var(--surface-subtle);  /* Modal body fill — same decision panel.json already made for a bounded, non-interactive surface */
+  --modal-border:                             var(--border-subtle);  /* Modal body edge */
+  --modal-text:                               var(--text-primary);  /* Modal heading and body copy */
+
+  /* NAVIGATION MENU — multi-level nav with flyouts, item states only */
+  --nav-menu-link-text:                       var(--text-primary);  /* Top-level nav link, rest */
+  --nav-menu-link-text-hover:                 var(--text-link-hover);  /* Nav link, hovered — reuses the same step text.json already ships for a hovered link */
+  --nav-menu-link-text-current:               var(--text-link);  /* The link representing the current page (aria-current="page") */
+  --nav-menu-link-indicator-current:          var(--action-primary);  /* Underline beneath the current-page link — same decision, same value, tabs.json's selected-tab indicator already made */
+  --nav-menu-link-focus-ring:                 var(--border-focus);  /* Focus-visible ring on a nav link */
+  --nav-menu-link-surface-hover:              var(--surface-element-hover);  /* Background wash behind a hovered link inside a flyout list */
+  --nav-menu-flyout-surface:                  var(--surface-subtle);  /* Flyout panel fill — same container-surface decision as modal.json/panel.json */
+  --nav-menu-flyout-border:                   var(--border-subtle);  /* Flyout panel edge */
+
+  /* PAGE META BANNER — tutorial / reference / guide / troubleshooting */
+  --page-meta-banner-tutorial-surface:        var(--status-success-background);  /* Tutorial — a positive, hands-on walkthrough */
+  --page-meta-banner-tutorial-border:         var(--status-success-border);  /* Tutorial edge */
+  --page-meta-banner-tutorial-accent:         var(--status-success-icon);  /* Tutorial type label */
+  --page-meta-banner-reference-surface:       var(--status-info-background);  /* Reference — neutral, authoritative lookup material */
+  --page-meta-banner-reference-border:        var(--status-info-border);  /* Reference edge */
+  --page-meta-banner-reference-accent:        var(--status-info-icon);  /* Reference type label */
+  --page-meta-banner-guide-surface:           var(--surface-subtle);  /* Guide — conceptual, no single fixed path; no status valence, so it takes the same neutral pairing callout's own `note` type already uses */
+  --page-meta-banner-guide-border:            var(--border-subtle);  /* Guide edge */
+  --page-meta-banner-guide-accent:            var(--text-secondary);  /* Guide type label */
+  --page-meta-banner-troubleshooting-surface: var(--status-warning-background);  /* Troubleshooting — something needs attention */
+  --page-meta-banner-troubleshooting-border:  var(--status-warning-border);  /* Troubleshooting edge */
+  --page-meta-banner-troubleshooting-accent:  var(--status-warning-icon);  /* Troubleshooting type label */
+  --page-meta-banner-meta:                    var(--text-secondary);  /* Audience and time metadata text, in every type — never the accent color. Same reasoning as callout.json's `text` role: colored metadata text is worse typography, and the type label alone already carries the color distinction. */
+
+  /* PAGINATION — prev/next plus a filled current-page indicator */
+  --pagination-item-text:                     var(--text-primary);  /* A page-number or prev/next control, rest */
+  --pagination-item-background-hover:         var(--surface-element-hover);  /* A page-number or prev/next control, hovered — rest has no fill */
+  --pagination-item-focus-ring:               var(--border-focus);  /* Focus-visible ring on any pagination control */
+  --pagination-item-text-disabled:            var(--text-disabled);  /* Prev/next at the start or end of the range — disabled, never removed, so the control's position in the set does not shift */
+  --pagination-item-background-current:       var(--action-primary);  /* The current page — filled, the same fill a solid accent button uses, reused here (not a new value) to mean 'this is the active thing', same posture as tabs.json's indicator-selected */
+  --pagination-item-text-current:             var(--action-primary-text);  /* Label on the current-page fill */
+
+  /* PANEL — bounded content surface */
+  --panel-surface:                            var(--surface-subtle);  /* Panel fill */
+  --panel-border:                             var(--border-subtle);  /* Panel edge */
+
+  /* POPOVER — anchored floating panel, reuses the container surface pairing */
+  --popover-surface:                          var(--surface-subtle);  /* Popover panel fill — same decision panel.json/modal.json/card.json already made for a bounded, non-interactive surface */
+  --popover-border:                           var(--border-subtle);  /* Popover panel edge */
+  --popover-text:                             var(--text-primary);  /* Popover body copy */
+
+  /* PROGRESS — determinate bar + indeterminate spinner */
+  --progress-track:                           var(--surface-element);  /* Unfilled portion of the determinate bar */
+  --progress-track-border:                    var(--border-default);  /* Track edge — surface.element does not self-delimit against the page (1.14:1 light / 1.19:1 dark), same contract action.secondary already documents */
+  --progress-fill:                            var(--action-primary);  /* Determinate bar fill */
+  --progress-fill-success:                    var(--status-success-icon);  /* Determinate bar fill, success tone — added 2026-08-27, HeroUI parity. status.success.icon, not .background: a fill needs the same 3:1 non-text-graphical-object saturation the icon role already carries, not the pale container tint a text label sits on */
+  --progress-fill-warning:                    var(--status-warning-icon);  /* Determinate bar fill, warning tone */
+  --progress-fill-danger:                     var(--status-error-icon);  /* Determinate bar fill, danger tone */
+  --progress-spinner-color:                   var(--action-primary);  /* Indeterminate spinner stroke color */
+
+  /* SEPARATOR — thin visual/semantic divider */
+  --separator-color:                          var(--border-subtle);  /* The divider line, either orientation — HeroUI parity's own 'tertiary' (subtlest) contrast tier, unchanged as this component's default */
+  --separator-color-secondary:                var(--border-default);  /* Medium-contrast divider — added 2026-08-27, HeroUI parity. The same role every interactive control border already uses; a separator consuming it carries no interactive contract of its own, only the color */
+  --separator-color-strong:                   var(--border-strong);  /* Standard/highest-contrast divider — HeroUI parity's own 'default' tier, added 2026-08-27 */
+
+  /* SIDEBAR — app-shell nav rail, expanded and icon-collapsed states */
+  --sidebar-surface:                          var(--surface-page);  /* The sidebar's own container fill — revised 2026-08-28 (third pass) from surface.subtle to surface.page. heroui.pro's own sidebar carries no tint distinguishing it from the page behind it (measured: identical computed background-color on both) — a bounded-surface treatment this component assumed by analogy to Panel/Menubar before actually checking. Kept as a named token, not deleted, since the sidebar's edge still needs a fill to sit on even when that fill matches the page */
+  --sidebar-border:                           var(--border-subtle);  /* The sidebar's edge against the page content — no longer a header/footer divider, see sidebar.md's third-pass section for why the header's own border-block-end was removed */
+  --sidebar-header-logo-background:           var(--action-primary);  /* App logo badge fill, added 2026-08-28 for HeroUI Pro parity — the same solid-accent decision button.json's own solid tone and tabs.json's checked track already made, reused rather than a new one */
+  --sidebar-header-logo-text:                 var(--action-primary-text);  /* App logo badge glyph — the only color action.primary's own contract permits pairing with, per button.json's identical pairing */
+  --sidebar-header-version-text:              var(--text-secondary);  /* App version subtitle beneath the header label (e.g. 'v1.0.0'), added 2026-08-28 (third pass) for HeroUI Pro parity — heroui.pro's own header shows a version line under its title. Same muted role group.label-text already uses for supporting, non-destination text, named separately because the two are conceptually different pieces of UI */
+  --sidebar-group-label-text:                 var(--text-secondary);  /* A nav group's own label — supporting text, not a destination */
+  --sidebar-item-text:                        var(--text-primary);  /* Nav item LABEL — corrected 2026-08-28: constant across rest, hover, selected and focus. heroui.pro's own measured label color never changes; only the icon beside it does (item.icon / item.icon-selected below). An earlier same-day pass wrongly moved this to text.secondary at rest, assuming label and icon shared one value the way .sidebar__icon inherited color from .sidebar__link — checked directly against computed styles and reverted */
+  --sidebar-item-icon:                        var(--text-secondary);  /* Nav item ICON, rest and hovered — added 2026-08-28, HeroUI Pro parity, replacing the icon's previous inherited-from-label color. Muted, distinct from the always-full-contrast label beside it */
+  --sidebar-item-icon-selected:               var(--text-primary);  /* Nav item ICON, selected or focus-visible — added 2026-08-28, HeroUI Pro parity. Full-contrast against item.icon's own muted rest value, paired with the filled pill (surface-selected/surface-hover below): two channels for one state, never color alone (04-states/states.md §3) */
+  --sidebar-item-surface-hover:               var(--surface-element-hover);  /* Nav item background, hovered — same step surface.json already names for 'input, unfilled control, hovered' */
+  --sidebar-item-surface-selected:            var(--surface-element-active);  /* Selected nav item background — reuses the same step menubar.json's item.surface-open already uses for 'this is the active thing', not a new fill */
+  --sidebar-item-focus-ring:                  var(--border-focus);  /* Focus-visible ring on a nav item or the collapse trigger */
+  --sidebar-item-text-disabled:               var(--text-disabled);  /* Disabled nav item label */
+
+  /* TABLE — header, striped rows, rule lines */
+  --table-border:                             var(--border-subtle);  /* Rule lines between rows and around the table edge — decorative structure, not an interactive boundary, same role border.subtle already names */
+  --table-header-background:                  var(--surface-subtle);  /* Header row fill */
+  --table-header-text:                        var(--text-primary);  /* Header cell label */
+  --table-row-background-striped:             var(--surface-subtle);  /* Alternate (odd/even) body row fill — same value as the header fill, one decision named twice: 'this is a subtly recessed band', reused rather than a second new one */
+  --table-row-background-hover:               var(--surface-element-hover);  /* Row fill on hover — added 2026-08-27, HeroUI parity, opt-in via .table--hoverable (see table.md §5). Reuses the same generic hover surface ghost buttons and accordion triggers already use, not a table-specific decision */
+  --table-row-background-selected:            var(--surface-accent);  /* Selected row fill — a soft accent tint, not a solid fill: a whole selected row rendered at full action.primary strength would be heavier than the row-level emphasis this state calls for. Same tint button.json's own soft.accent tone and avatar.json's tone.accent.soft-background already establish */
+  --table-caption-text:                       var(--text-secondary);  /* Table caption — supporting copy, de-emphasized relative to cell content */
+  --table-cell-text:                          var(--text-primary);  /* Body cell content */
+
+  /* TABS — nav item, selected via an underline indicator */
+  --tabs-list-border:                         var(--border-subtle);  /* Baseline rule the whole tablist sits on — the .tabs--secondary (underline) variant only, added 2026-08-28 for HeroUI parity; see tabs.md §6 */
+  --tabs-track-background:                    var(--surface-subtle);  /* Segmented-track fill behind the tab list — added 2026-08-28, HeroUI parity default variant. Same recessed-band decision table.json's header fill and panel.json's surface already name */
+  --tabs-tab-text:                            var(--text-secondary);  /* Unselected tab label, rest */
+  --tabs-tab-text-hover:                      var(--text-primary);  /* Unselected tab label, hovered */
+  --tabs-tab-text-selected:                   var(--text-primary);  /* Selected tab label */
+  --tabs-tab-background-selected:             var(--surface-page);  /* Selected tab's own pill fill in the default (segmented) variant — added 2026-08-28, HeroUI parity. A raised chip floating on the darker track.background, paired with --elevation-1 the same way select.css already pairs it with a surface. Not used by .tabs--secondary, which draws the underline indicator below instead */
+  --tabs-tab-indicator-selected:              var(--action-primary);  /* Underline drawn beneath the selected tab in the .tabs--secondary variant — the one color decision this component needed a name for, not a new value: reuses the same fill a solid accent button already uses to mean "this is the active thing." */
+  --tabs-tab-focus-ring:                      var(--border-focus);  /* Focus-visible ring on a tab */
+  --tabs-tab-text-disabled:                   var(--text-disabled);  /* Disabled tab label */
+
+  /* TOAST — success, error, info */
+  --toast-success-background:                 var(--status-success-background);  /* Success toast fill */
+  --toast-success-border:                     var(--status-success-border);  /* Success toast edge */
+  --toast-success-text:                       var(--status-success-icon);  /* Success toast icon and message — same legal-surface reasoning as badge.success.text: this label always sits on toast.success.background, the surface status.success.icon's own contract names as compliant for text use */
+  --toast-error-background:                   var(--status-error-background);  /* Error toast fill */
+  --toast-error-border:                       var(--status-error-border);  /* Error toast edge */
+  --toast-error-text:                         var(--status-error-icon);  /* Error toast icon and message */
+  --toast-info-background:                    var(--status-info-background);  /* Info toast fill */
+  --toast-info-border:                        var(--status-info-border);  /* Info toast edge */
+  --toast-info-text:                          var(--status-info-icon);  /* Info toast icon and message */
+
+  /* TOOLTIP — inverse surface */
+  --tooltip-background:                       var(--utility-inverse-surface);  /* Tooltip bubble fill -- gray-12, dark in light mode, light in dark mode */
+  --tooltip-text:                             var(--text-inverse);  /* Tooltip label -- the only color text.inverse's own contract permits pairing with utility.inverse-surface */
+}
+
+/* -----------------------------------------------------------------------------
+   DARK THEME
+   ----------------------------------------------------------------------------- */
+
+.dark, .dark-theme, [data-theme='dark'] {
+
+  /* ACCORDION — disclosure, native <details>/<summary> */
+  --accordion-border:                         var(--border-subtle);
+  --accordion-trigger-text:                   var(--text-primary);
+  --accordion-trigger-background-hover:       var(--surface-element-hover);
+  --accordion-trigger-focus-ring:             var(--border-focus);
+  --accordion-trigger-text-disabled:          var(--text-disabled);
+  --accordion-body-text:                      var(--text-primary);
+  --accordion-surface-background:             var(--surface-subtle);
+  --accordion-surface-border:                 var(--border-subtle);
+
+  /* AVATAR — initials fallback */
+  --avatar-fallback-background:               var(--action-secondary);
+  --avatar-fallback-text:                     var(--action-secondary-text);
+  --avatar-tone-accent-text:                  var(--text-link);
+  --avatar-tone-accent-soft-background:       var(--surface-accent);
+  --avatar-tone-success-text:                 var(--status-success-icon);
+  --avatar-tone-success-soft-background:      var(--status-success-background);
+  --avatar-tone-warning-text:                 var(--status-warning-icon);
+  --avatar-tone-warning-soft-background:      var(--status-warning-background);
+  --avatar-tone-danger-text:                  var(--status-error-icon);
+  --avatar-tone-danger-soft-background:       var(--status-error-background);
+  --avatar-tone-default-soft-background:      var(--surface-subtle);
+
+  /* BADGE — neutral, success, info, error, warning */
+  --badge-neutral-background:                 var(--surface-subtle);
+  --badge-neutral-border:                     var(--border-subtle);
+  --badge-neutral-text:                       var(--text-secondary);
+  --badge-success-background:                 var(--status-success-background);
+  --badge-success-border:                     var(--status-success-border);
+  --badge-success-text:                       var(--status-success-icon);
+  --badge-info-background:                    var(--status-info-background);
+  --badge-info-border:                        var(--status-info-border);
+  --badge-info-text:                          var(--status-info-icon);
+  --badge-error-background:                   var(--status-error-background);
+  --badge-error-border:                       var(--status-error-border);
+  --badge-error-text:                         var(--status-error-icon);
+  --badge-warning-background:                 var(--status-warning-background);
+  --badge-warning-border:                     var(--status-warning-border);
+  --badge-warning-text:                       var(--status-warning-icon);
+
+  /* BREADCRUMB — path trail, current item non-interactive */
+  --breadcrumb-item-text:                     var(--text-link);
+  --breadcrumb-item-text-hover:               var(--text-link-hover);
+  --breadcrumb-item-text-current:             var(--text-primary);
+  --breadcrumb-item-focus-ring:               var(--border-focus);
+  --breadcrumb-separator:                     var(--text-secondary);
+
+  /* BUTTON — solid, outline, ghost */
+  --button-solid-accent-background:           var(--action-primary);
+  --button-solid-accent-background-hover:     var(--action-primary-hover);
+  --button-solid-accent-text:                 var(--action-primary-text);
+  --button-solid-neutral-background:          var(--action-secondary);
+  --button-solid-neutral-background-hover:    var(--action-secondary-hover);
+  --button-solid-neutral-text:                var(--action-secondary-text);
+  --button-solid-neutral-border:              var(--border-default);
+  --button-solid-danger-background:           var(--action-danger);
+  --button-solid-danger-background-hover:     var(--action-danger-hover);
+  --button-solid-danger-text:                 var(--action-danger-text);
+  --button-soft-accent-background:            var(--surface-accent);
+  --button-soft-accent-text:                  var(--text-link);
+  --button-soft-neutral-background:           var(--surface-subtle);
+  --button-soft-neutral-background-hover:     var(--surface-element);
+  --button-soft-neutral-text:                 var(--text-secondary);
+  --button-soft-neutral-border:               var(--border-subtle);
+  --button-soft-danger-background:            var(--status-error-background);
+  --button-soft-danger-text:                  var(--status-error-icon);
+  --button-outline-text:                      var(--text-primary);
+  --button-outline-border:                    var(--border-default);
+  --button-outline-border-hover:              var(--border-strong);
+  --button-outline-background-hover:          var(--surface-element-hover);
+  --button-ghost-text:                        var(--text-primary);
+  --button-ghost-background-hover:            var(--surface-element-hover);
+  --button-disabled-text:                     var(--text-disabled);
+  --button-focus-ring:                        var(--border-focus);
+
+  /* CALLOUT — DITA note / tip / important / caution */
+  --callout-note-surface:                     var(--surface-subtle);
+  --callout-note-border:                      var(--border-subtle);
+  --callout-note-accent:                      var(--text-secondary);
+  --callout-tip-surface:                      var(--status-success-background);
+  --callout-tip-border:                       var(--status-success-border);
+  --callout-tip-accent:                       var(--status-success-icon);
+  --callout-important-surface:                var(--status-info-background);
+  --callout-important-border:                 var(--status-info-border);
+  --callout-important-accent:                 var(--status-info-icon);
+  --callout-caution-surface:                  var(--status-error-background);
+  --callout-caution-border:                   var(--status-error-border);
+  --callout-caution-accent:                   var(--status-error-icon);
+  --callout-text:                             var(--text-primary);
+
+  /* CARD — bounded content surface with header/body/footer slots */
+  --card-surface:                             var(--surface-subtle);
+  --card-border:                              var(--border-subtle);
+  --card-divider:                             var(--border-subtle);
+  --card-secondary-surface:                   var(--surface-element);
+  --card-tertiary-surface:                    var(--surface-element-hover);
+  --card-description-text:                    var(--text-secondary);
+
+  /* CHIP — neutral, success, info, error, warning; interactive and removable */
+  --chip-neutral-background:                  var(--surface-subtle);
+  --chip-neutral-border:                      var(--border-subtle);
+  --chip-neutral-text:                        var(--text-secondary);
+  --chip-success-background:                  var(--status-success-background);
+  --chip-success-border:                      var(--status-success-border);
+  --chip-success-text:                        var(--status-success-icon);
+  --chip-info-background:                     var(--status-info-background);
+  --chip-info-border:                         var(--status-info-border);
+  --chip-info-text:                           var(--status-info-icon);
+  --chip-error-background:                    var(--status-error-background);
+  --chip-error-border:                        var(--status-error-border);
+  --chip-error-text:                          var(--status-error-icon);
+  --chip-warning-background:                  var(--status-warning-background);
+  --chip-warning-border:                      var(--status-warning-border);
+  --chip-warning-text:                        var(--status-warning-icon);
+  --chip-focus-ring:                          var(--border-focus);
+
+  /* COMMAND — palette shell, reuses modal's surface and tabs' selected-state accent */
+  --command-surface:                          var(--surface-subtle);
+  --command-border:                           var(--border-subtle);
+  --command-text:                             var(--text-primary);
+  --command-text-secondary:                   var(--text-secondary);
+  --command-input-background:                 var(--surface-element);
+  --command-input-border:                     var(--border-default);
+  --command-input-placeholder:                var(--text-placeholder);
+  --command-divider:                          var(--border-subtle);
+  --command-item-text-hover:                  var(--text-primary);
+  --command-item-background-active:           var(--surface-element-active);
+  --command-item-accent-active:               var(--action-primary);
+  --command-item-text-disabled:               var(--text-disabled);
+  --command-focus-ring:                       var(--border-focus);
+
+  /* CONTEXT MENU — pointer-positioned menu, item states only */
+  --context-menu-surface:                     var(--surface-subtle);
+  --context-menu-border:                      var(--border-subtle);
+  --context-menu-item-text:                   var(--text-primary);
+  --context-menu-item-surface-hover:          var(--surface-element-hover);
+  --context-menu-item-focus-ring:             var(--border-focus);
+  --context-menu-item-text-disabled:          var(--text-disabled);
+  --context-menu-separator:                   var(--border-subtle);
+
+  /* FORM CONTROL — checkbox, radio, switch */
+  --form-control-border:                      var(--border-default);
+  --form-control-border-hover:                var(--border-strong);
+  --form-control-background:                  var(--surface-element);
+  --form-control-background-hover:            var(--surface-element-hover);
+  --form-control-checked-background:          var(--action-primary);
+  --form-control-checked-background-hover:    var(--action-primary-hover);
+  --form-control-checked-mark:                var(--action-primary-text);
+  --form-control-thumb:                       var(--border-strong);
+  --form-control-disabled-text:               var(--text-disabled);
+  --form-control-focus-ring:                  var(--border-focus);
+  --form-control-error-border:                var(--status-error-border);
+  --form-control-error-text:                  var(--status-error-text);
+
+  /* HOVER CARD — rich preview panel, reuses card's container pairing */
+  --hover-card-surface:                       var(--surface-subtle);
+  --hover-card-border:                        var(--border-subtle);
+  --hover-card-text:                          var(--text-primary);
+  --hover-card-text-secondary:                var(--text-secondary);
+
+  /* INPUT — text field, single line */
+  --input-background:                         var(--surface-element);
+  --input-background-hover:                   var(--surface-element-hover);
+  --input-border:                             var(--border-default);
+  --input-border-hover:                       var(--border-strong);
+  --input-text:                               var(--text-primary);
+  --input-placeholder:                        var(--text-placeholder);
+  --input-disabled-text:                      var(--text-disabled);
+  --input-focus-ring:                         var(--border-focus);
+  --input-error-border:                       var(--status-error-border);
+  --input-error-text:                         var(--status-error-text);
+  --input-success-border:                     var(--status-success-border);
+  --input-success-text:                       var(--status-success-text);
+
+  /* JSON TYPE BADGE — eight schema types, one required-field indicator */
+  --json-type-badge-string-background:        var(--status-success-background);
+  --json-type-badge-string-text:              var(--status-success-icon);
+  --json-type-badge-integer-background:       var(--status-info-background);
+  --json-type-badge-integer-text:             var(--status-info-icon);
+  --json-type-badge-number-background:        var(--status-info-background);
+  --json-type-badge-number-text:              var(--status-info-icon);
+  --json-type-badge-boolean-background:       var(--status-warning-background);
+  --json-type-badge-boolean-text:             var(--status-warning-text);
+  --json-type-badge-null-background:          var(--surface-subtle);
+  --json-type-badge-null-text:                var(--text-secondary);
+  --json-type-badge-array-background:         var(--status-critical-background);
+  --json-type-badge-array-text:               var(--status-critical-text);
+  --json-type-badge-object-background:        var(--data-type-object-background);
+  --json-type-badge-object-text:              var(--data-type-object-text);
+  --json-type-badge-enum-background:          var(--status-error-background);
+  --json-type-badge-enum-text:                var(--status-error-icon);
+  --json-type-badge-required-indicator:       var(--utility-required-indicator);
+
+  /* KBD — keyboard-key label */
+  --kbd-surface:                              var(--utility-code-highlight);
+  --kbd-border:                               var(--border-subtle);
+  --kbd-text:                                 var(--technical-code);
+
+  /* MENUBAR — desktop-app-style menu bar + flyout menus, item states only */
+  --menubar-surface:                          var(--surface-subtle);
+  --menubar-border:                           var(--border-subtle);
+  --menubar-item-text:                        var(--text-primary);
+  --menubar-item-surface-hover:               var(--surface-element-hover);
+  --menubar-item-surface-open:                var(--surface-element-active);
+  --menubar-item-focus-ring:                  var(--border-focus);
+  --menubar-item-text-disabled:               var(--text-disabled);
+  --menubar-menu-surface:                     var(--surface-subtle);
+  --menubar-menu-border:                      var(--border-subtle);
+  --menubar-separator:                        var(--border-subtle);
+
+  /* MODAL — modal surface, no scrim token yet */
+  --modal-surface:                            var(--surface-subtle);
+  --modal-border:                             var(--border-subtle);
+  --modal-text:                               var(--text-primary);
+
+  /* NAVIGATION MENU — multi-level nav with flyouts, item states only */
+  --nav-menu-link-text:                       var(--text-primary);
+  --nav-menu-link-text-hover:                 var(--text-link-hover);
+  --nav-menu-link-text-current:               var(--text-link);
+  --nav-menu-link-indicator-current:          var(--action-primary);
+  --nav-menu-link-focus-ring:                 var(--border-focus);
+  --nav-menu-link-surface-hover:              var(--surface-element-hover);
+  --nav-menu-flyout-surface:                  var(--surface-subtle);
+  --nav-menu-flyout-border:                   var(--border-subtle);
+
+  /* PAGE META BANNER — tutorial / reference / guide / troubleshooting */
+  --page-meta-banner-tutorial-surface:        var(--status-success-background);
+  --page-meta-banner-tutorial-border:         var(--status-success-border);
+  --page-meta-banner-tutorial-accent:         var(--status-success-icon);
+  --page-meta-banner-reference-surface:       var(--status-info-background);
+  --page-meta-banner-reference-border:        var(--status-info-border);
+  --page-meta-banner-reference-accent:        var(--status-info-icon);
+  --page-meta-banner-guide-surface:           var(--surface-subtle);
+  --page-meta-banner-guide-border:            var(--border-subtle);
+  --page-meta-banner-guide-accent:            var(--text-secondary);
+  --page-meta-banner-troubleshooting-surface: var(--status-warning-background);
+  --page-meta-banner-troubleshooting-border:  var(--status-warning-border);
+  --page-meta-banner-troubleshooting-accent:  var(--status-warning-icon);
+  --page-meta-banner-meta:                    var(--text-secondary);
+
+  /* PAGINATION — prev/next plus a filled current-page indicator */
+  --pagination-item-text:                     var(--text-primary);
+  --pagination-item-background-hover:         var(--surface-element-hover);
+  --pagination-item-focus-ring:               var(--border-focus);
+  --pagination-item-text-disabled:            var(--text-disabled);
+  --pagination-item-background-current:       var(--action-primary);
+  --pagination-item-text-current:             var(--action-primary-text);
+
+  /* PANEL — bounded content surface */
+  --panel-surface:                            var(--surface-subtle);
+  --panel-border:                             var(--border-subtle);
+
+  /* POPOVER — anchored floating panel, reuses the container surface pairing */
+  --popover-surface:                          var(--surface-subtle);
+  --popover-border:                           var(--border-subtle);
+  --popover-text:                             var(--text-primary);
+
+  /* PROGRESS — determinate bar + indeterminate spinner */
+  --progress-track:                           var(--surface-element);
+  --progress-track-border:                    var(--border-default);
+  --progress-fill:                            var(--action-primary);
+  --progress-fill-success:                    var(--status-success-icon);
+  --progress-fill-warning:                    var(--status-warning-icon);
+  --progress-fill-danger:                     var(--status-error-icon);
+  --progress-spinner-color:                   var(--action-primary);
+
+  /* SEPARATOR — thin visual/semantic divider */
+  --separator-color:                          var(--border-subtle);
+  --separator-color-secondary:                var(--border-default);
+  --separator-color-strong:                   var(--border-strong);
+
+  /* SIDEBAR — app-shell nav rail, expanded and icon-collapsed states */
+  --sidebar-surface:                          var(--surface-page);
+  --sidebar-border:                           var(--border-subtle);
+  --sidebar-header-logo-background:           var(--action-primary);
+  --sidebar-header-logo-text:                 var(--action-primary-text);
+  --sidebar-header-version-text:              var(--text-secondary);
+  --sidebar-group-label-text:                 var(--text-secondary);
+  --sidebar-item-text:                        var(--text-primary);
+  --sidebar-item-icon:                        var(--text-secondary);
+  --sidebar-item-icon-selected:               var(--text-primary);
+  --sidebar-item-surface-hover:               var(--surface-element-hover);
+  --sidebar-item-surface-selected:            var(--surface-element-active);
+  --sidebar-item-focus-ring:                  var(--border-focus);
+  --sidebar-item-text-disabled:               var(--text-disabled);
+
+  /* TABLE — header, striped rows, rule lines */
+  --table-border:                             var(--border-subtle);
+  --table-header-background:                  var(--surface-subtle);
+  --table-header-text:                        var(--text-primary);
+  --table-row-background-striped:             var(--surface-subtle);
+  --table-row-background-hover:               var(--surface-element-hover);
+  --table-row-background-selected:            var(--surface-accent);
+  --table-caption-text:                       var(--text-secondary);
+  --table-cell-text:                          var(--text-primary);
+
+  /* TABS — nav item, selected via an underline indicator */
+  --tabs-list-border:                         var(--border-subtle);
+  --tabs-track-background:                    var(--surface-subtle);
+  --tabs-tab-text:                            var(--text-secondary);
+  --tabs-tab-text-hover:                      var(--text-primary);
+  --tabs-tab-text-selected:                   var(--text-primary);
+  --tabs-tab-background-selected:             var(--surface-page);
+  --tabs-tab-indicator-selected:              var(--action-primary);
+  --tabs-tab-focus-ring:                      var(--border-focus);
+  --tabs-tab-text-disabled:                   var(--text-disabled);
+
+  /* TOAST — success, error, info */
+  --toast-success-background:                 var(--status-success-background);
+  --toast-success-border:                     var(--status-success-border);
+  --toast-success-text:                       var(--status-success-icon);
+  --toast-error-background:                   var(--status-error-background);
+  --toast-error-border:                       var(--status-error-border);
+  --toast-error-text:                         var(--status-error-icon);
+  --toast-info-background:                    var(--status-info-background);
+  --toast-info-border:                        var(--status-info-border);
+  --toast-info-text:                          var(--status-info-icon);
+
+  /* TOOLTIP — inverse surface */
+  --tooltip-background:                       var(--utility-inverse-surface);
+  --tooltip-text:                             var(--text-inverse);
+}

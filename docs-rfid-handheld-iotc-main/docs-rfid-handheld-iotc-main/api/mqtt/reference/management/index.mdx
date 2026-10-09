@@ -1,0 +1,33 @@
+---
+id: index
+title: "Management"
+sidebar_label: "Management"
+sidebar_position: 5
+draft: false
+description: "Commands that query and configure the reader — device status, network, MQTT endpoints, certificates, system operations, and event reporting."
+sidebar_custom_props: { emoji: "🛠️", card: "Commands that query and configure the reader — device status, network." }
+---
+
+
+The management commands identify the reader, report its status, and configure its network, MQTT endpoints, certificates, event reporting and firmware. Your application publishes them to a management endpoint's command topic, for example `<tenantId>/MGMT/clients/cmnd/<deviceSerialNumber>`, and reads each reply on its response topic, paired by [`requestId`](/api-reference/mqtt/protocol-reference/message-envelope#correlating-responses). Commands and replies travel at [QoS 1](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#qos) and are not retained.
+
+| Group | Commands |
+| --- | --- |
+| Device Info and Status | [`get_version`](/api-reference/mqtt/mgmt/get-version), [`get_status`](/api-reference/mqtt/mgmt/get-status), [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region) |
+| Network Configuration | [`get_eth`](/api-reference/mqtt/mgmt/get-eth), [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi), [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi), [`delete_wifi_profile`](/api-reference/mqtt/mgmt/delete-wifi-profile) |
+| Endpoint Configuration | [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config), [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) |
+| Certificate Management | [`get_installed_certificates`](/api-reference/mqtt/mgmt/get-installed-certificates), [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate), [`delete_certificate`](/api-reference/mqtt/mgmt/delete-certificate) |
+| Event Management | [`config_events`](/api-reference/mqtt/mgmt/config-events) |
+| Device Lifecycle | [`set_os`](/api-reference/mqtt/mgmt/set-os), [`reboot`](/api-reference/mqtt/mgmt/reboot) |
+
+Every `get_*` command is safe to send again. `set_os`, `install_certificate` and `reboot` reply with [code `1`](/api-reference/mqtt/response-codes#code-1) before their work is done.
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

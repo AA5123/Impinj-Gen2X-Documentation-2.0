@@ -1,0 +1,72 @@
+---
+id: retry-commands-safely
+title: "Retry Commands Safely"
+sidebar_label: "Retry Commands Safely"
+sidebar_position: 1
+draft: false
+description: "Decide when to send a command again: the three classes of command, why a refusal after a retry can mean success, the codes the contract marks as retryable, and reading state back before a resend."
+sidebar_custom_props: { emoji: "🔁", card: "When and how to send a command again without doing harm." }
+doc_type: how-to
+page_meta:
+  - "Audience: Solution builders"
+  - "Read time: 6 min"
+---
+
+A retry is a second real request. The reader keeps no request history and does not suppress repeats: it executes every copy of a command it receives, whatever its `requestId`. This page shows how to decide whether a retry is safe, and how to send one.
+
+## Know the Command's Class {#classes}
+
+The contract classifies each command by what a repeat does:
+
+| Class | Commands | A repeat |
+|---|---|---|
+| Safe to send again | `get_version`, `get_status`, `get_current_region`, `get_eth`, `get_wifi`, `get_endpoint_config`, `get_installed_certificates`, `get_operating_mode`, `get_post_filter` | Changes nothing, and returns the state again |
+| Not safe while the first is in effect | `set_wifi`, `config_endpoint`, `set_os`, `reboot`, `set_operating_mode`, `control_operation` | Is refused with a code, or acts again |
+| Not documented | `delete_wifi_profile`, `install_certificate`, `delete_certificate`, `config_events`, `set_post_filter` | Is most likely executed again |
+
+For a configuration command, the last copy to arrive is the one that takes effect.
+
+## Read a Refusal as Information {#refusals}
+
+A refusal after a retry can mean that your first attempt succeeded:
+
+| Code on the retry | What it may mean |
+|---|---|
+| `10` or `33` after `config_endpoint` `add` | The endpoint was added by the first attempt |
+| `18` after `set_wifi` `CREATE` | The profile was created by the first attempt |
+| `4` after `set_os` | The first update is running |
+| `11` after `control_operation` `START` | The inventory the first attempt started is running |
+| `12` after `control_operation` `STOP` | The radio is already idle |
+
+Read the state back before you treat any of these as a failure.
+
+## Decide Whether to Retry {#decide}
+
+1. **After an error code**, retry only when the contract marks the code as one where the condition can change without the request changing: `3`, `4`, `5`, `8`, `10`, `11`, `13`, `14`, `16`, `18`, `19`, `33` and `35`. Clear the condition first where you can; see [Send Commands and Handle Responses](/guides/build-your-integration/send-commands-and-handle-responses#clear-condition). For any other code, change the request instead.
+2. **After no reply**, you do not know whether the command reached the reader, whether it acted, or whether the reply was lost.
+   - For a command that is safe to send again, send it again.
+   - For any other command, read the state first with the matching `get_*` command, and resend only if the change did not happen.
+3. **Back off between attempts.** Wait longer after each failed attempt, and add some random variation so that many applications do not retry at the same moment. The reader queues at most 10 commands, and commands beyond that are lost.
+
+## Send the Retry {#send}
+
+Give the retry a new `requestId`. The reader does not use `requestId` to detect repeats, so reusing it gains nothing, and a new one lets you tell a late reply to the first attempt from the reply to the second.
+
+```python
+import random, time
+
+RETRYABLE = {3, 4, 5, 8, 10, 11, 13, 14, 16, 18, 19, 33, 35}
+
+def with_backoff(attempt_fn, max_attempts=4, base_s=1.0):
+    """attempt_fn() sends the command with a fresh requestId and returns the reply's code."""
+    for attempt in range(max_attempts):
+        code = attempt_fn()
+        if code == 0 or code not in RETRYABLE:
+            return code
+        time.sleep(base_s * 2 ** attempt * random.uniform(0.5, 1.5))
+    return code
+```
+
+This sketch is illustrative, has not been run against a reader, and leaves out the step that matters most for state-changing commands: reading the state back before each attempt.
+
+**Related:** 📘 [Delivery, Retries, and Disconnects](/guides/core-concepts/delivery-retries-and-disconnects) · 📙 [Send Commands and Handle Responses](/guides/build-your-integration/send-commands-and-handle-responses) · 📕 [Delivery and Retry Semantics](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics) · 📕 [Response Codes](/api-reference/mqtt/response-codes)

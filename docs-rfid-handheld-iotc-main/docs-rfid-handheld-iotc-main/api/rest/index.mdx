@@ -1,0 +1,35 @@
+---
+id: index
+slug: /
+title: "REST API"
+sidebar_label: "REST API"
+sidebar_position: 1
+description: "The IoT Connector REST API reference for FXR60 / FXR90 fixed readers, generated from the vendor OpenAPI document: base URL and versioning, authentication, the request and response format, and every endpoint."
+sidebar_custom_props: { emoji: "📖" }
+---
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** find the page you need in this reference
+
+This is the REST API reference for the Zebra FXR60 and FXR90 fixed RFID readers running
+IoT Connector. Its [operation reference](/api-reference/rest/endpoints) is rendered directly
+from the vendor's OpenAPI 3.1 document, so every path, parameter, schema and response in it
+is the specification itself. It covers the fixed reader line only — the RFD40 and RFD90
+handheld sleds use MQTT and are documented in the [MQTT API](/api-reference/mqtt) reference.
+
+## In this reference
+
+| Page | What it covers |
+|---|---|
+| 📕 **[About the REST API](/api-reference/rest/about-the-rest-api/)** | — |
+| ⚖️ **[Base URL, Versioning, and Deprecation Policy](/api-reference/rest/base-url-versioning-and-deprecation-policy/)** | — |
+| 🔐 **[Authentication and Tenancy](/api-reference/rest/authentication-and-tenancy/)** | The two HTTP security schemes the FXR60 / FXR90 REST API declares — Basic on the login call, bearer token on everything else — how a token is obtained and carried, and which local accounts exist. |
+| ↔️ **[Request and Response Format](/api-reference/rest/request-and-response-format/)** | — |
+| 🧹 **[Pagination, Filtering, and Rate Limits](/api-reference/rest/pagination-filtering-and-rate-limits/)** | — |
+| 🔤 **[How to Read This Reference](/api-reference/rest/how-to-read-this-reference/)** | — |
+| 🚀 **[Getting Started](/api-reference/rest/getting-started/)** | Orientation for the FXR60 / FXR90 REST API: where the base URL comes from, how to obtain a bearer token, how to make a first authenticated call, and how the operation reference is organized. |
+| 🔗 **[Endpoints](/api-reference/rest/endpoints/)** | Every operation in the vendor OpenAPI document, grouped by the specification's own tags. |
+| 🌳 **[Schemas](/api-reference/rest/schemas/)** | The object shapes the REST surface exchanges — common objects, configuration objects, and enumerations. |
+| 🔢 **[Errors and Status Codes](/api-reference/rest/errors-and-status-codes/)** | Every HTTP status code the FXR60 / FXR90 REST specification declares — 200, 400, 422 and 500 — what a success body looks like, the two error body shapes, and which operations declare an error at all. |
+| 🗓️ **[Changelog](/api-reference/rest/changelog/)** | — |
+
+**Related:** 📕 [MQTT API](/api-reference/mqtt) · 📘 [About this documentation](/guides/get-oriented)

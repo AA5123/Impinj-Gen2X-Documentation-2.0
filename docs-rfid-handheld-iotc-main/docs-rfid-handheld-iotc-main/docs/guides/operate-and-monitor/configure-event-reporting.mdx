@@ -1,0 +1,117 @@
+---
+id: configure-event-reporting
+title: "Configure Event Reporting"
+sidebar_label: "Configure Event Reporting"
+sidebar_position: 2
+description: "Choose which events a reader publishes with config_events, set the heartbeat interval and contents, apply the change with a reboot, and confirm it took effect."
+sidebar_custom_props: { emoji: "🎛️", card: "Choose which events a reader publishes, and apply the change." }
+doc_type: how-to
+page_meta:
+  - "Audience: Integrators, fleet operators"
+  - "Time: 10 min"
+  - "Ties to: [Event Management](/api-reference/mqtt/management/event-management/)"
+---
+
+[`config_events`](/api-reference/mqtt/mgmt/config-events) sets which events a reader publishes and what its heartbeat carries. This page shows how to send it, apply it and confirm it.
+
+**Before you start:** you can send commands to the reader's management endpoint and receive its replies. See [Send Commands and Handle Responses](/guides/build-your-integration/send-commands-and-handle-responses).
+
+## 1. Choose the Flags {#choose-flags}
+
+The event flags in `eventConfiguration` are booleans. Its thresholds are integers and `heartbeatConfiguration` is an object. The command requires `eventConfiguration`, but none of its members is required. A flag you leave out keeps its stored value, so an empty `eventConfiguration` changes nothing.
+
+Current firmware acts on seven flags:
+
+| Flag | Publishes |
+|---|---|
+| `heartbeat` | `heartBeatEVT` at the interval in `heartbeatConfiguration` |
+| `battery` | `alerts` with `id: BATTERY` |
+| `power` | `alerts` with `id: POWER` |
+| `network` | `alerts` with `id: NETWORK_EVENT` |
+| `firmwareUpdate` | `alerts` with `id: FIRMWARE_UPDATE` |
+| `fileDownload` | `alerts` with `id: FILE_DOWNLOAD` |
+| `terminalConnection` | Terminal connect and disconnect events |
+
+The other flags (`antenna`, `gpi`, `exceptions`, `ntp`, `userApp`, `temperature`, `cpuUsage`, `flashUsage`, `ramUsage`) and the four thresholds are reserved. The reader stores them and returns them in a read-back, but they have no effect. See [What the Event Flags Do Not Produce](/guides/operate-and-monitor/what-to-monitor-and-why#what-is-not-currently-emitted).
+
+## 2. Set the Heartbeat {#set-heartbeat}
+
+`heartbeatConfiguration` shapes the heartbeat:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `interval` | Integer, at most 65,535 | Seconds between heartbeats |
+| `inventoryStatus` | Boolean | Include `data.inventoryStatus` |
+| `batteryStatus` | Boolean | Include `data.batteryAlert` |
+
+## 3. Send `config_events` {#send}
+
+Publish the command to the management command topic, for example `<tenantId>/MGMT/clients/cmnd/<serial>`. This contract example enables the seven supported flags and a heartbeat every 100 seconds with both optional blocks:
+
+```json title="config_events — request (contract example: Enable all events)"
+{
+  "command": "config_events",
+  "requestId": "abc123",
+  "eventConfiguration": {
+    "terminalConnection": true,
+    "firmwareUpdate": true,
+    "network": true,
+    "heartbeat": true,
+    "power": true,
+    "battery": true,
+    "temperature": true,
+    "fileDownload": true,
+    "heartbeatConfiguration": {
+      "interval": 100,
+      "inventoryStatus": true,
+      "batteryStatus": true
+    }
+  }
+}
+```
+
+To turn a stream off, set its flag to `false`. This contract example keeps the alerts and turns the heartbeat off:
+
+```json title="config_events — request (contract example: Selective events)"
+{
+  "command": "config_events",
+  "requestId": "abc123",
+  "eventConfiguration": {
+    "terminalConnection": true,
+    "firmwareUpdate": true,
+    "network": true,
+    "heartbeat": false,
+    "power": true,
+    "battery": true,
+    "fileDownload": true
+  }
+}
+```
+
+A successful reply carries `response.code` `0`:
+
+```json title="config_events — response (contract example: Events configured)"
+{
+  "command": "config_events",
+  "requestId": "abc123",
+  "apiVersion": "V1.1",
+  "response": {
+    "code": 0,
+    "description": "Success"
+  }
+}
+```
+
+The contract documents only codes `0` (Success) and `101` (Default error) for this command. It does not say whether sending the same request twice is harmless; the reader acts on every copy, and the last one to arrive takes effect.
+
+## 4. Apply and Confirm {#apply}
+
+1. Send [`reboot`](/api-reference/mqtt/mgmt/reboot). A `config_events` change takes effect after a reboot.
+2. When the next `CONNECTED` [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) arrives, send [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) and check `eventConfiguration` on the endpoint.
+3. If you enabled the heartbeat, wait one interval for `heartBeatEVT` on the event topic.
+
+**Result:** the reader publishes the events you enabled on the event topic of the endpoint that carries them.
+
+The same settings can also be made per endpoint, in the `eventConfiguration` of [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint). The contract does not state which of the two takes precedence when both are set. `config_alerts`, which older material mentions, is not part of the current contract.
+
+**Related:** 📕 [`config_events`](/api-reference/mqtt/mgmt/config-events) · 📘 [What to Monitor and Why](/guides/operate-and-monitor/what-to-monitor-and-why) · 📙 [Respond to Alerts](/guides/operate-and-monitor/respond-to-alerts) · 📙 [Monitor Reader Health and Battery](/guides/operate-and-monitor/monitor-reader-health-and-battery)

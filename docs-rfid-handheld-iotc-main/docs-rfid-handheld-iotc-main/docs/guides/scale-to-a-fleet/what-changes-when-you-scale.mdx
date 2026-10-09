@@ -1,0 +1,46 @@
+---
+id: what-changes-when-you-scale
+title: "What Changes When You Scale"
+sidebar_label: "What Changes When You Scale"
+sidebar_position: 1
+description: "What is different about many readers: one bootstrap per reader, topics per reader, access rules per tenant, correlating messages across readers, keeping configuration consistent without a whole-device command, and changing a fleet in stages."
+sidebar_custom_props: { emoji: "📈", card: "What changes when one reader becomes a fleet." }
+doc_type: explanation
+page_meta:
+  - "Audience: Solution builders, fleet operators"
+  - "Read time: 6 min"
+---
+
+Everything in the MQTT API works on one reader at a time. There is no fleet command: to change a hundred readers, your tooling sends a hundred commands. This page explains what that means as a deployment grows.
+
+## Every Reader Is Bootstrapped Once {#bootstrap}
+
+A reader cannot receive an MQTT command until it has a first endpoint, and that endpoint is created outside MQTT, with 123RFID Desktop over USB-C. No command in the MQTT API sets the regulatory region either. So every reader needs one hands-on bootstrap before your tooling can reach it. Whether 123RFID Desktop can provision several readers in one session is not specified in the available sources. See [Bootstrap a Reader with 123RFID Desktop](/guides/manage-your-reader/bootstrap-reader).
+
+After bootstrap, everything else can be applied over MQTT.
+
+## Every Reader Has Its Own Topics {#topics}
+
+The reader appends its own serial number to every topic, so each reader's commands, replies, events and tag data have topics of their own. That shapes three things:
+
+- **Addressing.** Your tooling publishes each command to one reader's command topic. Use the model-prefixed serial form directed by the contract, and confirm it against `deviceSerialNo` in connection-state messages.
+- **Watching the fleet.** The `+` wildcard in the serial-number position subscribes to one kind of message from every reader in a tenant, for example `acme/MGMT/clients/event/+`.
+- **Correlation.** Replies carry the `requestId` you sent, but events carry no serial number in the payload except `mqttConnEVT`'s `deviceSerialNo`. Take the reader's identity from each message's topic.
+
+## Tenants and Access Rules Separate Traffic {#tenancy}
+
+The tenant ID is the first segment of every topic, so a broker access rule can confine a credential to one tenant's topics. Use that to separate customers, sites or environments, and give each reader credentials that allow only its own topics. The tenant ID is at most 48 characters, and the reader does not change its case.
+
+## Configuration Must Be Kept Consistent by Your Tooling {#consistency}
+
+The MQTT API has no command that reads or writes a reader's whole configuration. Each domain, such as endpoints, Wi-Fi, certificates, operating mode and post-filters, has its own commands, and `config_events` has no read command of its own: its settings show only in the `eventConfiguration` block of an endpoint's read-back. The operating mode is lost on every restart. To keep a fleet consistent, your tooling reads each domain from each reader, compares it with a baseline, and corrects it domain by domain. See [Keep Configuration Consistent](/guides/scale-to-a-fleet/keep-configuration-consistent).
+
+## Changes Should Roll Out in Stages {#staged-change}
+
+A configuration or firmware change applied to every reader at once can take the whole fleet off the network, and a reader that loses its only MQTT connection needs 123RFID Desktop to recover. Apply changes to a few readers first, confirm them from the readers themselves, then widen. See [Roll Out Changes in Stages](/guides/scale-to-a-fleet/roll-out-changes-in-stages).
+
+## Monitoring Becomes Evidence at Scale {#monitoring}
+
+With many readers, some messages will always be missing: heartbeats travel at QoS 0, and so does tag data unless you set QoS 1 on its topic. Show each reader's latest evidence and its age rather than a verdict, and set your own policy for when missing evidence becomes an alert. See [Build a Fleet Health View](/guides/operate-and-monitor/build-a-fleet-health-view).
+
+**Related:** 📙 [Provision Readers](/guides/scale-to-a-fleet/provision-readers) · 📙 [Keep Configuration Consistent](/guides/scale-to-a-fleet/keep-configuration-consistent) · 📙 [Roll Out Changes in Stages](/guides/scale-to-a-fleet/roll-out-changes-in-stages) · 📘 [The Configuration Model](/guides/core-concepts/the-configuration-model) · 📘 [Endpoints, Topics, and Channels](/guides/core-concepts/endpoints-topics-and-channels)

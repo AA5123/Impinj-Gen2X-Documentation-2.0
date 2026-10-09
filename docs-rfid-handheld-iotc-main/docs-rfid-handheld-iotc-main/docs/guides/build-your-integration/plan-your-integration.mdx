@@ -1,0 +1,252 @@
+---
+id: plan-your-integration
+title: "Plan Your Integration"
+sidebar_label: "Plan Your Integration"
+sidebar_position: 1
+description: "Choose how readers reach your applications: connect them directly to a broker, bridge topics into a cloud platform, or put a gateway service in between; then prepare the broker, credentials and topic access rules."
+sidebar_custom_props: { emoji: "🧩", card: "Direct, bridge and gateway patterns, and what the broker side needs." }
+doc_type: explanation
+page_meta:
+  - "Audience: Solution Builder"
+  - "Read time: 5 min"
+---
+
+
+Every integration has the same shape: readers publish to an MQTT 3.1.1 broker, and your applications subscribe to it. What varies is what sits between the broker and your applications. This page compares three patterns, then lists what the broker side needs before any reader connects. The broker, the device identities and the credentials come first: see [Cloud Integrations](#cloud-integrations).
+
+The reader's topics always have three segments, `<tenantId>/<middle segment>/<deviceSerialNumber>`, and the reader adds the tenant ID and serial number itself. Whatever broker you choose must accept topics of that form.
+
+### Direct Integration
+
+Readers point their MQTT endpoints directly at a cloud-platform broker. AWS IoT Core, Azure IoT Hub MQTT, GCP, or HiveMQ Cloud. The cloud broker is the only broker in the path.
+
+```d2
+direction: down
+R: IOTC Reader
+B: Cloud-hosted MQTT broker { shape: queue }
+A: Application services
+R -> B
+B -> A
+
+```
+
+**When:** the broker accepts the reader's topics as they are. Some managed services accept only their own topic names, so check yours before choosing this pattern.
+
+### Bridge Pattern
+
+A small MQTT bridge translates between IOTC's topic namespace and the cloud platform's preferred topic structure. The reader publishes to its Zebra-namespace topic; the bridge republishes to a cloud-namespace topic; the cloud platform consumes natively.
+
+```d2
+direction: down
+R: IOTC Reader
+B: IOTC-shaped broker { shape: queue }
+BR: "Bridge\n(topic-namespace translation)"
+CB: "Cloud-native ingest\nAWS IoT Core / Pub/Sub /\nIoT Hub" { shape: queue }
+R -> B
+B -> BR
+BR -> CB
+
+```
+
+**When:** the cloud platform has a specific topic convention you need to honor (e.g., AWS IoT Core's `$aws/things/...`); useful for retrofitting existing pipelines.
+
+### Gateway Pattern
+
+An application service subscribes to IOTC events from the broker, transforms or enriches them, and pushes to the cloud platform's native ingest API (often non-MQTT).
+
+```d2
+direction: down
+R: IOTC Reader
+B: MQTT broker { shape: queue }
+G: "Gateway service\n(transform + enrich)"
+ST: "Stream platform\n(Kafka / Kinesis)"
+S1: Service 1
+S2: Service 2
+R -> B
+B -> G
+G -> ST
+ST -> S1
+ST -> S2
+
+```
+
+**When:** the cloud platform's ingest is not MQTT-shaped, or you need to do significant transformation before persistence.
+
+### Choosing
+
+| Factor | Direct | Bridge | Gateway |
+|---|---|---|---|
+| Latency | Lowest | Low | Higher |
+| Operational complexity | Low | Medium | High |
+| Cost | Low | Medium | Highest |
+| Flexibility | Low | Medium | Highest |
+| Cloud lock-in | Highest | Medium | Lowest |
+
+Start with **direct** for simplicity. Move to **bridge** or **gateway** when a specific cloud capability or topology constraint demands it.
+
+**Related:** 📘 [Choose Shared or Dedicated Data Endpoints](/guides/build-your-integration/choose-shared-or-dedicated-data-endpoints) · 📙 [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints) · 📘 [Endpoints, Topics, and Channels](/guides/core-concepts/endpoints-topics-and-channels)
+
+## Cloud Integrations {#cloud-integrations}
+
+Every integration starts from a broker side that **already exists**: a broker endpoint, a device identity, and credentials the reader can present. Those are created with the broker's or cloud provider's own tools, not over MQTT, and they are the most common place an integration stalls. Create them first.
+
+:::note[Source of truth for vendor steps]
+Cloud-vendor consoles, CLIs, and API versions change independently of this documentation. The links below are entry points; always confirm the exact steps against the provider's current documentation. What the reader side needs is listed in [What You Need](/guides/get-oriented/what-you-need#before-you-begin).
+:::
+
+#### What Every Integration Needs (Provider-Independent)
+
+- A reachable **MQTT 3.1.1** broker endpoint (host + TLS port, normally `8883`).
+- A **device identity** per reader (named by serial number is the convention used throughout these guides).
+- The **CA certificate** the reader must trust, plus any **client certificate and key** the broker requires, in PEM form with PKCS1 keys and at most 4 KB of content (see [Install and Manage Certificates](/guides/manage-your-reader/install-and-manage-certificates)).
+- **Topic ACLs** that permit the reader's three-segment topics (`<tenantId>/<topic>/<deviceSerialNumber>`).
+
+#### AWS IoT Core
+
+In the AWS console:
+
+1. Enable **AWS IoT Core** in your target region, and note the account's **ATS data endpoint** (*IoT Core → Settings → Device data endpoint*, of the form `<id>-ats.iot.<region>.amazonaws.com`).
+2. **Create a Thing** per reader (*Manage → Things → Create*), named after the device serial number.
+3. **Generate and download** a device certificate and private key, and download the **Amazon Root CA (CA1)**. Convert the client cert/key to PEM / PKCS#1 for the reader.
+4. **Activate** the certificate and **attach an IoT policy** granting `iot:Connect`, `iot:Publish`, `iot:Subscribe`, `iot:Receive` on the reader's topic ARNs (scope them to the serial-number topic space).
+5. **Attach** the certificate to the Thing.
+
+*You now have:* the ATS endpoint, the Amazon Root CA, the per-reader client cert/key, and the policy.
+
+#### Azure IoT Hub
+
+In the Azure portal:
+
+1. **Create an IoT Hub** and note its **hostname** (`<hub>.azure-devices.net`).
+2. **Register a device** per reader (*IoT Hub → Devices → Add device*) — or, for scale, create a **Device Provisioning Service (DPS)** enrollment group linked to the hub.
+3. Choose the auth method: **symmetric key (SAS)** or **X.509** client certificate; for X.509, register the issuing CA / thumbprint.
+4. Obtain the **root CA chain** the reader must trust for the hub's TLS endpoint.
+
+*You now have:* the hub hostname, the per-device identity + SAS key (or X.509 cert), and the trust chain.
+
+#### Google Cloud
+
+For Google Cloud:
+
+1. Note that **Google Cloud IoT Core was retired (August 2023)** — there is no native managed MQTT device registry. Plan an **MQTT-bridge** path instead.
+2. Stand up a broker that fronts Google Cloud: a **self-managed broker** (Mosquitto / HiveMQ / EMQX on GCE or GKE) or **HiveMQ Cloud**, bridging messages into **Pub/Sub**.
+3. In your **GCP project**, create the **Pub/Sub topic** (and a **BigQuery** subscription/sink if you route tag data there).
+4. Create the **per-reader credentials** the bridge expects (broker username/password or client cert; a signed **JWT** only if your bridge implements that legacy pattern).
+
+*You now have:* a reachable broker/bridge endpoint, per-reader credentials, and the downstream Pub/Sub topic.
+
+#### Custom MQTT Broker
+
+For a broker you host yourself:
+
+1. Stand up the broker (Mosquitto, HiveMQ, EMQX, …) and expose **port 8883 with TLS** configured (server certificate signed by a CA the reader will trust).
+2. Create **per-reader credentials** — username/password and/or a client certificate for mutual TLS.
+3. Configure **topic ACLs** scoped to each reader's serial-number topic space (`<tenantId>/<topic>/<deviceSerialNumber>`).
+4. Size the broker for tag data. Each `dataEVT` message is at most 6144 bytes, and how often the reader publishes depends on each data endpoint's batching settings; see [Manage Tag Data Throughput](/guides/build-your-integration/manage-tag-data-throughput).
+
+*You now have:* the TLS broker endpoint, per-reader credentials, the ACLs, and a sizing plan.
+
+## Custom MQTT Broker {#custom-mqtt-broker-page}
+
+This guide shows you how to connect a handheld reader to a customer-hosted MQTT broker (Mosquitto, HiveMQ, EMQX, VerneMQ).
+
+#### Step 1: Broker Preparation
+
+The broker must support MQTT 3.1.1 over TLS, usually on port 8883, and QoS 0 and 1. The reader connects with a clean session by default. Size the broker for the expected message rate multiplied by the average message size; a `dataEVT` message is at most 6144 bytes.
+
+#### Step 2: TLS Configuration on the Broker
+
+- Provision a server certificate signed by a CA the reader trusts.
+- If using mutual TLS, issue device client certificates and configure the broker to require them.
+- Disable cleartext (TCP/1883) for production deployments.
+
+#### Step 3: Credential Management
+
+For username/password auth: provision per-tenant or per-device credentials in the broker's auth backend. For mutual TLS: device identity is the certificate subject; no additional credentials needed.
+
+#### Step 4: Topic ACLs
+
+Configure broker ACLs to enforce tenant isolation: a credential for `tenantId=acme` may publish and subscribe only on `acme/...`. Each broker's ACL syntax differs (consult vendor docs); the policy is the same.
+
+#### Step 5: Reader Endpoint Configuration
+
+Add an endpoint that points at the broker over TLS, with `securityParams` naming the certificates installed on the reader. The reader refuses to change an active endpoint (code `35`), so add a new one rather than updating the one in use. For a data endpoint, the tag-data topic must be the **second** publish topic:
+
+```json title="config_endpoint — request (adapted from contract example: Add data endpoint for MQTT TLS; publish topics added)"
+{
+  "command": "config_endpoint",
+  "requestId": "1233",
+  "epConfig": {
+    "operation": "add",
+    "configuration": {
+      "endpointName": "dataEP_tls",
+      "epType": "DATA1",
+      "protocol": "MQTT_TLS",
+      "activate": true,
+      "url": "broker.example.com",
+      "port": 8883,
+      "verificationType": "VERIFY_HOST_AND_PEER",
+      "qosCommon": 1,
+      "tenantId": "zebra",
+      "mqttParams": {
+        "keepAlive": 300,
+        "cleanSession": true,
+        "reconnectDelayMin": 5,
+        "reconnectDelayMax": 60,
+        "publishTopics": [
+          {
+            "topic": "DATA/clients/unused",
+            "qos": 0,
+            "retain": false
+          },
+          {
+            "topic": "DATA/clients/data1event",
+            "qos": 1,
+            "retain": false
+          }
+        ]
+      },
+      "securityParams": {
+        "format": "PEM",
+        "caCertificateFile": "mqtt_ca_cert",
+        "clientCert": "mqtt_client_cert",
+        "clientKey": "mqtt_client_key"
+      }
+    }
+  }
+}
+```
+
+For username and password authentication, add `username` and `password` to `mqttParams`. The full procedure is in [Secure an Endpoint with TLS and Client Certificates](/guides/manage-your-reader/secure-an-endpoint).
+
+#### Step 6: Verify
+
+From a test machine, subscribe to the tenant's wildcard topic with the same credentials:
+
+```bash
+mosquitto_sub -h broker.example.com -p 8883 \
+  -u <user> -P <password> --cafile broker-ca.pem \
+  -t "<tenantId>/#" -v
+```
+
+Start an inventory on the reader; events should arrive in the subscriber output.
+
+```d2
+direction: down
+R: IOTC Reader
+B: "Customer-hosted Broker\nHiveMQ / EMQX / Mosquitto" { shape: queue }
+A1: Application
+S: Subscriber service
+Pe: Storage { shape: cylinder }
+R -> B: MQTT / MQTT-TLS
+B -> A1
+B -> S
+S -> Pe
+
+```
+
+### Where to Go Next
+
+To bring a first reader online against this broker, follow the [Quick Start: Read Your First Tag](/guides/quick-start#prepare).
+
+**Related:** 📘 [Plan Your Integration](/guides/build-your-integration/plan-your-integration) · 📘 [Authentication and Tenancy](/api-reference/mqtt/protocol-reference/tls-and-authentication#authentication-and-tenancy) · 📙 [Install and Manage Certificates](/guides/manage-your-reader/install-and-manage-certificates) · 📕 [config_endpoint](/api-reference/mqtt/mgmt/config-endpoint)

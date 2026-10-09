@@ -1,0 +1,81 @@
+---
+id: scan-barcodes
+title: "Scan Barcodes"
+sidebar_label: "Scan Barcodes"
+sidebar_position: 3
+description: "Start and stop a barcode scan with control_operation and controlType SCANNER, and read the decoded barcodes from barcodeData in dataEVT."
+sidebar_custom_props: { emoji: "📷", card: "Start a barcode scan and read decoded barcodes from dataEVT." }
+doc_type: how-to
+page_meta:
+  - "Audience: Solution builders, API consumers"
+  - "Time: 5 min"
+  - "Ties to: [Inventory Control](/api-reference/mqtt/control/inventory-control/)"
+---
+
+A reader with a barcode imager scans barcodes over the same MQTT connection it uses for RFID. The scanner is separate from the RFID radio: you start and stop it with its own `control_operation`, and decoded barcodes arrive in the same [`dataEVT`](/api-reference/mqtt/data/tag-data-event) messages as tag reads.
+
+## Before You Begin {#before-you-begin}
+
+- The reader has a barcode imager. On a reader without one, `SCANNER` operations and barcode data cannot occur. No command in the MQTT API documented here reports whether a reader has an imager. The RFD40 Premium Plus and the RFD90 have one; the RFD40 Premium does not. See the [Reader Capability Matrix](/resources/supported-readers-and-features#capability-matrix).
+- Your application is subscribed to the tag-data topic. See [Where Tag Data Is Published](/guides/core-concepts/the-tag-data-stream#topic-routing).
+
+## Start a Scan {#start}
+
+Send [`control_operation`](/api-reference/mqtt/ctrl/control-operation) with `controlType: "SCANNER"` and `operation: "START"`:
+
+```json title="control_operation — request"
+{
+  "command": "control_operation",
+  "requestId": "scan-001",
+  "ctrlOprPayload": {
+    "controlType": "SCANNER",
+    "operation": "START"
+  }
+}
+```
+
+This starts the scanner only. The RFID radio is started and stopped separately, with `controlType: "RFID"`.
+
+## Read the Decoded Barcodes {#read}
+
+Each decoded barcode arrives as a record in `data.barcodeData`:
+
+```json title="dataEVT — event (contract example: Barcode data event)"
+{
+  "timestamp": "2026-08-18T09:59:50.821Z",
+  "data": {
+    "barcodeData": [
+      {
+        "symbology": "0x03",
+        "decodedBarcode": "PWR-BGA24V78W1WW 183213949"
+      }
+    ]
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `decodedBarcode` | The decoded value. The only member a barcode record must carry |
+| `symbology` | The barcode type, as a hexadecimal string such as `0x03`. Accept values you do not recognize. |
+
+A message can carry both `tagData` and `barcodeData` when both are active, and either array can be absent. The contract documents no limit on the number of barcode records in a message.
+
+## Stop the Scan {#stop}
+
+```json title="control_operation — request"
+{
+  "command": "control_operation",
+  "requestId": "scan-002",
+  "ctrlOprPayload": {
+    "controlType": "SCANNER",
+    "operation": "STOP"
+  }
+}
+```
+
+## Handle the Reply Codes {#codes}
+
+Besides `0` and `101`, the contract scopes codes `11`, `12` and `23` to `control_operation`. It describes `11` and `12` in terms of an RFID inventory, and does not say whether a `SCANNER` `START` or `STOP` returns them. Code `23` means a `controlType` or `operation` value outside the allowed set.
+
+**Related:** 📕 [`control_operation`](/api-reference/mqtt/ctrl/control-operation) · 📕 [`dataEVT`](/api-reference/mqtt/data/tag-data-event) · 📘 [The Tag Data Stream](/guides/core-concepts/the-tag-data-stream#barcode-reads) · 📙 [Start and Stop Inventory](/guides/read-tags-and-barcodes/start-and-stop-inventory)

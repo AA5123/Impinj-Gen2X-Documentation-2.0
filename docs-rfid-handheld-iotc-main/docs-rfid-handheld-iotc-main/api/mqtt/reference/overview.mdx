@@ -1,0 +1,22 @@
+---
+id: overview
+title: "Overview"
+sidebar_label: "Overview"
+sidebar_position: 1
+draft: false
+description: "How to read this reference, how the API is versioned, and its changelog."
+sidebar_custom_props: { emoji: "📚", card: "How to read the reference, versioning, and the changelog." }
+---
+
+The MQTT API is defined by one contract file, written in AsyncAPI 3.0.0, the standard format for describing event-driven APIs. Its payloads use the AsyncAPI Schema Object, a superset of JSON Schema Draft 07. The reader itself speaks MQTT 3.1.1. This reference is generated from that contract and is the authority for field names, values, codes and operations: 20 commands and 4 events.
+
+Start with these pages:
+
+- [Send Your First Command](/guides/quick-start#first-command): exchange [`get_version`](/api-reference/mqtt/mgmt/get-version) with a reader that is already connected, the shortest path to a first reply.
+- [How to Read This Reference](/api-reference/mqtt/how-to-read-this-reference): how a command or event page is laid out, and how the names used in the guides map to the contract's keys.
+- [Versioning and Compatibility](/api-reference/mqtt/versioning-and-deprecation-policy): how the contract version changes, and how deprecated fields are marked.
+- [Changelog](/api-reference/mqtt/changelog): what each contract version changed.
+
+## In This Section
+
+<HubCards />

@@ -1,0 +1,475 @@
+---
+id: enumerations
+title: "Enumerations"
+sidebar_label: "Enumerations"
+sidebar_position: 7
+draft: false
+description: "Every enumeration that more than one MQTT API message uses, with its exact wire values and notes on firmware support, plus where each single-message enumeration is defined."
+sidebar_custom_props: { emoji: "🔢", card: "Shared enumerations with exact wire values and support notes." }
+doc_type: reference
+page_meta:
+  - "Audience: API consumer"
+  - "Use: look up the exact values an enumerated field accepts or reports"
+---
+
+Values are case-sensitive and must be sent exactly as shown. Enumerations are closed: a schema validator rejects any other value. Where a note describes firmware support, the value is valid on the wire but current firmware reports it only in the places named.
+
+## Shared Enumerations {#shared-enumerations}
+
+### `accessMemoryBank` {#accessMemoryBank}
+
+Tag access memory bank. JSON type `string`. Used by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+| Value | Note |
+| --- | --- |
+| `EPC` |  |
+| `TID` |  |
+| `USER` |  |
+| `RESERVED` |  |
+
+### `accessOperationType` {#accessOperationType}
+
+Tag access operation type. JSON type `string`. Used by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+| Value | Note |
+| --- | --- |
+| `READ` |  |
+| `WRITE` |  |
+| `ACCESS` |  |
+| `LOCK` |  |
+| `KILL` |  |
+
+### `apiVersion` {#apiVersion}
+
+IoTC API version. JSON type `string`. Used by 21 pages. [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) sends it as a number instead; see that page.
+
+| Value | Note |
+| --- | --- |
+| `V1.0` |  |
+| `V1.1` |  |
+| `V1.2` |  |
+| `V1.21` |  |
+| `V1.22` |  |
+
+### `authenticationType` {#authenticationType}
+
+Remote-source authentication type. JSON type `string`. Used by [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate), [`set_os`](/api-reference/mqtt/mgmt/set-os).
+
+| Value | Note |
+| --- | --- |
+| `NONE` |  |
+| `CERTIFICATE` |  |
+
+### `batteryChargeState` {#batteryChargeState}
+
+Battery charge state. JSON type `string`. Used by [`alerts`](/api-reference/mqtt/events/alerts-event), [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event).
+
+| Value | Note |
+| --- | --- |
+| `LOW` |  |
+| `CRITICAL` |  |
+| `CHARGING` |  |
+| `FULL` |  |
+| `HIGH` |  |
+
+### `batteryHealth` {#batteryHealth}
+
+Battery state of health. JSON type `string`. Used by [`alerts`](/api-reference/mqtt/events/alerts-event), [`get_status`](/api-reference/mqtt/mgmt/get-status), [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event).
+
+| Value | Note |
+| --- | --- |
+| `GOOD` |  |
+| `CRITICAL` |  |
+| `MODERATE` |  |
+
+### `certificateAlgorithm` {#certificateAlgorithm}
+
+Endpoint certificate signature algorithm. JSON type `string`. Used by [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint), [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config).
+
+| Value | Note |
+| --- | --- |
+| `RSA256` |  |
+| `RSA512` |  |
+
+### `certificateComponentKey` {#certificateComponentKey}
+
+Certificate component key. JSON type `string`. Used by [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi), [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate), [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi).
+
+| Value | Note |
+| --- | --- |
+| `ca_cert` |  |
+| `client_key` |  |
+| `client_cert` |  |
+| `cert_key_password` |  |
+
+### `certificateFormat` {#certificateFormat}
+
+Certificate encoding format. JSON type `string`. Used by [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint), [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config).
+
+| Value | Note |
+| --- | --- |
+| `PEM` | The only format currently supported. |
+| `PFX` | Listed in the enum, but the contract states that only `PEM` is currently supported. |
+
+### `certificateType` {#certificateType}
+
+Certificate category. JSON type `string`. Used by [`delete_certificate`](/api-reference/mqtt/mgmt/delete-certificate), [`get_installed_certificates`](/api-reference/mqtt/mgmt/get-installed-certificates), [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate).
+
+| Value | Note |
+| --- | --- |
+| `client` |  |
+| `server` |  |
+| `mqtt` |  |
+| `wifi` |  |
+| `filestore` |  |
+
+### `commandName` {#commandName}
+
+IoTC command name. JSON type `string`. Used by 21 pages.
+
+[`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) · [`config_events`](/api-reference/mqtt/mgmt/config-events) · [`control_operation`](/api-reference/mqtt/ctrl/control-operation) · [`delete_certificate`](/api-reference/mqtt/mgmt/delete-certificate) · [`delete_wifi_profile`](/api-reference/mqtt/mgmt/delete-wifi-profile) · [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region) · [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) · [`get_eth`](/api-reference/mqtt/mgmt/get-eth) · [`get_installed_certificates`](/api-reference/mqtt/mgmt/get-installed-certificates) · [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode) · [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter) · [`get_status`](/api-reference/mqtt/mgmt/get-status) · [`get_version`](/api-reference/mqtt/mgmt/get-version) · [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi) · [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) · [`reboot`](/api-reference/mqtt/mgmt/reboot) · [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) · [`set_os`](/api-reference/mqtt/mgmt/set-os) · [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter) · [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi)
+
+
+### `connectionState` {#connectionState}
+
+Connection state. JSON type `string`. The contract uses two enumerations with different casing.
+
+| Value | Note |
+| --- | --- |
+| `CONNECTED` | [`alerts`](/api-reference/mqtt/events/alerts-event) network items, [`get_status`](/api-reference/mqtt/mgmt/get-status) (`radioConnection`, `terminalConnection.status`), [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi) (`accessPoint.status`), and [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) |
+| `DISCONNECTED` | The same members |
+| `Connected` | [`get_eth`](/api-reference/mqtt/mgmt/get-eth) only, in `linkStatus.status` |
+| `Disconnected` | The same member |
+
+Compare case-insensitively if one code path handles both.
+
+### `dataEndpointType` {#dataEndpointType}
+
+Tag-data endpoint selector. JSON type `string`. Used by [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter), [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter).
+
+| Value | Note |
+| --- | --- |
+| `DATA_EP1` |  |
+| `DATA_EP2` | Targets the [`DATA2`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) endpoint, which is currently not supported. |
+
+### `deviceModel` {#deviceModel}
+
+Reader model. JSON type `string`. Used by [`get_version`](/api-reference/mqtt/mgmt/get-version), [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event).
+
+| Value | Note |
+| --- | --- |
+| `RFD40` |  |
+| `RFD90` |  |
+
+### `endpointProtocol` {#endpointProtocol}
+
+Endpoint transport protocol. JSON type `string`. Used by [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint), [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config).
+
+| Value | Note |
+| --- | --- |
+| `MQTT` |  |
+| `MQTT_TLS` |  |
+
+### `epType` {#epType}
+
+Endpoint type. JSON type `string`. Used by [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint), [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config).
+
+| Value | Note |
+| --- | --- |
+| [`MGMT`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) |  |
+| [`MGMT_EVT`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) |  |
+| [`CTRL`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) |  |
+| [`DATA1`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) |  |
+| `DATA2` | Currently not supported. |
+| [`MDM`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) |  |
+
+### `gen2Session` {#gen2Session}
+
+EPC Gen2 inventory session. JSON type `string`. Used by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+| Value | Note |
+| --- | --- |
+| `SESSION_0` |  |
+| `SESSION_1` |  |
+| `SESSION_2` |  |
+| `SESSION_3` |  |
+
+### `interfaceEnableState` {#interfaceEnableState}
+
+Network interface administrative state. JSON type `string`. Used by [`get_eth`](/api-reference/mqtt/mgmt/get-eth), [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi).
+
+| Value | Note |
+| --- | --- |
+| `Enabled` |  |
+| `Disabled` |  |
+
+The contract's own `get_wifi` examples also show `ENABLED` and an empty string, which the enum does not allow. Compare case-insensitively, and treat an empty string as unknown.
+
+### `inventoryProtocol` {#inventoryProtocol}
+
+RFID inventory protocol. JSON type `string`. Used by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode). The default [operating mode](/api-reference/mqtt/ctrl/set-operating-mode) uses `GEN2`.
+
+| Value | Note |
+| --- | --- |
+| `GEN2` |  |
+| `GEN2X` |  |
+| `HYBRID` |  |
+
+### `inventoryState` {#inventoryState}
+
+Gen2 inventoried-flag state selector. JSON type `string`. Used by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+| Value | Note |
+| --- | --- |
+| `STATE_A` |  |
+| `STATE_B` |  |
+| `STATE_AB` |  |
+
+### `linkProfile` {#linkProfile}
+
+Gen2 air-interface link profile. JSON type `string`. Used by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+| Value | Note |
+| --- | --- |
+| `M4_256K` |  |
+| `M2_240K` |  |
+| `M2_256K` |  |
+| `M2_320K` |  |
+| `M4_240K` |  |
+| `M4_320K` |  |
+| `FM0_0K` |  |
+| `FM0_320K` |  |
+| `M8_240K` |  |
+| `M8_256K` |  |
+| `M8_320K` |  |
+
+### `lockAction` {#lockAction}
+
+Tag lock action. JSON type `string`. Used by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+| Value | Note |
+| --- | --- |
+| `READ_AND_WRITE` |  |
+| `PERMANENT_LOCK` |  |
+| `PERMANENT_UNLOCK` |  |
+| `UNLOCK` |  |
+
+### `lockMemoryBank` {#lockMemoryBank}
+
+Lockable tag resource. JSON type `string`. Used by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+| Value | Note |
+| --- | --- |
+| `EPC` |  |
+| `ACCESS_PWD` |  |
+| `KILL_PWD` |  |
+| `TID` |  |
+| `USER` |  |
+| `ALL` |  |
+
+### `matchPatternMethod` {#matchPatternMethod}
+
+Post-filter match method. JSON type `string`. Used by [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter), [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter).
+
+| Value | Note |
+| --- | --- |
+| `PREFIX` |  |
+| `SUFFIX` |  |
+| `REGEX` |  |
+
+### `mqttQoS` {#mqttQoS}
+
+MQTT Quality of Service level. JSON type `integer`. Used by [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint), [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config).
+
+The contract declares `qos` and `qosCommon` as integers without an enumeration or a default. MQTT 3.1.1 defines the levels `0`, `1` and `2`; the broker description states that the reader supports `0` and `1`. The contract's examples use `0` and `1`.
+
+### `operatingModeProfile` {#operatingModeProfile}
+
+RFID reader operating-mode profile. JSON type `string`; default `"BALANCED_PERFORMANCE"` in the [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) request and the [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode) reply. Used by [`dataEVT`](/api-reference/mqtt/data/tag-data-event), [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+| Value | Note |
+| --- | --- |
+| `FAST_READ` |  |
+| `CYCLE_COUNT` |  |
+| `DENSE_READERS` |  |
+| `OPTIMAL_BATTERY` |  |
+| `BALANCED_PERFORMANCE` |  |
+| `ADVANCED` |  |
+
+### `powerSource` {#powerSource}
+
+Device power source. JSON type `string`. The two messages that report it use different enumerations, and each spells the wall-charger value differently.
+
+| Value | [`alerts`](/api-reference/mqtt/events/alerts-event) `powerEvent` | [`get_status`](/api-reference/mqtt/mgmt/get-status) `deviceStatus` |
+| --- | --- | --- |
+| `BATTERY` | Yes | No |
+| `USB` | Yes | Yes |
+| `CRADLE` | Yes | Yes |
+| `WALLCHARGER` | No | Yes |
+| `WALL_CHARGER` | Yes | No |
+
+Current firmware has also been reported to return `NONE` in `get_status` when no external power source is attached. Neither enumeration allows it.
+
+### `radioTrigger` {#radioTrigger}
+
+Inventory trigger condition. JSON type `string`. Used by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+| Value | Note |
+| --- | --- |
+| `PRESSED` |  |
+| `RELEASED` |  |
+| `IMMEDIATE` |  |
+
+### `reportOperation` {#reportOperation}
+
+Post-filter reporting disposition. JSON type `string`. Used by [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter), [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter).
+
+| Value | Note |
+| --- | --- |
+| `INCLUDE` |  |
+| `EXCLUDE` |  |
+
+### `selectAction` {#selectAction}
+
+Gen2 select action. JSON type `string`. Used by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+| Value | Note |
+| --- | --- |
+| `INV_A_NOT_INV_B_OR_ASRT_SL_NOT_DSRT_SL` |  |
+| `INV_A_OR_ASRT_SL` |  |
+| `NOT_INV_B_OR_NOT_DSRT_SL` |  |
+| `INV_A2BB2A_NOT_INV_A_OR_NEG_SL_NOT_ASRT_SL` |  |
+| `INV_B_NOT_INV_A_OR_DSRT_SL_NOT_ASRT_SL` |  |
+| `INV_B_OR_DSRT_SL` |  |
+| `NOT_INV_A_OR_NOT_ASRT_SL` |  |
+| `NOT_INV_A2BB2A_OR_NOT_NEG_SL` |  |
+
+### `selectMemoryBank` {#selectMemoryBank}
+
+Select pre-filter memory bank. JSON type `string`. Used by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+| Value | Note |
+| --- | --- |
+| `EPC` |  |
+| `TID` |  |
+| `USER` |  |
+
+### `selectTarget` {#selectTarget}
+
+Gen2 select target flag. JSON type `string`. Used by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+| Value | Note |
+| --- | --- |
+| `SESSION_SL` |  |
+| `SESSION_0` |  |
+| `SESSION_1` |  |
+| `SESSION_2` |  |
+| `SESSION_3` |  |
+
+### `slFlag` {#slFlag}
+
+Gen2 SL (Select) flag selector. JSON type `string`. Used by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+| Value | Note |
+| --- | --- |
+| `ALL` |  |
+| `ASSERTED` |  |
+| `DEASSERTED` |  |
+
+### `statusCode` {#statusCode}
+
+IoTC status code: `response.code`. JSON type `integer`, from `0` to `101`. Used by 20 pages.
+
+The 39 codes are listed with their meanings in [Response Codes](/api-reference/mqtt/response-codes).
+
+### `verificationType` {#verificationType}
+
+TLS verification mode. JSON type `string`. Used by [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint), [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config), [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate), [`set_os`](/api-reference/mqtt/mgmt/set-os).
+
+This documentation describes two values:
+
+| Value | Note |
+| --- | --- |
+| `VERIFY_HOST_AND_PEER` | Verify the broker's certificate chain and that the certificate matches the host. Use it in production. |
+| `VERIFY_NONE` | No verification. Must not be used in production. An `MQTT_TLS` endpoint rejects it with [code `37`](/api-reference/mqtt/response-codes#code-37). |
+
+### `wifiEapMethod` {#wifiEapMethod}
+
+Wi-Fi enterprise EAP outer authentication method. JSON type `string`. Used by [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi), [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi).
+
+| Value | Note |
+| --- | --- |
+| `tls` |  |
+| `ttls` |  |
+| `peap` |  |
+
+### `wifiInnerEapMethod` {#wifiInnerEapMethod}
+
+Wi-Fi enterprise EAP inner authentication method. JSON type `string`. Used by [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi), [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi).
+
+| Value | Note |
+| --- | --- |
+| `none` |  |
+| `mschapv2` | Required for `ttls` and `peap`, and the value the reader uses when the member is omitted for them. Omit the member for `tls`. |
+
+### `wifiSecurityType` {#wifiSecurityType}
+
+Wi-Fi access point security type. JSON type `string`. Used by [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi), [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi).
+
+| Value | Note |
+| --- | --- |
+| `WPA2Personal` |  |
+| `WPA3Personal` |  |
+| `WPA2Enterprise` |  |
+| `WPA3Enterprise` |  |
+
+### `wpa2EnterpriseProtocol` {#wpa2EnterpriseProtocol}
+
+WPA2-Enterprise encryption protocol. JSON type `string`. Used by [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi), [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi).
+
+| Value | Note |
+| --- | --- |
+| `WPA2_Enterprise_CCMP` |  |
+
+### `wpa3EnterpriseProtocol` {#wpa3EnterpriseProtocol}
+
+WPA3-Enterprise encryption protocol. JSON type `string`. Used by [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi), [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi).
+
+| Value | Note |
+| --- | --- |
+| `WPA3_Enterprise_CCMP` |  |
+| `WPA3_Enterprise_CCMP_256` |  |
+| `WPA3_Enterprise_GCMP_128` |  |
+| `WPA3_Enterprise_GCMP_256_SHA256` |  |
+| `WPA3_Enterprise_GCMP_256_SUITEB_192` |  |
+
+## Enumerations Used by One Message {#single-message-enumerations}
+
+These enumerations appear in only one command or event. Their values are listed on that operation's page.
+
+| Enumeration | Values | Defined on |
+| --- | --- | --- |
+| `alertId` | 5 | [`alerts`](/api-reference/mqtt/events/alerts-event) |
+| `alertPriority` | 3 | [`alerts`](/api-reference/mqtt/events/alerts-event) |
+| `alertState` | 3 | [`alerts`](/api-reference/mqtt/events/alerts-event) |
+| `alertType` | 3 | [`alerts`](/api-reference/mqtt/events/alerts-event) |
+| `certContentFormat` | 2 | [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) |
+| `certSource` | 2 | [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) |
+| `controlType` | 2 | [`control_operation`](/api-reference/mqtt/ctrl/control-operation) |
+| `endpointOperation` | 3 | [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) |
+| `ethEapInnerMethod` | 3 | [`get_eth`](/api-reference/mqtt/mgmt/get-eth) |
+| `ethEapMethod` | 8 | [`get_eth`](/api-reference/mqtt/mgmt/get-eth) |
+| `fileTransferStatus` | 4 | [`alerts`](/api-reference/mqtt/events/alerts-event) |
+| `fileType` | 2 | [`alerts`](/api-reference/mqtt/events/alerts-event) |
+| `linkState` | 2 | [`alerts`](/api-reference/mqtt/events/alerts-event) |
+| `lldpNegotiationState` | 3 | [`alerts`](/api-reference/mqtt/events/alerts-event) |
+| `postFilterOperation` | 3 | [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter) |
+| `powerMode` | 2 | [`alerts`](/api-reference/mqtt/events/alerts-event) |
+| `publicKeyAlgorithm` | 6 | [`get_installed_certificates`](/api-reference/mqtt/mgmt/get-installed-certificates) |
+| `radioActivity` | 2 | [`get_status`](/api-reference/mqtt/mgmt/get-status) |
+| `radioOperation` | 2 | [`control_operation`](/api-reference/mqtt/ctrl/control-operation) |
+| `rfidInventoryStatus` | 2 | [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) |
+| `terminalType` | 3 | [`get_status`](/api-reference/mqtt/mgmt/get-status) |
+| `wifiOperation` | 2 | [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi) |
+
+**Related:** 📕 [Reserved and Deprecated Fields](/api-reference/mqtt/schemas/reserved-and-deprecated-fields) · 📕 [Common Objects](/api-reference/mqtt/schemas/common-objects) · 📕 [Response Codes](/api-reference/mqtt/response-codes)

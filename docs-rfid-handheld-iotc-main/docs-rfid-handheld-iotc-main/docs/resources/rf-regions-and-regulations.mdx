@@ -1,0 +1,181 @@
+---
+id: rf-regions-and-regulations
+title: "RF Regions and Regulations"
+sidebar_label: "RF Regions and Regulations"
+sidebar_position: 3
+description: "Reference for the IOTC get_current_region response — regulatory standard, transmit-power limits, channel plan, LBT — and regional lookup for RFD40 and RFD90."
+sidebar_custom_props: { emoji: "⚖️", card: "Country, SKU, regulatory code and default link profile, for RFD40 and RFD90." }
+doc_type: reference
+page_meta:
+  - "Audience: All personas"
+  - "Use: regional power and certification lookup"
+---
+
+
+The region codes and frequency bands below are **indicative** and are **not carried in the IOTC MQTT API contract** — the contract's `currentRegion` response declares field *names*, types, descriptions and examples (`country`, `regulatoryStandard`, `maxTxPowerSupported`, `channelData`, …); it defines no band edges and no per-country table of power ceilings. Country approvals and bands change. Before deploying to a new country, confirm the current band, power ceiling, and certification status against the Zebra regulatory portal and the device's regulatory label.
+
+The reader operates in a single **regulatory region** that fixes its UHF channel set, frequency-hopping behavior, Listen Before Talk (LBT) requirement, and transmit-power ceiling. No MQTT command sets the region; the [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region) reference names **123RFID Desktop** as the tool that sets it, at bootstrap. Read the ceiling from the reader itself. Region power is reported in dBm, while `transmitPower` is declared in centi-dBm. Confirm the setting's scale on the firmware before comparing it with the ceiling; do not infer it from a raw number.
+
+This appendix is the lookup table for that workflow: general UHF region/band background, the exact shape of the `get_current_region` response, its field and response-code semantics, and where to find the authoritative per-country certification status.
+
+#### Regional UHF Allocations (General Context)
+
+The table below is **general UHF RFID background**, **not** values defined by the IOTC API. The `currentRegion` schema does **not** define a list of region codes, regulatory domains, frequency bands, or per-region LBT/hopping flags. It returns only the per-device fields `country`, `regulatoryStandard`, `frequencyHopping`, `lbtEnabled`, `maxTxPowerSupported`, `minTxPowerSupported`, and `channelData` — both `country` and `regulatoryStandard` are free-form strings, not enums. Treat the rows below as indicative industry context only; the device reports its *actual* operating channels in the `channelData` array (see [The `get_current_region` response](#the-get_current_region-response) below), not a band range, and the authoritative per-country allocation, power ceiling, and certification status are maintained at the Zebra regulatory portal and on the device's regulatory label.
+
+Broadly, a deployment region fixes a UHF Gen2 frequency band and whether Listen Before Talk and frequency hopping apply:
+
+| Example region | Approx. UHF band (MHz) | LBT | Freq. hopping |
+|---|---|---|---|
+| United States | 902–928 | No | Yes |
+| European Union (ETSI) | 865.6–867.6 | Yes | No (4-channel ETSI EN 302 208) |
+| Japan | 916.7–920.9 | Yes | Yes |
+
+Band edges and approvals change and many countries split into low/high sub-bands or impose duty-cycle rules; consult the Zebra regulatory portal for the current authoritative list before deploying to a new country.
+
+#### SKUs, Regulatory Codes and Default RF Modes {#skus-and-regulatory-codes}
+
+Zebra's own region table for the RFD40 and RFD90 covers **168 regions**. Each row gives the region's
+SKU, its regulatory code, and the RF mode the reader defaults to there. The SKU is what fixes the
+default:
+
+| SKU | Regions | Default RF mode |
+|---|---:|---|
+| `ETSI_SKU` | 88 | 19 |
+| `WORLD_SKU` | 40 | 13, and 19 for one region |
+| `EU_900MHZ_SKU` | 25 | 19 |
+| `FCC_SKU` | 3 | 13 |
+| `JAPAN_1W_SKU` | 1 | 9 |
+| `JAPAN_250MW_SKU` | 1 | 13 |
+| `INDIA_SKU` | 1 | 19 |
+| `ISRAEL_SKU`, `SRI_LANKA_SKU`, `THAILAND_SKU`, `TAA_SKU`, `FCC_WALMART_SKU` | 1 each | 13 |
+| `TUNISIA_SKU` | 1 | 19 |
+
+Mode 19 is an `M4_256K` dense-reader mode, mode 13 an `M4_240K` general-purpose mode, and mode 9 an
+`M2_256K` mode chosen because Japan's 1 W configuration uses listen-before-talk. What those modes mean
+for throughput is in [Link Profiles](/guides/read-tags-and-barcodes/configure-advanced-radio-settings#link-profiles).
+
+**The regulatory code is not the same as the standard family.** The table uses 45 distinct codes,
+and most name a country as well as a family: `FCC_USA`, `ETSI_EU`, `JAPAN_FCC_LBT`, `JAPAN_FCC_1W`,
+`JAPAN_FCC_250MW`, `AUSTRALIA_FCC`, `BRAZIL_FCC`, `CHINA_FCC`, `HONGKONG_FCC`, `SOUTHKOREA_FCC`,
+`TAIWAN_FCC`, `SINGAPORE_FCC`, `MALAYSIA_FCC`, `MACAO_FCC`, `NEWZEALAND_ETSI`, `NEWZEALAND_FCC`,
+`RUSSIA_ETSI`, `UKRAINE_ETSI`, `UKRAINE_ETSI_LICENSE`, `CAMBODIA_ETSI`, `LAOS_ETSI`, `LAOS_FCC`,
+`MOROCCO_ETSI`, `PAKISTAN_ETSI`, `KAZAKHSTAN_ETSI`, `LEBANON_ETSI`, and the three channel-count
+variants `EU_900M_2_CHANNEL`, `EU_900M_3_CHANNEL` and `EU_900M_4_CHANNEL`, among others.
+
+Two consequences for a client reading `get_current_region`:
+
+- **Do not match `regulatoryStandard` against `FCC` or `ETSI` alone.** A reader can report a
+  country-qualified code. The contract's own examples show both the short and the qualified form, and
+  which one a given firmware reports is not specified in the available sources.
+- **Two regions can share a standard family and differ in behavior**, as the three EU channel-count
+  codes do. Read `channelData`, `lbtEnabled` and `frequencyHopping` from the reply rather than
+  inferring them from the standard's name.
+
+#### The `get_current_region` Response
+
+`get_current_region` is a read-only Device Status command (idempotent — safe to retry with the **same** `requestId`). It takes only the standard request envelope and returns the `currentRegion` block. Applies to the MQTT-capable RFD40 and RFD90 readers listed in [Supported Readers and Features](/resources/supported-readers-and-features).
+
+**Request**
+
+```json title="get_current_region — request"
+{
+  "command": "get_current_region",
+  "requestId": "abc123"
+}
+```
+
+**Response (United States / FCC)**
+
+```json title="get_current_region — response"
+{
+  "command": "get_current_region",
+  "requestId": "abc123",
+  "apiVersion": "V1.1",
+  "currentRegion": {
+    "frequencyHopping": true,
+    "channelData": [
+      "915750", "915250", "903250", "926750", "926250", "904250", "927250", "920250", "919250", "909250",
+      "918750", "917750", "905250", "904750", "925250", "921750", "914750", "906750", "913750", "922250",
+      "911250", "911750", "903750", "908750", "905750", "912250", "906250", "917250", "914250", "907250",
+      "918250", "916250", "910250", "910750", "907750", "924750", "909750", "919750", "916750", "913250",
+      "923750", "908250", "925750", "912750", "924250", "921250", "920750", "922750", "902750", "923250"
+    ],
+    "country": "United States",
+    "lbtEnabled": false,
+    "maxTxPowerSupported": 30,
+    "minTxPowerSupported": 0,
+    "regulatoryStandard": "FCC"
+  },
+  "response": {
+    "code": 0,
+    "description": "Success"
+  }
+}
+```
+
+The example above reports channel center frequencies as six-digit strings in kHz, as described in [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region).
+
+#### `currentRegion` Field Reference
+
+All seven `currentRegion` fields are **required** in a successful response.
+
+| Field | Type | Example | Meaning |
+|---|---|---|---|
+| `frequencyHopping` | boolean | `true` | Whether the radio hops across the channel set. Mandatory in most FFH (frequency-hopping) regions such as the US; ETSI uses fixed channels with LBT instead. |
+| `channelData` | array of string | `["915750", "915250", ...]` | The channels the reader may operate on, rather than band edges. Each entry is a center frequency expressed as a string in kHz. The worked US/FCC example contains 50 channels. |
+| `country` | string | `"United States"` | The configured country. The field declaration carries the short form `USA` as its example, while the shipped reply and every US example the contract carries use the long form `United States` — both spellings are legal today and neither corroborates the other. There is no ISO-3166 constraint. Treat it as a display string, not an enum. |
+| `lbtEnabled` | boolean | `false` | Listen Before Talk. Required in ETSI/CE and several Asian regions; the radio senses the channel before transmitting. Affects inventory-start timing. `false` for FCC. |
+| `maxTxPowerSupported` | number | `30` | The region's regulatory power ceiling, in dBm. Never exceed the ceiling reported by your reader. Confirm the `transmitPower` scale on your firmware before comparing the setting with this ceiling. Read range is not a power measurement. |
+| `minTxPowerSupported` | number | `0` | Regulatory/hardware power floor, declared in dBm on its own field declaration — “measured in dBm”, example `0`. Every worked example the contract carries reports `0`, matching that example, and no bounds and no relationship to `maxTxPowerSupported` are declared. |
+| `regulatoryStandard` | string | `"FCC"` | The governing standard. A free-form string with no enum or minimum length. The field example is `FCC_USA`; the worked US/FCC response carries `FCC`. Read the value from the device rather than predicting it. |
+
+Read the ceiling from the reader itself and confirm the `transmitPower` scale on the firmware before comparing the two fields. Read range does not prove emitted power. See [The regulatory ceiling](/guides/read-tags-and-barcodes/improve-read-performance#the-regulatory-ceiling) for the RF-tuning workflow.
+
+
+
+#### Reading `channelData`
+
+The documented `channelData` entries are center frequencies expressed as strings in kHz. For example, `915750` represents 915.75 MHz. The US/FCC example contains 50 entries spanning 902.75 to 927.25 MHz. Read the channel count from your reader; do not assume every region has the same count.
+
+#### Response Codes
+
+The `response.code` field carries the command result. `get_current_region` has exactly one command-specific code, `3`; the two universal codes that every command can return apply to it as well.
+
+| Code | Meaning | Applies to region workflow |
+|---|---|---|
+| `0` | Success | `currentRegion` is fully populated. |
+| `3` | Not able to retrieve information | Region state could not be read at that moment. Retry after a short delay; reboot if it persists. |
+| `101` | Default error | The catch-all, returned when no more specific code applies. Investigate from the surrounding context. |
+
+`0` and `101` are universal codes, so they are not specific to this command. The complete IOTC response-code table is in [Response Codes](/api-reference/mqtt/response-codes), and the per-command view is on [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region).
+
+#### `regulatoryStandard` Values
+
+The `currentRegion.regulatoryStandard` field is a **free-form string**, with no enum or minimum length. The contract carries two example strings: `FCC_USA` on the field declaration and `FCC` in the worked US/FCC reply. Treat it as a display or audit value reported by the reader, rather than a fixed set of allowed values or a certification decision.
+
+| `regulatoryStandard` (reported) | Source |
+|---|---|
+| `FCC_USA` | The example on the field's own declaration |
+| `FCC` | The value the worked US/FCC `get_current_region` response carries |
+
+Zebra's own region table also uses country-qualified codes, a 45-value set of country-qualified codes such as
+`FCC_USA`, `ETSI_EU` and `JAPAN_FCC_LBT`; see
+[SKUs, Regulatory Codes and Default RF Modes](#skus-and-regulatory-codes). That is the strongest
+evidence available that the qualified form is real, and it does not settle which form a given
+firmware reports in this field. Match on the value you read back, not on a name you expect.
+
+The device's specific certifications and approval status per country are on its regulatory label and on the Zebra product page — they are not carried in the IOTC API response.
+
+#### Pre-Deployment Compliance Check
+
+Use this sequence to confirm a reader is compliant before starting inventory:
+
+1. Send `get_current_region` and confirm `response.code` is `0` (a `3` means region state could not be read — retry).
+2. Verify `country` and `regulatoryStandard` match the deployment location.
+3. Read `maxTxPowerSupported` from **that** reader. Its ceiling is reported in dBm. Confirm the `transmitPower` scale on the firmware before comparing the values.
+4. Do not derive a `transmitPower` setting from a reported ceiling until the setting's scale is confirmed. `300` is the schema maximum for `transmitPower`, rather than a documented region ceiling.
+5. Set a low `transmitPower`, read it back with [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), and raise it in steps. Read range is **not** a power measurement, so it cannot tell you where to stop: where regulatory margin matters, confirm the power actually applied against Zebra's firmware documentation or an instrument, and treat that confirmation as the stopping rule (see the `maxTxPowerSupported` row above).
+6. Confirm `lbtEnabled` and `frequencyHopping` match the region's expectations (e.g. LBT on for ETSI).
+7. Confirm `channelData` is non-empty and the channel count matches the region.
+
+**Related:** 📙 [Bootstrap a Reader with 123RFID Desktop](/guides/manage-your-reader/bootstrap-reader) · 📙 [The Regulatory Ceiling](/guides/read-tags-and-barcodes/improve-read-performance#the-regulatory-ceiling) · 📕 [Response Codes](/api-reference/mqtt/response-codes) · 📕 [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region) · 📕 [What You Need](/guides/get-oriented/what-you-need)

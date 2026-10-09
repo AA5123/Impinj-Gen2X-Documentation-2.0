@@ -1,0 +1,51 @@
+---
+id: reader-and-hardware
+title: "Reader and Hardware"
+sidebar_label: "Reader and Hardware"
+sidebar_position: 1
+description: "Diagnose the reader itself: power and battery, the radio, firmware-update failures (FM-FW-01 to FM-FW-04), silent-offline state, and device identity."
+sidebar_custom_props: { emoji: "📟", card: "Diagnose the reader itself: power and battery, the radio." }
+doc_type: how-to
+page_meta:
+  - "Audience: Fleet Operator"
+  - "Use: the device itself is suspect"
+---
+
+
+**Scope.** The reader and its firmware: power and battery, the radio, firmware updates, restarts and identity. These faults are cleared at the reader: by charging it, restarting it, updating its firmware or replacing it.
+
+If the reader is healthy but cannot reach the network, start at [Network and Connectivity](/guides/diagnose-and-recover/diagnose-by-system-area/network-and-connectivity) instead. If it reaches the network but not the broker, start at [MQTT Connection](/guides/diagnose-and-recover/diagnose-by-system-area/mqtt-connection).
+
+## First Command
+
+[`get_status`](/api-reference/mqtt/mgmt/get-status) answers every question in this area at once — `powerSource`, `radioActivity`, `radioConnection`, `systemTime`, `temperature`, and the `batteryStatus` block. Run it before you form a hypothesis. If it does not answer at all, the fault is not in this area; it is on the path.
+
+## Start With
+
+| Symptom | Go to |
+|---|---|
+| 123RFID Desktop cannot see the sled over USB | [RP-01: Connect a sled to 123RFID Desktop](/guides/diagnose-and-recover/recovery-playbooks/reconnect-the-reader#rp-01) |
+| Broker still lists the reader as connected, but heartbeats stopped | [RP-07: Diagnose silent-offline state](/guides/diagnose-and-recover/recovery-playbooks/reconnect-the-reader#rp-07) |
+| [`set_os`](/api-reference/mqtt/mgmt/set-os) returns code `4` — another update is running | [FM-FW-01](/guides/diagnose-and-recover/diagnose-by-system-area#fm-fw-01) |
+| [`set_os`](/api-reference/mqtt/mgmt/set-os) returns code `8` — not enough flash | [FM-FW-02](/guides/diagnose-and-recover/diagnose-by-system-area#fm-fw-02) |
+| [`set_os`](/api-reference/mqtt/mgmt/set-os) returns code `9` — the firmware file is unreachable | [FM-FW-03](/guides/diagnose-and-recover/diagnose-by-system-area#fm-fw-03) |
+| [`set_os`](/api-reference/mqtt/mgmt/set-os) returns code `14` — battery too low | [FM-FW-04](/guides/diagnose-and-recover/diagnose-by-system-area#fm-fw-04) |
+| A firmware update started and then failed | [RP-06: Recover from a failed firmware update](/guides/diagnose-and-recover/recovery-playbooks/recover-from-firmware-problems#rp-06) |
+| A fleet rollout failed on part of the fleet | [RP-09: Stagger and retry the rollout](/guides/diagnose-and-recover/recovery-playbooks/recover-from-firmware-problems#rp-09) |
+| [`reboot`](/api-reference/mqtt/mgmt/reboot) returns code `5` — inventory is running | [RP-04: Stop inventory cleanly](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-04) |
+| Two readers report the same serial number | [FM-FLEET-01](/guides/diagnose-and-recover/diagnose-by-system-area#fm-fleet-01) |
+| The operating mode is back to the default after a restart | [What a Reboot Changes](/guides/core-concepts/the-configuration-model#reboots): re-apply it |
+
+## Power and Battery
+
+Battery state gates more than runtime: a firmware update is refused when the battery is too low ([FM-FW-04](/guides/diagnose-and-recover/diagnose-by-system-area#fm-fw-04)). When you are diagnosing anything else, keep the reader on external power so that power is not a hidden variable. `get_status` reports the source as `powerSource`.
+
+`get_status.deviceStatus.batteryStatus` gives you `chargePercentage`, `chargeStatus`, `capacity`, and `stateOfHealth`. For trends across a shift or a fleet rather than a single reading, use the [battery-monitoring guide](/guides/operate-and-monitor/monitor-reader-health-and-battery#battery-health).
+
+## Radio Faults {#radio-faults}
+
+The contract describes `radioConnection` in [`get_status`](/api-reference/mqtt/mgmt/get-status) as whether the RFID radio module is attached and reachable, yet its own example replies show `DISCONNECTED` on an idle reader, so do not treat that value as a fault on its own. If an inventory will not start, or a command returns code `3` (`IOT_ERROR_INFO_NOT_AVAILABLE`) persistently, the contract's recommended action is to retry after a short delay and, if it persists, reboot the reader. If the problem returns on the same reader after a reboot, contact Zebra support.
+
+`radioActivity: ACTIVE` is not a fault — but it blocks [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) and [`reboot`](/api-reference/mqtt/mgmt/reboot). Clear it with [RP-04](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-04) before concluding anything else.
+
+**Related:** ⚠️ [Diagnose by System Area](/guides/diagnose-and-recover/diagnose-by-system-area) · 📘 [The Configuration Model](/guides/core-concepts/the-configuration-model) · 📙 [Update Firmware and Restart the Reader](/guides/manage-your-reader/update-firmware-and-restart) · 📙 [Inspect Reader Identity and Status](/guides/manage-your-reader/inspect-reader-identity-and-status) · 🛟 [Recovery Playbooks](/guides/diagnose-and-recover/recovery-playbooks)

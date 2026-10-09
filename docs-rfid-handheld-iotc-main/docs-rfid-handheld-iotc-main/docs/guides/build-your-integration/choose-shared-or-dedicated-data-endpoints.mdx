@@ -1,0 +1,45 @@
+---
+id: choose-shared-or-dedicated-data-endpoints
+title: "Choose Shared or Dedicated Data Endpoints"
+sidebar_label: "Choose Shared or Dedicated Data Endpoints"
+sidebar_position: 2
+description: "Where tag data should go: a shared management or control endpoint, or a dedicated DATA1 endpoint. The differences in topic isolation, consumers, post-filters, batching and delivery."
+sidebar_custom_props: { emoji: "🔀", card: "Shared or dedicated tag-data endpoints, and what differs between them." }
+doc_type: explanation
+page_meta:
+  - "Audience: Solution builders"
+  - "Read time: 5 min"
+---
+
+A reader can publish tag data in two places: on a **shared** endpoint, such as a management or control endpoint that also carries commands and events, or on a **dedicated** data endpoint, of type `DATA1`. (The contract also declares `DATA2`, which is currently not supported.) This page explains what differs between them, so that you can choose.
+
+| | Shared endpoint | Dedicated `DATA1` endpoint |
+|---|---|---|
+| Topic | The endpoint's connection-state topic, for example `{tenantId}/MGMT/clients/rfid/{deviceSerialNumber}` | Conventionally `{tenantId}/DATA/clients/data1event/{deviceSerialNumber}` |
+| Shares its topic with | Connection-state messages: `mqttConnEVT` and the Last Will | Nothing |
+| Broker, credentials and TLS | Those of the shared endpoint | Its own |
+| Post-filters | Not specified whether `set_post_filter` applies | Scoped to the endpoint as `DATA_EP1` |
+| Batching | The shared endpoint's `batching` block | Its own `batching` block |
+| Contract's recommendation | The fallback placement | Preferred for sustained inventory |
+
+## Why a Dedicated Endpoint Is Preferred {#why-dedicated}
+
+On a shared endpoint, tag data arrives on the same topic as the reader's connection-state messages, so every consumer of one sees the other, and broker access rules cannot separate them. The contract calls the shared placement the fallback and recommends a dedicated data endpoint for sustained inventory.
+
+A dedicated endpoint also opens its own MQTT session. It can point at a different broker from the management traffic, with its own credentials and TLS settings, so that tag data and commands do not share a connection. Whether that matters depends on your volumes and your broker; the contract states no figures.
+
+## One Dedicated Endpoint {#one-data-endpoint}
+
+The contract declares two dedicated data endpoint types, `DATA1` and `DATA2`, but `DATA2` is currently not supported. Use one `DATA1` endpoint. To limit which tags it reports, add post-filter rules scoped to `DATA_EP1`. See [Post-Filter Reported Tags](/guides/read-tags-and-barcodes/post-filter-reported-tags).
+
+## Delivery Is Set per Topic {#delivery}
+
+Each publish topic carries its own `qos`, 0 or 1, the two levels the reader supports. The default data endpoint configurations use QoS 0, which the MQTT layer does not resend when lost; the contract's own data-endpoint example sets the tag-data topic to QoS 1. Raising the QoS on the data endpoint does not affect other endpoints, and at QoS 1 your application must absorb duplicates. Whatever the QoS, the contract describes the stream as a statistical view of the tag population, not a guaranteed log. See [The Tag Data Stream](/guides/core-concepts/the-tag-data-stream#statistical-view).
+
+## What Your Application Must Subscribe To {#subscribe}
+
+An application receives only the topics it subscribes to, so subscribe to the `DATA1` endpoint's tag-data topic. A fleet-wide consumer can use the `+` wildcard in the serial-number position, for example `acme/DATA/clients/data1event/+`.
+
+The procedure for creating the endpoints, including the rule that tag data goes to the **second** publish topic, is in [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints#add).
+
+**Related:** 📘 [The Tag Data Stream](/guides/core-concepts/the-tag-data-stream) · 📘 [Endpoints, Topics, and Channels](/guides/core-concepts/endpoints-topics-and-channels) · 📙 [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints) · 📙 [Consume Tag Data](/guides/build-your-integration/consume-tag-data) · 📕 [`dataEVT`](/api-reference/mqtt/data/tag-data-event)

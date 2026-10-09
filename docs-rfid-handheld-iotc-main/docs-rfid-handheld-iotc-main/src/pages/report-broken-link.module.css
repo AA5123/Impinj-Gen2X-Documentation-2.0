@@ -1,0 +1,290 @@
+/* Report-broken-link page | Zebra Handheld RFID Reader IOTC */
+
+.main {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 1.5rem 5rem;
+  min-height: 60vh;
+}
+
+.container {
+  max-width: 45rem;
+  width: 100%;
+}
+
+/* Measure. The container keeps its full 45rem because the fields, the button row
+   and the divider all want that width. A 52ch prose cap was tried here on
+   2026-08-16 and withdrawn with the site-wide one — see the decision record at the
+   head of src/css/custom.scss. The 45rem column is the measure. */
+
+.intro {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: var(--ifm-h1-font-size);
+  /* 600 unchanged on purpose: the 600-vs-700 display-weight question is OQ-44 and
+     stays the owner's, exactly as its twin records at NotFoundBody.module.css:80.
+     The type contract sets the size ladder, not this. */
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  line-height: var(--zebra-lh-h1);
+  color: var(--ifm-heading-color);
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: var(--ifm-color-emphasis-700);
+  margin: 0;
+  line-height: var(--ifm-line-height-base);
+}
+
+/* Form fields */
+.section {
+  margin-bottom: 1.5rem;
+}
+
+/* Body rung and not the 0.875rem UI rung: these labels are questions the reader
+   reads as sentences ("Where did you arrive from?"), which the rung note at
+   custom.scss:157 puts on body, and each sits directly above a control the
+   iOS floor below pins at 1rem. Was 0.95rem — 15.2px, on no rung at all. */
+.fieldLabel {
+  display: block;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+  color: var(--ifm-heading-color);
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--ifm-color-emphasis-600);
+  /* Was 0.9em, which compounded off the label: 13.68px against the old 0.95rem
+     label and 14.4px once that label reached 1rem, so the de-emphasis marker
+     would have GROWN as the page came onto the ladder. The caption rung is
+     absolute and holds at 13px whatever the label does. */
+  font-size: var(--zebra-fs-caption);
+}
+
+.fieldHint {
+  margin: 0.4rem 0 0 0;
+  font-size: var(--zebra-fs-caption);
+  /* The caption rung is 13/1.4. Without this the <p> inherits the 1.5 body leading
+     and ships 13/19.5 against the 18.2 every other caption holds. Declared here and
+     NOT on the sibling `.optional`, which is an inline <span> inside a <label>: a
+     line-height on an inline box changes the line box of the text it sits in, so
+     inheriting is the correct behaviour there, not an omission. */
+  line-height: var(--zebra-lh-caption);
+  color: var(--ifm-color-emphasis-600);
+}
+
+/* 1rem here is load-bearing, not decorative: iOS Safari auto-zooms on focus for
+   any text-entry control under 16px, so the two fields hold the body rung while
+   the buttons further down take the 0.875rem UI rung. */
+.input,
+.textarea {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  font-size: 1rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--radius-container);  /* was 4px — square/pill, aw-style-guide.md 6.1 */
+  background-color: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+  font-family: var(--ifm-font-family-base);
+  box-sizing: border-box;
+}
+
+.input {
+  /* IBM Plex Mono because this field holds a literal URL, where l/1/I and 0/O
+     have to be separable (custom.scss:50). The size deliberately does NOT follow
+     it: the mono rung is 0.875rem, and 14px in a text field is exactly what makes
+     iOS Safari zoom on focus. Mono at 1rem is off the mono ladder on purpose, and
+     the trade is one field slightly larger than its rung versus every iPhone
+     visitor losing their place mid-form. Was 0.92rem — 14.72px, on neither ladder
+     and inside the zoom range. */
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 1rem;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 6.875rem;
+  line-height: var(--ifm-line-height-base);
+}
+
+/* Same recipe as the shared chrome rule in custom.scss — 2px ring, 2px offset, one
+   token. This is the second of the two routes the visual gate never sweeps. */
+.input:focus-visible,
+.textarea:focus-visible {
+  outline: 2px solid var(--focus-ring-color, var(--ifm-color-primary));
+  outline-offset: 2px;
+  border-color: var(--ifm-color-primary);
+}
+
+[data-theme='dark'] .input,
+[data-theme='dark'] .textarea {
+  background-color: var(--ifm-color-emphasis-100);
+  border-color: var(--ifm-color-emphasis-400);
+}
+
+/* Submission options */
+.actions {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+/* Real <h2> elements (report-broken-link.tsx:175, 211), so they take the H2 rung:
+   1.1rem was 17.6px, barely a step over body. Leading is not declared here — the
+   global `h2` rule at custom.scss:514 already carries --zebra-lh-h2. Weight stays
+   600 to match .title above; see the OQ-44 note there. */
+.sectionTitle {
+  font-size: var(--ifm-h2-font-size);
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--ifm-heading-color);
+}
+
+.actionsHint {
+  margin: 0 0 1rem 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 1rem;
+}
+
+.actionList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+/* The UI rung, not the body rung the fields above hold: the iOS focus-zoom floor
+   is a text-entry rule and nothing is typed into a button, so the two controls on
+   this page legitimately differ. Was 0.95rem / 15.2px, between the two.
+   The 404's .searchButton stays at 1rem on a reason that does not reach here — it
+   is the submit half of a search row and sits inline with a 1rem field, where two
+   sizes in one row read as a mistake (NotFoundBody.module.css:248). These two sit
+   alone in a flex row, so the divergence is deliberate, not drift. */
+.actionButton,
+.actionButtonPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.1rem;
+  font-size: var(--zebra-fs-ui);
+  font-weight: 500;
+  border-radius: var(--radius-control);  /* was 4px — square/pill, aw-style-guide.md 6.1 */
+  cursor: pointer;
+  text-decoration: none;
+  font-family: var(--ifm-font-family-base);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background-color: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+  transition: background-color var(--motion-base) ease, border-color var(--motion-base) ease;
+}
+
+.actionButton:hover {
+  background-color: var(--ifm-color-emphasis-100);
+  border-color: var(--ifm-color-emphasis-500);
+  text-decoration: none;
+}
+
+.actionButtonPrimary {
+  border-color: var(--ifm-color-primary);
+  background-color: var(--ifm-color-primary);
+  /* Not `white`: on the dark brand fill (#6CB4EE) white is 2.234:1 against a 4.5
+     floor for 14px/500 text. This token resolves to #ffffff in light (8.466:1)
+     and #000000 in dark (9.401:1) through --ifm-color-content-inverse, so one
+     declaration satisfies both themes and no [data-theme] override is needed.
+     Twin of the .searchButton fix in NotFoundBody.module.css; this route is one
+     click from the 404 that links to it. Design system §11.1(1). */
+  color: var(--ifm-font-color-base-inverse);
+}
+
+.actionButtonPrimary:hover {
+  background-color: var(--ifm-color-primary-dark);
+  border-color: var(--ifm-color-primary-dark);
+}
+
+.actionButton:focus-visible,
+.actionButtonPrimary:focus-visible {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: 2px;
+}
+
+.actionButtonNote {
+  font-weight: 400;
+  /* Was 0.82em, compounding off the button label: 12.46px at the old 0.95rem
+     button and 11.48px now the button is 0.875rem. Absolute caption rung instead
+     — this rule has no consumer today (see below), so the unit is corrected and
+     the size left at the rung rather than tuned against a rendering nobody has
+     seen. */
+  font-size: var(--zebra-fs-caption);
+  color: var(--ifm-color-emphasis-600);
+}
+
+.actionButtonPrimary .actionButtonNote {
+  /* Inherit, so this cannot reintroduce the white-on-brand pair fixed above if a
+     future edit gives .actionButtonNote a consumer. It has none today. */
+  color: inherit;
+}
+
+/* Divider + recovery */
+.divider {
+  margin: 2.5rem 0 1.5rem;
+  border: none;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.jumpsList {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 1rem;
+  line-height: var(--ifm-line-height-base); /* was 1.7; body leading is 1.5, and a
+                                               looser list has no recorded exception. */
+}
+
+/* THE ROW IS A FLEX LINE NOW, because the mark is an element rather than a generated
+   character. `align-items: flex-start` and not `center`: three of the four rows wrap to two
+   lines on a phone, and centring would float the chevron into the middle of the block. The
+   `margin-top` seats it on the FIRST line's optical centre. */
+.jumpsList li {
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.jumpIcon {
+  flex-shrink: 0;
+  color: var(--ifm-link-color);
+  margin-top: 0.28rem;
+}
+
+/* The two action buttons' marks need NO layout rule: `.actionButton, .actionButtonPrimary`
+   below already declares `display: inline-flex; align-items: center; gap: 0.5rem` for the
+   label alone, and an <svg> sibling drops into that row unchanged. `flex-shrink` is the one
+   thing the flex context does not give — the longest label ("Copy failed — try selecting text
+   manually") is wide enough to squeeze a shrinkable glyph on a narrow screen. */
+.actionIcon {
+  flex-shrink: 0;
+}
+
+/* Mobile. Layout only now — the two font-size overrides that used to open this
+   block are gone. .title was 1.5rem, which is exactly the 24px .sectionTitle now
+   takes, so h1 and h2 rendered at the same size on a phone; .subtitle restated the
+   1rem it already carries at every width. What is left is padding and button
+   stacking, which is why the breakpoint stays at 600px: moving it to the 576px its
+   twin uses is a layout call, and the type contract does not make layout calls. */
+@media (max-width: 600px) {
+  .main {
+    padding: 1.5rem 1rem 3rem;
+  }
+  .actionList {
+    flex-direction: column;
+  }
+  .actionButton,
+  .actionButtonPrimary {
+    width: 100%;
+    justify-content: center;
+  }
+}

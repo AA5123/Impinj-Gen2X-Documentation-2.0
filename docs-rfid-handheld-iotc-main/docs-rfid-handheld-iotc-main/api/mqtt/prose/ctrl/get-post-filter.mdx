@@ -1,0 +1,175 @@
+{/* @authoring-guidance — keep this block; it is stripped from the generated page
+   Authoring source for api/mqtt/reference/ctrl/get-post-filter.mdx (a @generated page — never edit that file directly).
+   Edit the prose below, then run `npm run gen:reference`. Full section map: scripts/api/mqtt/docs/generation.md.
+
+   MANUAL — write these freely (the schema cannot supply them):
+     Overview · When to Use · Request Semantics · Response Semantics · Lifecycle · Notes and Caveats
+     · the human rows in Details · the field selection + glosses in Key Fields · the Related links
+     · per-field `desc` and unit-word `enumUnits` · per-code Response-Codes glosses
+     · the Topic Mapping rows + notes (authored in-place in the prose below — project-owned, NOT the schema).
+   SCHEMA-DERIVED — keep aligned with the API contract (the FINAL source of truth) BY HAND. NOTHING verifies this — this page is CARRY, so the generator never reads the contract for it and `--check` cannot see a schema change (scripts/api/mqtt/docs/generation.md):
+     the Request/Response Payload field set · types · enums · `required` · nesting · variant count
+     · the Response-Codes set (globals 0+101 + op-specific, from the operation's `x-iotc-response-codes`).
+   @end-authoring-guidance */}
+
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'get_post_filter', desc: 'Fixed command name.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: 'A unique identifier for the request; echoed back in the response. There is no other payload.' },
+];
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'get_post_filter', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1', 'V1.2', 'V1.21', 'V1.22'], example: 'V1.1', desc: 'API version reported by this command. Emitted per-handler, not device-wide.' },
+  {
+    field: 'postFilterPayload',
+    type: 'object',
+    required: false,
+    desc: 'The current post-filter configuration. Present only when at least one filter is configured — omitted entirely (not even an empty array) when none are set (see [Response Semantics](#response-semantics)).',
+    children: [
+      {
+        field: 'postFilter',
+        type: 'array',
+        required: false,
+        desc: 'The configured post-filter rules (one per entry).',
+        children: [
+          { field: 'dataEpType', type: 'enum', required: false, enumUnits: ['DATA_EP1', 'DATA_EP2'], example: 'DATA_EP1', desc: 'The data endpoint this filter applies to. `DATA_EP2` targets the `DATA2` endpoint, which is currently not supported.' },
+          { field: 'matchPattern', type: 'string', required: false, example: 'FFFF', desc: 'The pattern matched against scanned tag data.' },
+          { field: 'matchPatternMethod', type: 'enum', required: false, enumUnits: ['PREFIX', 'SUFFIX', 'REGEX'], example: 'REGEX', desc: 'How the pattern is applied — prefix, suffix, or regular expression.' },
+          { field: 'reportOperation', type: 'enum', required: false, enumUnits: ['INCLUDE', 'EXCLUDE'], example: 'INCLUDE', desc: 'Reports (`INCLUDE`) or drops (`EXCLUDE`) matching tag data.' },
+        ],
+      },
+    ],
+  },
+  {
+    field: 'response',
+    type: 'object',
+    required: true,
+    desc: 'Status envelope for the read.',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '0', desc: '`0` = Success; non-zero = error. Required by the contract. Readers have been reported to omit it on success — see [Response Codes](#response-codes) below.' },
+      { field: 'description', type: 'string', required: true, example: 'Success', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const REQUEST_JSON = {
+  command: 'get_post_filter',
+  requestId: 'abc123',
+};
+
+export const RESPONSE_JSON = {
+  command: 'get_post_filter',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  postFilterPayload: {
+    postFilter: [
+      { dataEpType: 'DATA_EP1', matchPattern: 'FFFF', matchPatternMethod: 'REGEX', reportOperation: 'INCLUDE' },
+    ],
+  },
+  response: { code: 0, description: 'Success' },
+};
+
+export const EMPTY_JSON = {
+  command: 'get_post_filter',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 0, description: 'Success' },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** read back the reader's current post-filter rules
+
+## Overview
+
+`get_post_filter` **reads back the reader's current post-filters** — the rules that include or exclude scanned RFID **tag data** before it is reported to a data endpoint. Each rule matches tag data by pattern (prefix, suffix, or regex) and either reports (`INCLUDE`) or drops (`EXCLUDE`) it, scoped to a data endpoint. It is read-only. It is a **control-plane ([CTRL](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types)) command**; configure filters with [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter).
+
+This is a **CTRL-endpoint command**: it is published on the **control** endpoint (`<tenantId>/CTRL/clients/cmnd/<serial>`) and answered only there (not on the [MGMT](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types)/[MDM](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) channel). Returning a response requires an **active CTRL endpoint** ([`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint), `epType: CTRL`, `activate: true`).
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Interaction Pattern** | Request / Response (app publishes a command; device publishes the correlated reply) |
+| **State Change** | READ-ONLY |
+| **Required Request Fields** | `command`, [`requestId`](/api-reference/mqtt/protocol-reference/message-envelope#correlating-responses) (no other payload) |
+| **Applies To** | **Endpoint:** Control (CTRL). **Reader:** RFD40 series, RFD90 series |
+| **API Version** | `V1.1` ([API Version Reporting](/api-reference/mqtt/protocol-reference/message-envelope#api-version-reporting)) |
+| **Related** | [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter), [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) |
+
+## When to Use
+
+Use `get_post_filter` to **inspect the reader's post-filters**:
+
+- **Audit filtering** — see which patterns are included/excluded per data endpoint before relying on the tag-data stream.
+- **After [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter)** — verify a filter was applied (the setter's response carries no configuration echo).
+- **Confirm none are set** — an absent `postFilterPayload` means no filters are configured (see [Response Semantics](#response-semantics)).
+
+## Topic Mapping
+
+| Message | Direction | Topic | Note |
+| --- | --- | --- | --- |
+| Request | App → Reader | `<tenantId>/CTRL/clients/cmnd/<serial>` | On the **control** endpoint. Requires an **active CTRL endpoint**. |
+| Response | Reader → App | `<tenantId>/CTRL/clients/resp/<serial>` | Correlated reply; the in-payload `requestId` links the twin topics. |
+
+Topics follow the pattern `<tenantId>/<topic>/<serial>` — the tenant id assigned to you at provisioning (a slot you fill in, never a literal), the base topic you configure on the endpoint, and the reader's serial number, which the reader appends itself in its model-prefixed form (for example `RFD40-212735201D0053`). `App → Reader` means your app publishes and the reader subscribes; `Reader → App` means the reader publishes and your app subscribes.
+
+Control commands are answered **only on the CTRL endpoint** — publishing `get_post_filter` to the MGMT/MDM command topic produces no reply.
+
+Post-filters act on **tag data** (post-singulation), distinct from the Gen2 `select` pre-filters in [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) that act on the air interface. If control commands time out, confirm a CTRL endpoint is active and activate one with [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) if needed.
+
+See [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure).
+
+## Key Fields
+
+- **`postFilterPayload.postFilter[]`** (response) — the configured rules; absent when none are set.
+- **`dataEpType`** (response) — the data endpoint (`DATA_EP1` / `DATA_EP2`) each rule scopes to. `DATA_EP2` targets the [`DATA2`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) endpoint, which is currently not supported.
+- **`matchPattern` + `matchPatternMethod`** (response) — what to match and how (`PREFIX` / `SUFFIX` / `REGEX`).
+- **`reportOperation`** (response) — `INCLUDE` (report matches) or `EXCLUDE` (drop matches).
+- **`response.code`** (response) — read this to determine success vs failure. The contract requires it; note the reported success-path omission (see [Success without a code](/api-reference/mqtt/protocol-reference/message-envelope#success-omits-code)). See [Response Codes](#response-codes).
+
+## Request Payload
+
+The request is a minimal envelope — just `command` and `requestId`. It returns all configured post-filters and takes no parameters.
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" />
+
+## Response Payload
+
+On success the device returns the envelope (`command`, `requestId`, `apiVersion`, `response`) plus `postFilterPayload` **when filters are configured**. The **Example** tab shows one `DATA_EP1` regex filter.
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" exampleCaption="with a filter set" />
+
+When **no filters are configured**, the device omits `postFilterPayload` entirely:
+
+<JsonBlock title="Response — no filters configured" data={EMPTY_JSON} />
+
+## Response Semantics
+
+- **`postFilterPayload` is absent when no filters are set.** With no post-filters configured, the device omits `postFilterPayload` entirely — not even an empty `postFilter: []`. Treat its absence as "no filters." When filters exist, `postFilter[]` lists them.
+
+## Response Codes
+
+`get_post_filter` returns `response.code`. The codes applicable to this command are below; for the full table see the [Response Codes](/api-reference/mqtt/response-codes) and [Correlation and Request/Response Pairing](/api-reference/mqtt/protocol-reference/message-envelope#correlation-and-request-response-pairing).
+
+| Code | Description |
+| --- | --- |
+| `0` | Success — the post-filter configuration was retrieved (an empty configuration still succeeds). |
+| `3` | Not able to retrieve information (`IOT_ERROR_INFO_NOT_AVAILABLE`) — the device could not gather the post-filters at this time. Retry after a short delay; if persistent, reboot. |
+| `101` | Default error — generic catch-all. |
+
+The contract requires `response.code`. Readers have been reported to omit it on a successful reply, returning just `response: { "description": "Success" }` — treat that as success too. See [Success without a code](/api-reference/mqtt/protocol-reference/message-envelope#success-omits-code).
+
+## Examples
+
+Publish `get_post_filter` over the CTRL endpoint (with an active CTRL endpoint); the device replies with the current filters. The [Response Payload](#response-payload) shows a configured filter; the no-filter reply is shown above it. There are no request variants — the command takes no parameters.
+
+## Notes and Caveats {#notes--caveats}
+
+- **Post-filters vs pre-filters.** `get_post_filter` reports **post-filters** — pattern rules applied to scanned **tag data** before it reaches a data endpoint (`INCLUDE`/`EXCLUDE`). These are separate from the Gen2 `select` **pre-filters** in [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode), which filter on the air interface during inventory. Configure post-filters with [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter).
+
+`get_post_filter` is a read-only, idempotent getter — safe to poll. Use it to verify a change applied by [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter); it carries no credentials in request or response. For the concept-level view, see [Post-Filter Reported Tags](/guides/read-tags-and-barcodes/post-filter-reported-tags).
+
+**Related:** 📕 [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter) · 📕 [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode) · 📕 [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) · 📘 [Post-Filter Reported Tags](/guides/read-tags-and-barcodes/post-filter-reported-tags) · 📕 [Response Codes](/api-reference/mqtt/response-codes)

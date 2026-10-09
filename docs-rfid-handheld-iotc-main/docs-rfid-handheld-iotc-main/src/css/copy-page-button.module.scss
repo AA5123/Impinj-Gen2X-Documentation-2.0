@@ -1,0 +1,290 @@
+/* "Copy page" trigger and its hand-rolled role="menu" panel. Consumed by
+   src/components/CopyPageButton.tsx, mounted from src/theme/Heading/index.tsx.
+
+   Colour policy (UI audit 2026-08-07, items 4 and 5): every value here is an
+   Infima or --api- token. The six Primer hexes this file used to carry
+   (#ffffff #d0d7de #24292f #f6f8fa #8c959f #656d76) came from a different design
+   system and left the resting border at 1.45:1 in light — under the WCAG 1.4.11
+   3:1 non-text floor — while the light fill was byte-identical to the page, so
+   that border WAS the control's entire boundary. Exactly one authored hex
+   survives — the dark :active fill; the note above it says why. The remaining
+   `#hex` values are var() fallback arguments, unreachable because Infima always
+   defines the token in front of them. */
+
+.copyPageButtonContainer {
+  position: relative;
+  display: inline-block;
+}
+
+/* Rest border = emphasis-600 (#8d949e), 3.06:1 on the light page: the first step
+   on the Infima scale that clears 3:1. Dark takes emphasis-400 at the foot of
+   this file, which resolves to the SAME #8d949e — the emphasis scale mirrors
+   around 500 — for 5.02:1 on the button's own #242526 fill and 5.62:1 on the
+   #1b1b1d page. That is the lift already shipped for
+   [data-theme='dark'] .variant-select__control (api.scss) and for
+   [data-theme='dark'] .theme-code-block (custom.scss).
+   line-height: 1 matches .downloadPdfButton, and that pinning is what makes the
+   two boxes in .h1-actions agree: it holds the 0.875rem label's line box at 14px,
+   under the 16px icon each control carries, so the ICON sets both content heights
+   and the font's own metrics never enter the sum. That is what closed the 0.8px
+   disagreement measured at display scale 1.25. The 2026-08-16 type contract's
+   ui-control rung is 1.25-1.4, or 1 where already pinned, and this is a pinned
+   one — on the rung, not exempt from it. Taking the caption's 1.4 instead would
+   give 0.875rem x 1.4 = 19.6px, which overtakes the 16px icon, hands the height
+   back to the font metrics and grows BOTH boxes 3.6px. Neither control may take
+   it, and neither file may be converted without the other. */
+.copyPageButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--ifm-navbar-background-color, #1c1e21);
+  border: 1px solid var(--ifm-color-emphasis-600);
+  /* 6px stays: radius is off the px->rem rule, and custom.scss section 4(a) names
+     these two buttons as the shipped chrome-control radius rung and quotes this
+     literal as its evidence. */
+  border-radius: var(--radius-control);  /* was 6px — square/pill, aw-style-guide.md 6.1 */
+  color: var(--ifm-navbar-link-color);
+  cursor: pointer;
+  /* Written as the literal 0.875rem rather than var(--zebra-fs-ui): custom.scss's
+     navbar notes (section 3, and section 4(b) on the link size) argue the chrome
+     type rung by quoting this declaration and .downloadPdfButton's verbatim, and
+     `.navbar__link` now reads var(--zebra-fs-ui) for that same rung. Same rung
+     either way — 14px at a 16px root — so this is notation, not a size change. */
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  /* House timing, and an explicit two-property list rather than `all`: `all`
+     also swept outline-width and outline-offset, so the focus ring animated in
+     over 200ms instead of appearing. */
+  transition: background-color var(--motion-base) ease, border-color var(--motion-base) ease;
+  white-space: nowrap;
+}
+
+/* One full emphasis step past rest (5.72:1 light), so lifting the resting border
+   onto the 3:1 floor does not swallow the hover change. */
+.copyPageButton:hover {
+  background: var(--ifm-color-emphasis-100);
+  border-color: var(--ifm-color-emphasis-700);
+}
+
+/* Press = one fill step past hover. The border holds at the hover value so a
+   keyboard Space press — which is :active WITHOUT :hover — still reads bounded. */
+.copyPageButton:active {
+  background: var(--ifm-color-emphasis-200);
+  border-color: var(--ifm-color-emphasis-700);
+}
+
+.copyPageButton:focus-visible {
+  /* Ring channel ONLY (§8.2(8), owner ruling 2026-08-12). The `background` and
+     `border-color` this rule carried made keyboard focus read as hover; §8.2(1) remains. */
+  outline: 2px solid var(--ifm-color-primary, #007acc);
+  outline-offset: 2px;
+}
+
+/* Label-swap width reservation (UI audit 2026-08-07, item 4). The trigger's label
+   swaps between 'Copy page' / 'Copied' / 'Failed'; all three are rendered at once
+   and every layer is placed in the SAME grid cell (1 / 1), so the stack's intrinsic
+   width is the widest layer's and the swap cannot resize the button. .h1-actions is a
+   flex row held against the right edge by .custom-h1-wrapper's justify-content:
+   space-between (src/theme/Heading/styles.module.css), and this control is its last
+   child, so a narrower label would shrink the group and slide the PDF button right —
+   the defect measured at 3.75px on the sibling JsonBlock control (audit item 8a).
+   Both feedback labels are deliberately shorter than the resting 'Copy page', so the
+   widest layer is the resting one and the audited 137.7px resting width is unchanged.
+   That 137.7px is the measurement at the default 16px root: since 2026-08-16 the
+   trigger's gap, padding and type are rem, so the number tracks the root rather than
+   standing on its own. The claim it supports — the swap cannot resize the button —
+   does not depend on the root at all.
+   The spoken failure string stays the longer 'Copy failed', in the role="status"
+   region — see STATUS_MESSAGES in CopyPageButton.tsx. */
+.copyPageText {
+  display: inline-grid;
+}
+
+.copyPageTextLayer {
+  grid-area: 1 / 1;
+}
+
+/* visibility: hidden, NOT display: none. Hidden keeps the inactive labels in layout
+   — that is what reserves the width — while still removing them from the
+   accessibility tree, so the button's accessible name stays a single string. */
+.copyPageTextLayerHidden {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+
+.chevron {
+  transition: transform var(--motion-base) ease;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+/* The overlay SKIN is shared with the variant picker (audit item 4, option 3:
+   converge the surface, not the control — role="menu"/menuitem and
+   listbox/option stay different ARIA patterns). Same tokens and the same
+   0 10px 30px shadow as .variant-select__control::picker(select) in api.scss.
+   Both panels already computed 8px, so no geometry moves. */
+.copyPageDropdown {
+  /* 300px stays px — fixed panel geometry, not spacing. CopyPageButton.tsx mirrors
+     the literal as CONFIG.DROPDOWN_WIDTH: 300 for the pre-mount fallback, and the
+     placement clamp beside it is px viewport arithmetic against the 320px reflow
+     target. A rem width would scale with the user's root font and walk out of that
+     clamp: 18.75rem is 375px at a 20px root, wider than the target viewport. */
+  min-width: 300px;
+  background: var(--api-surface);
+  border: 1px solid var(--api-frame);
+  border-radius: var(--api-radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  overflow: hidden; /* clips the first and last row's fill to the 8px corners */
+  opacity: 1;
+  scale: 1;
+  /* ENTRY only, at the house 0.15s. The 0.12s CLOSE half of the picker's pair
+     (on the base ::picker(select) rule in api.scss) has nothing to run on here:
+     CopyPageButton.tsx renders this panel behind `{isOpen && …}`, so React
+     removes the node on close and no transition —
+     not even one riding `allow-discrete` — survives an unmount. Keeping the
+     panel mounted would make the close half available for free. */
+  transition: opacity var(--motion-base) ease, scale var(--motion-base) ease;
+}
+
+@starting-style {
+  .copyPageDropdown {
+    opacity: 0;
+    scale: 0.98;
+  }
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--ifm-font-color-base);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--motion-base) ease;
+  border-bottom: 1px solid var(--api-border); /* the house INTERNAL-hairline role */
+}
+
+.dropdownItem:last-child {
+  border-bottom: none;
+}
+
+.dropdownItem:hover {
+  background: var(--api-hover);
+}
+
+/* The panel clips (overflow: hidden above, which is doing real work on the 8px
+   corners), so an outline ring is sliced to a 1px column at each panel edge —
+   the UA default ring measured exactly that. An INSET box-shadow is not clipped.
+   Recipe lifted from .variant-select__control option:focus-visible in
+   api.scss: the transparent outline is invisible normally but IS
+   remapped by the forced-colors palette, where box-shadow is dropped, so WCAG
+   2.4.7 survives there too. */
+.dropdownItem:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 2px var(--ifm-color-primary);
+}
+
+.dropdownItem svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.itemTitle {
+  font-size: var(--zebra-fs-ui);
+  font-weight: 500;
+  /* Declared, not inherited. This label carried no line-height of its own, so its
+     box depended on what a <button> passes down — UA-dependent, and exposed as well
+     to the 2026-08-16 move of --ifm-line-height-base from 1.65 to 1.5. 1.25 is the
+     bottom of the type contract's ui-control band and the value its ruling 3 keeps
+     on sidebar rows, which are the same kind of chrome row as this one. It pins the
+     label at 17.5px, so the panel's height below is arithmetic and not a
+     measurement. */
+  line-height: 1.25;
+  margin-bottom: 0.125rem;
+  color: var(--ifm-font-color-base);
+}
+
+/* Caption rung, deliberately NOT the 0.875rem the row's title takes: this is one
+   line of metadata about the row, and lifting it onto the body floor would leave it
+   the same size as .itemTitle, separated by weight and colour alone. Leading follows
+   the same rung — 1.4 x 13px = 18.2px, 1.3px more per row than the 1.3 this shipped
+   with, so the four-row panel grows 5.2px. */
+.itemDescription {
+  font-size: var(--zebra-fs-caption);
+  color: var(--ifm-color-emphasis-700);
+  line-height: var(--zebra-lh-caption);
+}
+
+/* ---- dark ----
+   This first rule is (0,2,0) and so TIES with the un-themed :hover / :active /
+   :focus-visible rules above; the two that follow it are (0,3,0). Only source
+   order separates a tie, which is why this block stays last AND why every state
+   it touches has to be restated here — the resting border silently winning over
+   :hover is exactly the defect the audit measured in dark. */
+[data-theme='dark'] .copyPageButton {
+  border-color: var(--ifm-color-emphasis-400);
+}
+
+[data-theme='dark'] .copyPageButton:hover {
+  background: var(--ifm-color-emphasis-200);
+  border-color: var(--ifm-color-emphasis-500);
+}
+
+/* No token sits between emphasis-200 (#444950, the hover fill) and emphasis-300
+   (#606770) in dark, and #606770 would drop the 11.96:1 label to 4.46:1 — under
+   the 4.5 floor. #4a4f57 is the one authored value in this file: 6.42:1 for the
+   label, one perceptible step past the hover fill, and it keeps the press moving
+   in the same direction as light. */
+[data-theme='dark'] .copyPageButton:active {
+  background: #4a4f57;
+  border-color: var(--ifm-color-emphasis-500);
+}
+
+/* No dark :focus-visible rule any more: its only job was to restate the border repaint
+   the un-themed focus rule used to make, and that repaint is gone. CONSEQUENTIAL edit —
+   his 2026-08-12 ruling named only the un-themed rule; §8.2(8) does not distinguish themes. */
+
+/* --api-frame is emphasis-300, which in DARK resolves to #606770: only 2.68:1 on
+   the panel's own #242526, and the panel/page fill separation is 1.12:1, so in
+   dark this overlay had no perceptible edge at all. emphasis-400 clears both
+   (5.02 / 5.62) — the same lift, for the same reason, as
+   [data-theme='dark'] .variant-select__control::picker(select) in api.scss.
+   Light is left on --api-frame (#dadde1 there) so the panel keeps the picker's
+   skin; the shadow carries the light edge, exactly as it does for the picker. */
+[data-theme='dark'] .copyPageDropdown {
+  border-color: var(--ifm-color-emphasis-400);
+}
+
+/* No global reduced-motion reset exists in src/css, so each surface gates its
+   own — same spirit as the picker's own block in api.scss. Nothing here
+   carries meaning: colour
+   fades, the chevron spin and the panel's entry scale all go to zero and the
+   states become instant. @starting-style has to be neutralised too, or the entry
+   opacity sticks and the panel never becomes visible. */
+@media (prefers-reduced-motion: reduce) {
+  .copyPageButton,
+  .chevron,
+  .copyPageDropdown,
+  .dropdownItem {
+    transition: none;
+  }
+
+  .copyPageDropdown {
+    scale: none;
+  }
+
+  @starting-style {
+    .copyPageDropdown {
+      opacity: 1;
+    }
+  }
+}

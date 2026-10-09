@@ -1,0 +1,326 @@
+// =============================================================================
+// THE LINE-ICON VOCABULARY — 42 glyphs, three consumers.
+//
+// ORIGINALLY: criterion 3 of the 2026-08-14 sidebar-parity request, "Add
+// minimalist, Apple-like icons that reflect each heading. TIER 1 HEADINGS ONLY —
+// no icons on tier 2 or below." That is still what the SECTION -> GLYPH map and
+// the geometry rule at the foot of this file do, unchanged.
+//
+// SECOND CONSUMER, added for item 3F of the 2026-08-14 Dyte-parity brief (the
+// brief is a gitignored working document, so it is named rather than cited by
+// path: a `path:line` into an untracked tree passes `lint:refs` here and fails it
+// in CI): the landing-page cards. 19 glyphs were
+// added to the registry below so that `src/css/cards.scss` can map 106 distinct
+// front-matter emoji onto 34 marks. Those 19 are DATA ONLY — this file declares
+// them and consumes none of them; the card map is their only reader. The brief's
+// instruction was "extend the system that already exists; do not invent a second
+// one", so the registry stays single even though its consumers are now two, and
+// the alternative (payloads next to the map that reads them) would have left the
+// site with two files each holding half a vocabulary.
+//
+// MEASURED AGAINST the reference implementation (docs.dyte.io/guides, Docusaurus
+// 3.7.0), whose sidebar icons were read off its live stylesheet: it decorates
+// per-item with a `className` from its sidebars file plus a CSS rule, and owns
+// ZERO sidebar swizzles. This file is the same technique with two deliberate
+// improvements, both stated below.
+//
+// WHY `mask` + `background-color` AND NOT THE REFERENCE'S `content: url()`
+// The reference paints its icons as `::before { content: url("data:…") }`. A
+// `content: url()` value is a REPLACED IMAGE, so `currentColor` inside it cannot
+// resolve against the element — which is why the reference is forced to ship a
+// SECOND, hard-coded `fill="white"` copy of every icon under a dark-theme
+// selector, and why its icons cannot follow the active-row colour at all.
+// A mask reads only the ALPHA channel and takes its paint from
+// `background-color`, so ONE declaration per icon serves both themes, follows
+// the active/hover ink for free, keeps the Zebra accent as a token rather than a
+// literal, and survives `forced-colors: active` (a system-remapped
+// `currentColor` still paints; a replaced image does not). Same technique, same
+// reasoning and the same `-webkit-` pairing already shipped for the schema
+// chevron and checkmark in `src/css/api.scss` — this is a second consumer of an
+// established idiom, not a new one.
+//
+// A SECOND FIX THE REFERENCE NEEDS AND THIS DOES NOT: its icons are authored
+// `width="1em" height="1em"`, which gives a replaced image no intrinsic pixel
+// size, and they compute to 16 x 19.5px — non-square, i.e. every glyph is
+// vertically stretched by 22%. The box below is a hard 20 x 20.
+//
+// WHY THIS IS NOT `sidebar_custom_props`
+// The 133 doc pages carrying `sidebar_custom_props.emoji` cannot drive this, for
+// two independent reasons, both measured rather than assumed. (1) `customProps`
+// NEVER REACHES THE DOM: stock destructures only
+// `{items, label, collapsible, className, href}` at
+// node_modules/@docusaurus/theme-classic/lib/theme/DocSidebarItem/Category/index.js:153
+// and only `{href, label, className, autoAddBaseUrl}` at
+// node_modules/@docusaurus/theme-classic/lib/theme/DocSidebarItem/Link/index.js:26,
+// and `grep -rn customProps` over that whole `DocSidebarItem/` directory returns
+// 0 — so no selector can see it, and routing icons through it would mean owning
+// TWO new swizzles. (2) IT IS THE WRONG POPULATION: every page carrying it is a
+// tier-2 or tier-3 row, which is exactly what the owner said must get no icon.
+// `className` in `sidebars/guides.ts` is the hook that DOES reach the DOM — stock spreads
+// it onto the `<li>` through `clsx(…, className)` at that same
+// Category/index.js:217-227 — and it was already attached to every tier-1 Part
+// while carrying no CSS declarations anywhere in `src/css/`.
+//
+// GEOMETRY CONTRACT, uniform across all 34 glyphs: authored on a 24x24 viewBox
+// with `stroke-width: 1.8`, `fill: none`, round caps and joins, then painted into
+// a 20px box — so the effective stroke is 1.8 x (20/24) = 1.5px on every icon,
+// which is the single-stroke weight the request asked for. Authoring on the
+// 24-grid rather than rescaling every coordinate onto a 20-grid is what keeps the
+// geometry exact. THAT SENTENCE IS ALSO WHY THE BOX STAYS IN px under the type
+// contract (2026-08-16), which otherwise prefers rem: at `1.25rem` the 1.5px would
+// follow the reader's root size and this contract would state a number it no longer
+// controls. The baked `stroke='%23000'` is IRRELEVANT and must not be
+// mistaken for a colour decision: a mask discards it and reads alpha only.
+// `aria-hidden` is not needed inside the payload — a masked ::before generates no
+// accessibility node, so these glyphs are already invisible to assistive tech,
+// which is correct because every one of them duplicates its own visible label.
+// (The card consumer cannot lean on that, because its host is a real `<span>`
+// carrying the emoji as text; it declares `aria-hidden` on that span in
+// `src/theme/DocCard/index.js` instead. Same outcome, stated in the place that
+// can actually deliver it.)
+// =============================================================================
+
+// The card stylesheet is pulled in HERE, and the reason is scope rather than
+// taste: item 3F owns `cards.scss` and this file, and not `custom.scss`, where
+// the other four `@use` lines live. If that offends the file's organisation more
+// than it helps, the fix is to move this single line up to `src/css/custom.scss`
+// beside its own `@use 'sidebar-icons'` — nothing else has to change, because Sass
+// resolves a module once however many places reach it.
+@use 'cards';
+
+// ---- THE REGISTRY. One token per glyph, named for the shape, not the section,
+// so a section can be re-pointed at a different icon without renaming anything.
+// 42 glyphs, read by the SIDEBAR map below (26 paint rules), by the CARD map in
+// `src/css/cards.scss` (19 targets), or by neither. The two readers overlap — a
+// glyph can serve a nav row and a card — so those counts do not sum to 42, and the
+// question worth being able to answer by looking is "can I re-point this without
+// touching the sidebar?", which the paint rules below answer directly.
+//
+// EXACTLY TWO GLYPHS ARE READ BY NO STYLESHEET AT ALL: `braces` and `radio-tower`,
+// the React half's marks for the API Reference and MQTT API navigation labels
+// (.ai-history/037-sidebar-icons.md). They are declared here and painted nowhere,
+// for one concrete reason: `scripts/site/generate-icons.mjs --prune` computes the
+// set to keep from this registry plus its REACT_ICONS array and DELETES the rest,
+// so a glyph the React half uses and this registry omits survives until someone
+// prunes and then silently vanishes. `panel-left` was in exactly that state until
+// 2026-08-23.
+//   (`library-big` was in this paragraph until the Resources sidebar was given its
+// glyphs; it now paints the Resources index row. Verify the pair with:
+// every `--sb-icon-*` token that has no `li.sidebar-icon--<name>` rule here and no
+// quoted `'<name>'` in cards.scss.)
+:root {
+  /* >>> GENERATED by scripts/site/generate-icons.mjs — do not edit by hand */
+  --sb-icon-alert-triangle: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='m21.73%2018-8-14a2%202%200%200%200-3.48%200l-8%2014A2%202%200%200%200%204%2021h16a2%202%200%200%200%201.73-3'%20/%3E%20%3Cpath%20d='M12%209v4'%20/%3E%20%3Cpath%20d='M12%2017h.01'%20/%3E%20%3C/svg%3E");
+  --sb-icon-bell: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M10.268%2021a2%202%200%200%200%203.464%200'%20/%3E%20%3Cpath%20d='M3.262%2015.326A1%201%200%200%200%204%2017h16a1%201%200%200%200%20.74-1.673C19.41%2013.956%2018%2012.499%2018%208A6%206%200%200%200%206%208c0%204.499-1.411%205.956-2.738%207.326'%20/%3E%20%3C/svg%3E");
+  --sb-icon-bolt: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M15.914%204a1.5%201.5%200%2000-2.474-1.561l-9%209A1.5%201.5%200%20005.5%2014h4.002a.5.5%200%2001.471.666L8.086%2020a1.5%201.5%200%20002.475%201.56l9-9A1.5%201.5%200%200018.5%2010h-3.997a.5.5%200%2001-.472-.667z'%20/%3E%20%3C/svg%3E");
+  --sb-icon-book: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M4%2019.5v-15A2.5%202.5%200%200%201%206.5%202H19a1%201%200%200%201%201%201v18a1%201%200%200%201-1%201H6.5a1%201%200%200%201%200-5H20'%20/%3E%20%3C/svg%3E");
+  --sb-icon-book-open: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M12%205v16'%20/%3E%20%3Cpath%20d='M20.001%2019A2%202%200%200022%2017V5a2%202%200%2000-1.999-2L16%203.002A5%205%200%200012%205a5%205%200%2000-4-2H4a2%202%200%2000-2%202v12a2%202%200%20001.999%202H8a5%205%200%20014%202%205%205%200%20014-2z'%20/%3E%20%3C/svg%3E");
+  --sb-icon-broadcast: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M4.9%2016.1C1%2012.2%201%205.8%204.9%201.9'%20/%3E%20%3Cpath%20d='M7.8%204.7a6.14%206.14%200%200%200-.8%207.5'%20/%3E%20%3Ccircle%20cx='12'%20cy='9'%20r='2'%20/%3E%20%3Cpath%20d='M16.2%204.8c2%202%202.26%205.11.8%207.47'%20/%3E%20%3Cpath%20d='M19.1%201.9a9.96%209.96%200%200%201%200%2014.1'%20/%3E%20%3Cpath%20d='M9.5%2018h5'%20/%3E%20%3Cpath%20d='m8%2022%204-11%204%2011'%20/%3E%20%3C/svg%3E");
+  --sb-icon-chart: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M3%203v16a2%202%200%200%200%202%202h16'%20/%3E%20%3Cpath%20d='m19%209-5%205-4-4-3%203'%20/%3E%20%3C/svg%3E");
+  --sb-icon-chevron-right: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='m9%2018%206-6-6-6'%20/%3E%20%3C/svg%3E");
+  --sb-icon-check-circle: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Ccircle%20cx='12'%20cy='12'%20r='10'%20/%3E%20%3Cpath%20d='m9%2012%202%202%204-4'%20/%3E%20%3C/svg%3E");
+  --sb-icon-clock: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Ccircle%20cx='12'%20cy='12'%20r='10'%20/%3E%20%3Cpath%20d='M12%206v6l4%202'%20/%3E%20%3C/svg%3E");
+  --sb-icon-cloud: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M17.5%2019H9a7%207%200%201%201%206.71-9h1.79a4.5%204.5%200%201%201%200%209Z'%20/%3E%20%3C/svg%3E");
+  --sb-icon-compass: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Ccircle%20cx='12'%20cy='12'%20r='10'%20/%3E%20%3Cpath%20d='m16.24%207.76-1.804%205.411a2%202%200%200%201-1.265%201.265L7.76%2016.24l1.804-5.411a2%202%200%200%201%201.265-1.265z'%20/%3E%20%3C/svg%3E");
+  --sb-icon-device: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Crect%20width='14'%20height='20'%20x='5'%20y='2'%20rx='2'%20ry='2'%20/%3E%20%3Cpath%20d='M12%2018h.01'%20/%3E%20%3C/svg%3E");
+  --sb-icon-file: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M6%2022a2%202%200%200%201-2-2V4a2%202%200%200%201%202-2h8a2.4%202.4%200%200%201%201.704.706l3.588%203.588A2.4%202.4%200%200%201%2020%208v12a2%202%200%200%201-2%202z'%20/%3E%20%3Cpath%20d='M14%202v5a1%201%200%200%200%201%201h5'%20/%3E%20%3C/svg%3E");
+  --sb-icon-filter: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M10%2020a1%201%200%200%200%20.553.895l2%201A1%201%200%200%200%2014%2021v-7a2%202%200%200%201%20.517-1.341L21.74%204.67A1%201%200%200%200%2021%203H3a1%201%200%200%200-.742%201.67l7.225%207.989A2%202%200%200%201%2010%2014z'%20/%3E%20%3C/svg%3E");
+  --sb-icon-globe: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Ccircle%20cx='12'%20cy='12'%20r='10'%20/%3E%20%3Cpath%20d='M12%202a14.5%2014.5%200%200%200%200%2020%2014.5%2014.5%200%200%200%200-20'%20/%3E%20%3Cpath%20d='M2%2012h20'%20/%3E%20%3C/svg%3E");
+  --sb-icon-grid: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Crect%20width='7'%20height='7'%20x='3'%20y='3'%20rx='1'%20/%3E%20%3Crect%20width='7'%20height='7'%20x='14'%20y='3'%20rx='1'%20/%3E%20%3Crect%20width='7'%20height='7'%20x='14'%20y='14'%20rx='1'%20/%3E%20%3Crect%20width='7'%20height='7'%20x='3'%20y='14'%20rx='1'%20/%3E%20%3C/svg%3E");
+  --sb-icon-help-circle: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Ccircle%20cx='12'%20cy='12'%20r='10'%20/%3E%20%3Cpath%20d='M9.09%209a3%203%200%200%201%205.83%201c0%202-3%203-3%203'%20/%3E%20%3Cpath%20d='M12%2017h.01'%20/%3E%20%3C/svg%3E");
+  --sb-icon-layers: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M12.83%202.18a2%202%200%200%200-1.66%200L2.6%206.08a1%201%200%200%200%200%201.83l8.58%203.91a2%202%200%200%200%201.66%200l8.58-3.9a1%201%200%200%200%200-1.83z'%20/%3E%20%3Cpath%20d='M2%2012a1%201%200%200%200%20.58.91l8.6%203.91a2%202%200%200%200%201.65%200l8.58-3.9A1%201%200%200%200%2022%2012'%20/%3E%20%3Cpath%20d='M2%2017a1%201%200%200%200%20.58.91l8.6%203.91a2%202%200%200%200%201.65%200l8.58-3.9A1%201%200%200%200%2022%2017'%20/%3E%20%3C/svg%3E");
+  --sb-icon-link: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M10%2013a5%205%200%200%200%207.54.54l3-3a5%205%200%200%200-7.07-7.07l-1.72%201.71'%20/%3E%20%3Cpath%20d='M14%2011a5%205%200%200%200-7.54-.54l-3%203a5%205%200%200%200%207.07%207.07l1.71-1.71'%20/%3E%20%3C/svg%3E");
+  --sb-icon-list: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M3%205h.01'%20/%3E%20%3Cpath%20d='M3%2012h.01'%20/%3E%20%3Cpath%20d='M3%2019h.01'%20/%3E%20%3Cpath%20d='M8%205h13'%20/%3E%20%3Cpath%20d='M8%2012h13'%20/%3E%20%3Cpath%20d='M8%2019h13'%20/%3E%20%3C/svg%3E");
+  --sb-icon-lock: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Crect%20width='18'%20height='11'%20x='3'%20y='11'%20rx='2'%20ry='2'%20/%3E%20%3Cpath%20d='M7%2011V7a5%205%200%200%201%2010%200v4'%20/%3E%20%3C/svg%3E");
+  --sb-icon-play: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M5%205a2%202%200%200%201%203.008-1.728l11.997%206.998a2%202%200%200%201%20.003%203.458l-12%207A2%202%200%200%201%205%2019z'%20/%3E%20%3C/svg%3E");
+  --sb-icon-plug: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M12%2022v-5'%20/%3E%20%3Cpath%20d='M15%208V2'%20/%3E%20%3Cpath%20d='M17%208a1%201%200%200%201%201%201v4a4%204%200%200%201-4%204h-4a4%204%200%200%201-4-4V9a1%201%200%200%201%201-1z'%20/%3E%20%3Cpath%20d='M9%208V2'%20/%3E%20%3C/svg%3E");
+  --sb-icon-pulse: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M22%2012h-2.48a2%202%200%200%200-1.93%201.46l-2.35%208.36a.25.25%200%200%201-.48%200L9.24%202.18a.25.25%200%200%200-.48%200l-2.35%208.36A2%202%200%200%201%204.49%2012H2'%20/%3E%20%3C/svg%3E");
+  --sb-icon-refresh: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M3%2012a9%209%200%200%201%209-9%209.75%209.75%200%200%201%206.74%202.74L21%208'%20/%3E%20%3Cpath%20d='M21%203v5h-5'%20/%3E%20%3Cpath%20d='M21%2012a9%209%200%200%201-9%209%209.75%209.75%200%200%201-6.74-2.74L3%2016'%20/%3E%20%3Cpath%20d='M8%2016H3v5'%20/%3E%20%3C/svg%3E");
+  --sb-icon-route: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Ccircle%20cx='6'%20cy='19'%20r='3'%20/%3E%20%3Cpath%20d='M9%2019h8.5a3.5%203.5%200%200%200%200-7h-11a3.5%203.5%200%200%201%200-7H15'%20/%3E%20%3Ccircle%20cx='18'%20cy='5'%20r='3'%20/%3E%20%3C/svg%3E");
+  --sb-icon-braces: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M8%203H7a2%202%200%200%200-2%202v5a2%202%200%200%201-2%202%202%202%200%200%201%202%202v5c0%201.1.9%202%202%202h1'%20/%3E%20%3Cpath%20d='M16%2021h1a2%202%200%200%200%202-2v-5c0-1.1.9-2%202-2a2%202%200%200%201-2-2V5a2%202%200%200%200-2-2h-1'%20/%3E%20%3C/svg%3E");
+  --sb-icon-radio-tower: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M4.9%2016.1C1%2012.2%201%205.8%204.9%201.9'%20/%3E%20%3Cpath%20d='M7.8%204.7a6.14%206.14%200%200%200-.8%207.5'%20/%3E%20%3Ccircle%20cx='12'%20cy='9'%20r='2'%20/%3E%20%3Cpath%20d='M16.2%204.8c2%202%202.26%205.11.8%207.47'%20/%3E%20%3Cpath%20d='M19.1%201.9a9.96%209.96%200%200%201%200%2014.1'%20/%3E%20%3Cpath%20d='M9.5%2018h5'%20/%3E%20%3Cpath%20d='m8%2022%204-11%204%2011'%20/%3E%20%3C/svg%3E");
+  --sb-icon-library-big: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Crect%20width='8'%20height='18'%20x='3'%20y='3'%20rx='1'%20/%3E%20%3Cpath%20d='M7%203v18'%20/%3E%20%3Cpath%20d='M20.4%2018.9c.2.5-.1%201.1-.6%201.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1%205.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2%201.1.1%201.3.6Z'%20/%3E%20%3C/svg%3E");
+  --sb-icon-book-a: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M4%2019.5v-15A2.5%202.5%200%200%201%206.5%202H19a1%201%200%200%201%201%201v18a1%201%200%200%201-1%201H6.5a1%201%200%200%201%200-5H20'%20/%3E%20%3Cpath%20d='m8%2013%204-7%204%207'%20/%3E%20%3Cpath%20d='M9.1%2011h5.7'%20/%3E%20%3C/svg%3E");
+  --sb-icon-paperclip: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='m16%206-8.414%208.586a2%202%200%200%200%202.829%202.829l8.414-8.586a4%204%200%201%200-5.657-5.657l-8.379%208.551a6%206%200%201%200%208.485%208.485l8.379-8.551'%20/%3E%20%3C/svg%3E");
+  --sb-icon-history: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M3%2012a9%209%200%201%200%209-9%209.75%209.75%200%200%200-6.74%202.74L3%208'%20/%3E%20%3Cpath%20d='M3%203v5h5'%20/%3E%20%3Cpath%20d='M12%207v5l4%202'%20/%3E%20%3C/svg%3E");
+  --sb-icon-headset: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M3%2011h3a2%202%200%200%201%202%202v3a2%202%200%200%201-2%202H5a2%202%200%200%201-2-2v-5Zm0%200a9%209%200%201%201%2018%200m0%200v5a2%202%200%200%201-2%202h-1a2%202%200%200%201-2-2v-3a2%202%200%200%201%202-2h3Z'%20/%3E%20%3Cpath%20d='M21%2016v2a4%204%200%200%201-4%204h-5'%20/%3E%20%3C/svg%3E");
+  --sb-icon-search: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='m21%2021-4.34-4.34'%20/%3E%20%3Ccircle%20cx='11'%20cy='11'%20r='8'%20/%3E%20%3C/svg%3E");
+  --sb-icon-sitemap: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Crect%20x='16'%20y='16'%20width='6'%20height='6'%20rx='1'%20/%3E%20%3Crect%20x='2'%20y='16'%20width='6'%20height='6'%20rx='1'%20/%3E%20%3Crect%20x='9'%20y='2'%20width='6'%20height='6'%20rx='1'%20/%3E%20%3Cpath%20d='M5%2016v-3a1%201%200%200%201%201-1h12a1%201%200%200%201%201%201v3'%20/%3E%20%3Cpath%20d='M12%2012V8'%20/%3E%20%3C/svg%3E");
+  --sb-icon-slash: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M22%202%202%2022'%20/%3E%20%3C/svg%3E");
+  --sb-icon-sliders: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M10%205H3'%20/%3E%20%3Cpath%20d='M12%2019H3'%20/%3E%20%3Cpath%20d='M14%203v4'%20/%3E%20%3Cpath%20d='M16%2017v4'%20/%3E%20%3Cpath%20d='M21%2012h-9'%20/%3E%20%3Cpath%20d='M21%2019h-5'%20/%3E%20%3Cpath%20d='M21%205h-7'%20/%3E%20%3Cpath%20d='M8%2010v4'%20/%3E%20%3Cpath%20d='M8%2012H3'%20/%3E%20%3C/svg%3E");
+  --sb-icon-sliders-vertical: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M10%208h4'%20/%3E%20%3Cpath%20d='M12%2021v-9'%20/%3E%20%3Cpath%20d='M12%208V3'%20/%3E%20%3Cpath%20d='M17%2016h4'%20/%3E%20%3Cpath%20d='M19%2012V3'%20/%3E%20%3Cpath%20d='M19%2021v-5'%20/%3E%20%3Cpath%20d='M3%2014h4'%20/%3E%20%3Cpath%20d='M5%2010V3'%20/%3E%20%3Cpath%20d='M5%2021v-7'%20/%3E%20%3C/svg%3E");
+  --sb-icon-steps: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M4%2016v-2.38C4%2011.5%202.97%2010.5%203%208c.03-2.72%201.49-6%204.5-6C9.37%202%2010%203.8%2010%205.5c0%203.11-2%205.66-2%208.68V16a2%202%200%201%201-4%200Z'%20/%3E%20%3Cpath%20d='M20%2020v-2.38c0-2.12%201.03-3.12%201-5.62-.03-2.72-1.49-6-4.5-6C14.63%206%2014%207.8%2014%209.5c0%203.11%202%205.66%202%208.68V20a2%202%200%201%200%204%200Z'%20/%3E%20%3Cpath%20d='M16%2017h4'%20/%3E%20%3Cpath%20d='M4%2013h4'%20/%3E%20%3C/svg%3E");
+  --sb-icon-tag: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M12.586%202.586A2%202%200%200%200%2011.172%202H4a2%202%200%200%200-2%202v7.172a2%202%200%200%200%20.586%201.414l8.704%208.704a2.426%202.426%200%200%200%203.42%200l6.58-6.58a2.426%202.426%200%200%200%200-3.42z'%20/%3E%20%3Ccircle%20cx='7.5'%20cy='7.5'%20r='.5'%20fill='currentColor'%20/%3E%20%3C/svg%3E");
+  --sb-icon-trash: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M10%2011v6'%20/%3E%20%3Cpath%20d='M14%2011v6'%20/%3E%20%3Cpath%20d='M19%206v14a2%202%200%200%201-2%202H7a2%202%200%200%201-2-2V6'%20/%3E%20%3Cpath%20d='M3%206h18'%20/%3E%20%3Cpath%20d='M8%206V4a2%202%200%200%201%202-2h4a2%202%200%200%201%202%202v2'%20/%3E%20%3C/svg%3E");
+  --sb-icon-users: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M16%2021v-2a4%204%200%200%200-4-4H6a4%204%200%200%200-4%204v2'%20/%3E%20%3Cpath%20d='M16%203.128a4%204%200%200%201%200%207.744'%20/%3E%20%3Cpath%20d='M22%2021v-2a4%204%200%200%200-3-3.87'%20/%3E%20%3Ccircle%20cx='9'%20cy='7'%20r='4'%20/%3E%20%3C/svg%3E");
+  --sb-icon-wrench: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%20%3E%20%3Cpath%20d='M14.7%206.3a1%201%200%200%200%200%201.4l1.6%201.6a1%201%200%200%200%201.4%200l3.106-3.105c.32-.322.863-.22.983.218a6%206%200%200%201-8.259%207.057l-7.91%207.91a1%201%200%200%201-2.999-3l7.91-7.91a6%206%200%200%201%207.057-8.259c.438.12.54.662.219.984z'%20/%3E%20%3C/svg%3E");
+  /* <<< GENERATED */
+}
+
+// ---- SECTION -> GLYPH. The only place the mapping lives, one line each.
+// `--sb-icon` is set on the `<li>` and INHERITS down to the `::before`, which is
+// what lets the geometry below be written once instead of fifteen times.
+//
+// THE CHILD COMBINATOR WAS DROPPED ON 2026-09-05, and the paragraph it replaced is
+// worth keeping because the reasoning was sound and the requirement changed under it.
+// It read: "`.theme-doc-sidebar-menu >` is LOAD-BEARING, not decoration: it is the
+// sidebar root `<ul>`, so `> li` is a TOP-LEVEL row by structure. That makes 'tier 1
+// only' an enforced property of the selector rather than a convention about which items
+// happen to carry the class — a class copied onto a nested item by mistake still paints
+// nothing."
+//
+// WHY IT HAD TO GO. The `apiIndex` sidebar (`sidebars/api-reference.ts`) is the one
+// sidebar on this site whose meaningful rows are ALL tier-2: its two tier-1 rows are the
+// `REST API` / `MQTT API` category headers, and every navigable item — Overview, Getting
+// Started, Management, Control, … — is a `type: 'link'` child inside them. Those children
+// mirror rows that DO carry glyphs in the two reference sidebars they point at, so the
+// chooser page was the only place on the site where the same concept appeared twice, once
+// with its mark and once bare. `> li` made that unfixable by construction.
+//
+// WHAT WAS GIVEN UP, stated plainly: the selector no longer enforces tier. A
+// `sidebar-icon--*` class copied onto a nested row now paints. That is the intended new
+// behaviour, so the safety property is gone rather than relocated — the compensating fact
+// is that no row acquires a glyph without someone typing the class onto it in
+// `sidebars/*.ts`, and at the time of the change every one of the 12 tier-2 consumers was
+// a deliberate mirror of a tier-1 row in another sidebar.
+//
+// THE TWO-CLASS CONTRACT IS UNCHANGED and is still the real trap: see the geometry rule
+// below. Paint keys on `sidebar-icon--<name>`, geometry on the bare `sidebar-icon`.
+.theme-doc-sidebar-menu li.sidebar-icon--compass { --sb-icon: var(--sb-icon-compass); }
+.theme-doc-sidebar-menu li.sidebar-icon--layers { --sb-icon: var(--sb-icon-layers); }
+.theme-doc-sidebar-menu li.sidebar-icon--bolt { --sb-icon: var(--sb-icon-bolt); }
+.theme-doc-sidebar-menu li.sidebar-icon--sliders { --sb-icon: var(--sb-icon-sliders); }
+.theme-doc-sidebar-menu li.sidebar-icon--broadcast { --sb-icon: var(--sb-icon-broadcast); }
+.theme-doc-sidebar-menu li.sidebar-icon--pulse { --sb-icon: var(--sb-icon-pulse); }
+.theme-doc-sidebar-menu li.sidebar-icon--grid { --sb-icon: var(--sb-icon-grid); }
+.theme-doc-sidebar-menu li.sidebar-icon--wrench { --sb-icon: var(--sb-icon-wrench); }
+.theme-doc-sidebar-menu li.sidebar-icon--book { --sb-icon: var(--sb-icon-book); }
+.theme-doc-sidebar-menu li.sidebar-icon--book-open { --sb-icon: var(--sb-icon-book-open); }
+.theme-doc-sidebar-menu li.sidebar-icon--sliders-vertical { --sb-icon: var(--sb-icon-sliders-vertical); }
+.theme-doc-sidebar-menu li.sidebar-icon--play { --sb-icon: var(--sb-icon-play); }
+.theme-doc-sidebar-menu li.sidebar-icon--bell { --sb-icon: var(--sb-icon-bell); }
+.theme-doc-sidebar-menu li.sidebar-icon--tag { --sb-icon: var(--sb-icon-tag); }
+.theme-doc-sidebar-menu li.sidebar-icon--list { --sb-icon: var(--sb-icon-list); }
+// Added 2026-08-16 with the two pages the IA review moved into the MQTT instance
+// (P0.2, P0.3). Both land as TIER-1 rows in `api-mqtt`, so both are inside this
+// selector's reach; the tokens they point at were already generated and unreferenced.
+.theme-doc-sidebar-menu li.sidebar-icon--sitemap { --sb-icon: var(--sb-icon-sitemap); }
+.theme-doc-sidebar-menu li.sidebar-icon--device { --sb-icon: var(--sb-icon-device); }
+// `lock` was declared in the registry above but had no paint rule, so
+// `sidebar-icon--lock` — which sidebars/api-mqtt.ts has carried on its Connection row
+// since that sidebar was written — set no `--sb-icon` and rendered an empty 20x20 box.
+// The registry entry and the consumer both already existed; only this line was missing.
+.theme-doc-sidebar-menu li.sidebar-icon--lock { --sb-icon: var(--sb-icon-lock); }
+.theme-doc-sidebar-menu li.sidebar-icon--alert-triangle { --sb-icon: var(--sb-icon-alert-triangle); }
+// `globe` — same story as `lock` above: the registry token has existed since the card map
+// needed it, and until 2026-08-29 no sidebar row asked for it, so there was no paint rule.
+// The `apiIndex` sidebar's REST API row is the first consumer. The glyph is deliberately the
+// navbar's own `RestApi: Globe`, so the row and the dropdown item it duplicates carry one mark.
+.theme-doc-sidebar-menu li.sidebar-icon--globe { --sb-icon: var(--sb-icon-globe); }
+// Added 2026-08-23. The Guides index row was the ONE tier-1 row in the whole
+// sidebar with no glyph — 10 of 11 carried one — which is invisible while the
+// sidebar shows labels and becomes the whole problem the moment it collapses to
+// icons, since that row would collapse to nothing at all.
+//
+// `route`, picked in .ai-history/037-sidebar-icons.md with the rejected
+// candidates and the reason for each. The short version: all ten guide
+// categories are a sequence of steps toward an outcome, `BookOpen` collides with
+// `Glossary: BookA`, and `Compass` would give the parent the same idea as its own
+// child "Get Oriented".
+.theme-doc-sidebar-menu li.sidebar-icon--route { --sb-icon: var(--sb-icon-route); }
+// Added 2026-08-23. `sidebars/resources.ts` was the one sidebar of the four carrying
+// no glyphs at all, which mattered more once the sidebar started collapsing to icons:
+// its seven tier-1 rows would have collapsed to nothing.
+//
+// Picked in .ai-history/037-sidebar-icons.md section 7, which argues the whole set as a
+// SIBLING COLUMN rather than one row at a time — seven marks that render together, so
+// the only test that matters is whether any two are confusable at 20px. Two rejections
+// there turned on geometry a name would have hidden, and both are worth repeating here
+// because they constrain anything added to this list later:
+//   `table` for Quick Reference is `rect 18x18` + one vertical + two horizontals, and
+//   `panel-left` — the trigger now drawn in the breadcrumbs on all 214 doc pages — is
+//   `rect 18x18` + one vertical. Table is the trigger glyph plus two lines.
+//   `life-buoy` for Support is the IDENTICAL `circle r=10` as `circle-help`, which is
+//   FAQs, three rows above it. That is the same argument this system used to withdraw
+//   `circle-play`.
+// `book-a` keeps Glossary and `help-circle` keeps FAQs, both already chosen in SYMBOLS.
+.theme-doc-sidebar-menu li.sidebar-icon--library-big { --sb-icon: var(--sb-icon-library-big); }
+.theme-doc-sidebar-menu li.sidebar-icon--book-a { --sb-icon: var(--sb-icon-book-a); }
+.theme-doc-sidebar-menu li.sidebar-icon--help-circle { --sb-icon: var(--sb-icon-help-circle); }
+.theme-doc-sidebar-menu li.sidebar-icon--paperclip { --sb-icon: var(--sb-icon-paperclip); }
+.theme-doc-sidebar-menu li.sidebar-icon--history { --sb-icon: var(--sb-icon-history); }
+.theme-doc-sidebar-menu li.sidebar-icon--headset { --sb-icon: var(--sb-icon-headset); }
+
+// ---- THE GEOMETRY, written once.
+// TWO selectors and both are required, because the two kinds of tier-1 row put
+// their `<a>` at different depths. A CATEGORY wraps it in
+// `div.menu__list-item-collapsible` alongside the caret button —
+// node_modules/@docusaurus/theme-classic/lib/theme/DocSidebarItem/Category/index.js:227-245,
+// with the caret at :246 — whereas a plain doc LINK puts the `<a>` directly under
+// the `<li>` —
+// node_modules/@docusaurus/theme-classic/lib/theme/DocSidebarItem/Link/index.js:30-40.
+// BOTH are needed because a tier-1 row is not always a category: `api-mqtt`
+// (`sidebars/api-mqtt.ts`) and `api-rest` (`sidebars/api-rest.ts`) each mix icon-bearing
+// tier-1 categories with icon-bearing tier-1 doc links, so a category-only selector
+// would paint nothing on any doc link. That mixing, not any particular row count, is
+// the invariant this rule is written against — the counts move on every IA reshuffle
+// and have already gone stale once here. (`resources` carries no `sidebar-icon` row
+// at all.)
+//
+// UPDATED 2026-08-23. This note used to end: "`docs` in `sidebars/guides.ts` is
+// categories only; its one tier-1 doc link, `guides/index`, carries
+// `sidebar-index-row` and no `sidebar-icon`, so it is deliberately out of reach."
+// It now carries both, so `docs` mixes shapes like the other two and the second
+// selector below is load-bearing for it as well. Nothing about the rule changed —
+// it was already written for the mixed case, which is the point of having written
+// it that way.
+//
+// NOTE THE TWO-CLASS CONTRACT, because it bites: the PAINT rules above key on the
+// specific `sidebar-icon--<name>`, this GEOMETRY rule keys on the bare
+// `sidebar-icon`. A row carrying only the specific class resolves `--sb-icon`
+// correctly and then draws it into an `auto x auto` box with a transparent
+// background — a silent no-op that a class-presence check cannot see. That is
+// exactly how `guides/index` first shipped, and why
+// .audit/2026-08-22_shadcn/verify-guides-icon.mjs measures the ::before box.
+//
+// `flex: 0 0 auto` is required: Infima gives `.menu__link` `display: flex`
+// (node_modules/infima/dist/css/default/default.css:2342-2347), so this
+// ::before is a flex ITEM and would otherwise be shrunk by a long label.
+.theme-doc-sidebar-menu li.sidebar-icon > .menu__list-item-collapsible > .menu__link::before,
+.theme-doc-sidebar-menu li.sidebar-icon > .menu__link::before {
+  content: '';
+  flex: 0 0 auto;
+  // ALL THREE STAY px, AND AS ONE FAMILY WITH `sidebar.scss`'s ladder and bar axis
+  // (type contract, 2026-08-16). The box, because the 1.5px effective stroke in the
+  // geometry contract above is derived from it — and with it the `20px 20px` of the
+  // mask pair below, which is the same number and has to stay it. The gap, because it
+  // is the second half of the label's position: the icon column starts at x=20 and the
+  // label starts 28px further right, 20 of box plus 8 of gap. Convert the gap alone and
+  // every label slides off that column as soon as the root is not 16px, which is the
+  // one outcome the x= arithmetic in the sibling file cannot survive.
+  width: 20px;
+  height: 20px;
+  // FIRST-LINE SLOT — see the section of that name in `src/css/sidebar.scss`, which is where
+  // `--sb-label-line` is declared and where the arithmetic is worked through. The row is
+  // `align-items: flex-start` as of 2026-09-08 so a tier-1 label can wrap with its glyph
+  // beside the FIRST line; this cancels the 1.8px by which a 20px glyph exceeds the 18.2px
+  // line box, so the glyph cannot set the flex line's cross size and grow the row to 37.8px.
+  // Lands the box at the same offset `align-items: center` did — 8.0px off the row's top.
+  //   `margin-block`, not the `margin` shorthand, precisely so it leaves the 8px gap below
+  // untouched: that gap is half of the label's x-position and the note above owns it.
+  margin-block: calc((var(--sb-label-line) - 20px) / 2);
+  margin-right: 8px;
+  // The paint. `currentColor` is the whole reason this is a mask: it inherits the
+  // row's own ink, so the glyph turns Zebra `--ifm-color-primary` on the active
+  // row and follows the dark-theme menu colour, with NO literal hex and NO
+  // `[data-theme='dark']` block anywhere in this file.
+  background-color: currentColor;
+  -webkit-mask: var(--sb-icon) center / 20px 20px no-repeat;
+          mask: var(--sb-icon) center / 20px 20px no-repeat;
+}
+
+// Under forced colours the mask still paints, because the system remaps
+// `currentColor` along with the text it belongs to — which is the property the
+// reference's `content: url()` approach cannot offer. Nothing to rescue here;
+// this comment exists so the absence of a rescue reads as a measured conclusion
+// rather than an omission, matching the two rescues in `src/css/sidebar.scss`.

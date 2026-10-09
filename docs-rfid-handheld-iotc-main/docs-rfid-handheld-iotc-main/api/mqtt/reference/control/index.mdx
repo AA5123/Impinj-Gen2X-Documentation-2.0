@@ -1,0 +1,30 @@
+---
+id: index
+title: "Control"
+sidebar_label: "Control"
+sidebar_position: 6
+draft: false
+description: "Control-plane commands that configure how the reader reads and run inventory — operating mode, post-read tag filtering, and START/STOP inventory control."
+sidebar_custom_props: { emoji: "🎛️", card: "Control-plane commands that configure how the reader reads and run inventory." }
+---
+
+
+The control commands configure and run the RFID radio and the barcode scanner, and decide what each data endpoint reports. They are conventionally sent to a [`CTRL`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) endpoint's command topic, for example `<tenantId>/CTRL/clients/cmnd/<deviceSerialNumber>`. Commands and replies travel at [QoS 1](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#qos) and are not retained.
+
+| Group | Commands |
+| --- | --- |
+| [Operating Mode](/api-reference/mqtt/ctrl/set-operating-mode) | [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) |
+| Tag Filtering | [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter), [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter) |
+| Inventory Control | [`control_operation`](/api-reference/mqtt/ctrl/control-operation) |
+
+`set_operating_mode` and `control_operation` `START` are refused with [code `11`](/api-reference/mqtt/response-codes#code-11) while an inventory runs. The operating mode is lost on reboot. Before you start an inventory, confirm the reader’s [regulatory region](/api-reference/mqtt/mgmt/get-current-region) with [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region): the reader does not transmit until it is set.
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

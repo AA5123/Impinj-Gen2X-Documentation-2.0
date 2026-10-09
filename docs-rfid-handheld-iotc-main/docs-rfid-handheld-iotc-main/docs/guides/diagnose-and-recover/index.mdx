@@ -1,0 +1,58 @@
+---
+id: index
+title: "Diagnose and Recover"
+sidebar_label: "Diagnose and Recover"
+sidebar_position: 9
+draft: false
+description: "Incident response: work a problem from the symptom, narrow it by system area, run the recovery playbook that fits, and escalate with the right evidence."
+sidebar_custom_props: { emoji: "🩹", card: "Incident response: work a problem from the symptom, narrow it by system area." }
+---
+
+
+Something is wrong with a reader or with your integration. Start from what you can see, and follow the route to the check, the cause and the fix. The failure modes (`FM-XX-NN`) and recovery playbooks (`RP-NN`) have stable identifiers; link to them directly.
+
+## Start from a Symptom {#symptoms}
+
+| What you see | Start here |
+|---|---|
+| A command gets no reply | [Commands Get No Response](/guides/diagnose-and-recover/commands-get-no-response) |
+| Heartbeats, alerts or connection events do not arrive | [No Events Arrive](/guides/diagnose-and-recover/no-events-arrive) |
+| An inventory runs, but no tag data arrives, or reads are missing | [No Tag Data, or Reads Are Missing](/guides/diagnose-and-recover/no-tag-data) |
+| The reader never connects to the broker | [Cannot Connect to the Broker](/guides/diagnose-and-recover/cannot-connect-to-the-broker) |
+| The reader connects, then drops, again and again | [The Reader Keeps Disconnecting](/guides/diagnose-and-recover/reader-keeps-disconnecting) |
+| A firmware update or certificate install never finishes | [A Firmware Update or Certificate Install Never Completes](/guides/diagnose-and-recover/update-or-install-never-completes) |
+| A command returns a non-zero code | Look the code up in [Response Codes](/api-reference/mqtt/response-codes), then see [Retry Commands Safely](/guides/build-your-integration/retry-commands-safely) |
+| The same message arrives twice | Expected at QoS 1: see [Delivery, Retries, and Disconnects](/guides/core-concepts/delivery-retries-and-disconnects#at-least-once), then [Retry Commands Safely](/guides/build-your-integration/retry-commands-safely) |
+| A configuration is accepted, but the reader behaves differently | [Endpoints and Configuration](/guides/diagnose-and-recover/diagnose-by-system-area/endpoints-and-configuration) |
+| The reader reads tags, but badly: missed tags, short counts, interference | [RFID Read Performance](/guides/diagnose-and-recover/diagnose-by-system-area/rfid-read-performance) |
+| Many readers fail at once | [Scope a Fleet-Wide Incident](/guides/diagnose-and-recover/scope-a-fleet-wide-incident) |
+
+## Common Codes and Their Routes {#codes}
+
+| Code and command | Likely cause | Go to |
+|---|---|---|
+| `10` from `config_endpoint` `add` | The endpoint name exists | [FM-CFG-01](/guides/diagnose-and-recover/diagnose-by-system-area#fm-cfg-01) |
+| `25` or `26` from `config_endpoint` | Too many publish or subscribe topics | [FM-CFG-02](/guides/diagnose-and-recover/diagnose-by-system-area#fm-cfg-02) |
+| `35` from `config_endpoint` | The endpoint is active | [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints#update) |
+| `11` from `set_operating_mode` or `control_operation` `START` | An inventory is running | [RP-04](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-04) |
+| `12` from `control_operation` `STOP` | The radio was already idle; not a failure | — |
+| `22` from `set_operating_mode` | `ADVANCED` without `advancedConfigurations` | [FM-CFG-03](/guides/diagnose-and-recover/diagnose-by-system-area#fm-cfg-03) |
+| `23` from a command listed for that code | A value outside its enum; case matters | The command's reference page |
+| `4` from any command | A firmware update is running | [FM-FW-01](/guides/diagnose-and-recover/diagnose-by-system-area#fm-fw-01) |
+| `8`, `9`, `13` or `14` from `set_os` | Flash, file, failure or battery | [FM-FW-02](/guides/diagnose-and-recover/diagnose-by-system-area#fm-fw-02), [FM-FW-03](/guides/diagnose-and-recover/diagnose-by-system-area#fm-fw-03), [RP-06](/guides/diagnose-and-recover/recovery-playbooks/recover-from-firmware-problems#rp-06), [FM-FW-04](/guides/diagnose-and-recover/diagnose-by-system-area#fm-fw-04) |
+| `5` from `reboot` | An inventory is running | [RP-04](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-04) |
+| `1` from `set_os`, `install_certificate` or `reboot` | Accepted, not finished; not a failure | [Track Asynchronous Commands](/guides/build-your-integration/track-asynchronous-commands) |
+
+## Diagnose a Problem {#diagnose-a-problem}
+
+When no symptom above fits, work from the network outward, one layer at a time: the reader's network link, then its MQTT session, then its endpoints and topics, then your application. Three checks usually show which layer is broken:
+
+1. **Ask the reader.** Send [`get_status`](/api-reference/mqtt/mgmt/get-status). Any reply proves that the path through the broker works in both directions.
+2. **Look at the connection events.** Read the latest `mqttConnEVT` on the endpoint's connection-state topic. A `CONNECTED` with nothing since is a different fault from `CONNECTED` and `DISCONNECTED` alternating.
+3. **Look at the heartbeats.** `heartBeatEVT` arrives at its interval while the reader, its session and the path to your application work. When it stops, one of them needs attention.
+
+If all three are healthy and the problem persists, it is downstream of the broker: access rules, your pipeline or your application. The layered model and the failure-mode catalog are in [Diagnose by System Area](/guides/diagnose-and-recover/diagnose-by-system-area#where-things-fail). To clear a known failure, go to the [Recovery Playbooks](/guides/diagnose-and-recover/recovery-playbooks). Before you contact Zebra, collect the evidence in [Escalate to Support](/guides/diagnose-and-recover/escalate-to-support).
+
+## In This Section
+
+<HubCards />

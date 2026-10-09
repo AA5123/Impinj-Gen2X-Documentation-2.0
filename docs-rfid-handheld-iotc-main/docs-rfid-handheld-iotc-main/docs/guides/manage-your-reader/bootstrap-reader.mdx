@@ -1,0 +1,186 @@
+---
+id: bootstrap-reader
+title: "Bootstrap a Reader with 123RFID Desktop"
+sidebar_label: "Bootstrap a Reader with 123RFID Desktop"
+sidebar_position: 1
+description: "Use 123RFID Desktop on Windows, over USB-C, to set a reader's region, join Wi-Fi, and create and activate the MDM endpoint that gives it its first MQTT connection."
+sidebar_custom_props: { emoji: "2️⃣", card: "Set the region, join Wi-Fi, and point the reader at your broker." }
+doc_type: how-to
+page_meta:
+  - "Used in: Quick Start, phase 2"
+  - "Audience: Operator with a Windows laptop"
+  - "Time: 8 min"
+---
+
+
+**Result:** an **active MDM endpoint** on the sled, connected to your broker. The MDM endpoint is the bootstrap connection, the first live MQTT path into and out of the reader. **Until this is active, no MQTT command works.**
+
+### Why Bootstrap Is Needed
+
+A reader out of the box has no Wi-Fi credentials and no broker to connect to, so it cannot receive an MQTT command. No MQTT command sets the regulatory region at all, and Wi-Fi and endpoints can be changed over MQTT only once the reader already has a working connection. 123RFID Desktop, over USB-C, is the path this documentation uses for the initial provisioning; see [Setup Tools](/resources/setup-tools). After this procedure the sled has:
+
+- A regulatory region.
+- A Wi-Fi profile with SSID, security type, and credentials, on a reader that has Wi-Fi.
+- An active **MDM endpoint** with broker URL, port, protocol, and tenant ID.
+- A bootstrap connection you can send MQTT commands over.
+
+### Install and Open 123RFID Desktop
+
+Download it from `support.zebra.com` (search "123RFID Desktop"). It runs on Windows only. Launch it; the Welcome screen appears.
+
+### Discover and Connect the Reader
+
+Before configuring Wi-Fi or MQTT, discover and connect the reader to your PC over USB-C.
+
+#### Initiate Discovery
+
+Click the **FIND READERS** button on the main screen.
+
+![123RFID Desktop welcome screen with the FIND READERS button highlighted](/img/docs/123rfid/desktop/01-find-readers.webp)
+
+#### Select the Connection Type
+
+In the Reader Discovery screen, click the **USB** icon to scan for the connected reader.
+
+![Reader Discovery screen showing the USB connection-type icon](/img/docs/123rfid/desktop/02-discovery-bluetooth-usb.webp)
+
+#### Choose Your Device
+
+An **Add a device** pop-up window opens. Select the handheld reader from the list; verify that the serial number matches the label on the back of the sled. Click **Next**.
+
+![Add a device pop-up listing discovered handheld readers](/img/docs/123rfid/desktop/03-add-device.webp)
+
+#### Connect
+
+Locate your device in the **Available Readers** list and click the green **CONNECT** button next to it.
+
+![Available Readers list with the green CONNECT button next to a reader](/img/docs/123rfid/desktop/04-available-readers-connect.webp)
+
+#### Verify the Connection
+
+Once connected, the reader moves from the bottom list to the **Connected Readers** section at the top of the interface.
+
+![Connected Readers section showing the reader successfully connected](/img/docs/123rfid/desktop/05-connected-readers.webp)
+
+### Set the Region
+
+In the **Region** tab, select your regulatory region from the dropdown and confirm. The sled may briefly disconnect and reconnect as the region is applied.
+
+:::caution[Choose the region for where the reader will operate]
+The region decides which frequencies and power levels the radio may use, and no MQTT command can change it afterwards. [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region) reads it back.
+:::
+
+### Configure Wi-Fi Connectivity
+
+For MQTT and other network-dependent protocols to function, the reader needs a stable network path to your broker. Wi-Fi is the typical choice for handheld deployments.
+
+:::note[RFD40 Standard]
+The RFD40 Standard has no Wi-Fi radio, so skip this section. After you activate the MDM endpoint, dock the sled in a communication cradle connected to a network that reaches your broker. The cradle gives the sled a network connection, and the IoT Connector connects to the broker.
+:::
+
+#### Open the Reader Configuration
+
+Click the **Configure** icon (gear symbol) in the left-hand navigation panel. The Reader Configuration window appears. Click the picture of the connected reader to edit its settings.
+
+![Reader Configuration window with a picture of the connected reader](/img/docs/123rfid/desktop/06-reader-configuration.webp)
+
+#### Edit Configuration on the Reader
+
+A page opens with two buttons. Click **Edit Configuration on Reader**.
+
+![Edit Configuration on Reader button on the reader-configuration page](/img/docs/123rfid/desktop/07-edit-configuration.webp)
+
+#### Navigate to Communication
+
+From the left-hand menu in the settings view, select **Communication**.
+
+![Communication menu item in the settings sidebar](/img/docs/123rfid/desktop/08-communication-menu.webp)
+
+#### Access Wi-Fi Settings and Add a Network
+
+The **Wi-Fi Configuration** window opens by default. Select the **Scan and Choose Network** radio button to search for available networks, then pick your network's SSID from the drop-down list.
+
+![Wi-Fi Configuration window with the Scan and Choose Network option](/img/docs/123rfid/desktop/09-wifi-scan-network.webp)
+
+#### Enter Credentials and Connect
+
+Choose the appropriate security protocol (for example, **WPA2_Personal_CCMP**) and enter the passkey. Click **Add**, then click **Connect**.
+
+![Wi-Fi connected status showing SSID, IP address, and MAC](/img/docs/123rfid/desktop/10-wifi-connected.webp)
+
+#### Verify the Network
+
+In the **Existing Connection** section, confirm that the connected SSID, assigned IP address, MAC address, and connection status are correct, and that the Wi-Fi network can reach the broker.
+
+### Configure the MDM Endpoint
+
+Configure the MQTT broker connection so the reader can send commands to and receive responses from your broker.
+
+#### Navigate to the End Point Tab
+
+While still in the **Communication** section, click the **End Point** tab at the top.
+
+![End Point tab in the Communication settings view](/img/docs/123rfid/desktop/11-endpoint-tab.webp)
+
+#### Create a New Endpoint
+
+Click the **New** button on the right side of the screen.
+
+![New endpoint button in the End Point configuration screen](/img/docs/123rfid/desktop/12-new-endpoint.webp)
+
+Fill in at least these fields:
+
+- **Endpoint name** — anything readable, e.g., `mdm_bootstrap`.
+- **Broker URL** — the hostname or IP address of your broker.
+- **Port** — `1883` for plain MQTT or `8883` for TLS.
+- **Protocol** — `MQTT` (plain) or `MQTT_TLS`. Match it to the port: a plain `MQTT` connection to port `8883` fails.
+- **Tenant ID** — the first segment of every topic the reader uses, at most 48 characters. The reader does not change its case, and MQTT topics are case-sensitive, so `zebra` and `ZEBRA` are different prefixes.
+- **MQTT parameters** — `keepAlive` and `cleanSession` defaults are fine for evaluation.
+- **Credentials** — if your broker requires authentication.
+- **Certificate material** — if using TLS (certs must be installed beforehand; see [Securing the connection (TLS & certificates)](/guides/core-concepts/the-security-model)).
+
+:::note[The three topic fields are optional]
+Command Topic, Response Topic, and Event Topic are optional. If left blank, default values are populated automatically when you click **Add**.
+:::
+
+#### Add the Endpoint
+
+Once all required fields are filled, click **Add**. The new endpoint appears in the endpoint list at the bottom of the screen.
+
+![New endpoint added to the endpoint list at the bottom of the screen](/img/docs/123rfid/desktop/13-add-endpoint.webp)
+
+### Activate and Verify
+
+#### Activate the Endpoint
+
+Select the **Activate** checkbox in the row corresponding to your new endpoint.
+
+![Activate checkbox selected for the new endpoint](/img/docs/123rfid/desktop/14-activate-endpoint.webp)
+
+#### Verify the Endpoint Status
+
+Under the **Endpoint Status** section, click **Refresh** to confirm that the connection has been established and reads **Connected**.
+
+![Endpoint Status section showing the endpoint as Connected after Refresh](/img/docs/123rfid/desktop/15-verify-endpoint-status.webp)
+
+#### Confirm the Bootstrap Connection Is Live
+
+Watch your broker logs (for Mosquitto, `mosquitto -v` shows every connection). You should see an incoming MQTT connection from the sled's IP within a few seconds. In MQTTX, subscribe to `+/MDM/#` (one tenant prefix, then all MDM traffic); you should see the sled's own traffic.
+
+### Success Check
+
+- The sled is connected to Wi-Fi.
+- The broker logs show an incoming MQTT connection identifying the sled.
+- The MDM endpoint shows an **active** / **Connected** state in 123RFID Desktop.
+- You have noted: the sled's serial number (on the back of the device and in the UI), the broker URL and port, and the tenant ID.
+
+### Did Not Work? {#didnt-work}
+
+- **No Wi-Fi association.** Verify SSID, security type, and password exactly (case-sensitive). Enterprise networks need a certificate chain installed; beyond Quick Start scope.
+- **Wi-Fi associates but no broker connection.** DNS or routing issue. Try an IP address rather than hostname.
+- **Connection appears then drops.** Credentials wrong on the broker side, or the broker rejects the client ID. Mosquitto with `allow_anonymous true` will not reject anything; HiveMQ Cloud and AWS IoT Core need credentials.
+- **Commands still get no reply.** Check that the tenant ID in your subscription matches the one you entered, including its case.
+
+### Where to Go Next
+
+[Send Your First Command](/guides/quick-start#first-command) — the first MQTT round-trip using [`get_version`](/api-reference/mqtt/mgmt/get-version).

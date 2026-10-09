@@ -1,0 +1,43 @@
+---
+id: recover-from-firmware-problems
+title: "Recover from Firmware Problems"
+sidebar_label: "Recover from Firmware Problems"
+sidebar_position: 4
+description: "Recovery playbooks RP-06 and RP-09: recover a single reader from a failed set_os update, and stagger and retry a fleet-wide firmware rollout that failed on part of the fleet."
+sidebar_custom_props: { emoji: "⬆️", card: "RP-06 and RP-09: recover one reader, or a fleet rollout that half failed." }
+doc_type: how-to
+page_meta:
+  - "Audience: All personas in incident response"
+  - "Time: 10 min per playbook"
+---
+
+
+Two playbooks for [`set_os`](/api-reference/mqtt/mgmt/set-os) failures. RP-06 is the single-reader case: check the running version, battery, flash and the firmware source, then send the update again. RP-09 is the same diagnosis applied across a fleet, where the failures usually sort into a small number of groups with different fixes.
+
+Run each step; verify the success check; move on.
+
+### RP-06: Recover from Failed Firmware Update {#rp-06}
+
+**When:** [`set_os`](/api-reference/mqtt/mgmt/set-os) returned code 13 (Firmware update Failed) or the update appeared to start but did not complete.
+
+1. Run [`get_version`](/api-reference/mqtt/mgmt/get-version) and note which firmware is running now. What the reader runs after a failed update is not specified in the available sources.
+2. Run [`get_status`](/api-reference/mqtt/mgmt/get-status). A low battery refuses the update with code `14`; charge the reader or connect external power. The contract does not state the threshold.
+3. If `set_os` returned code `8`, the reader lacks flash space for the file: free space or use a smaller package, as the contract recommends.
+4. Verify the firmware URL is reachable from the sled's network — try downloading it from the sled's Wi-Fi segment.
+5. Re-issue [`set_os`](/api-reference/mqtt/mgmt/set-os) with the same URL.
+6. Watch the `FIRMWARE_UPDATE` alerts. Compare `updateStatus` only against `FW update success`.
+7. **Success check:** an alert reports `FW update success`, and [`get_version`](/api-reference/mqtt/mgmt/get-version) shows the new firmware.
+
+### RP-09: Stagger and Retry Rollout {#rp-09}
+
+**When:** Fleet-wide firmware update failed on some readers.
+
+1. Identify the readers that failed: the ones whose `set_os` reply was a refusal code, and the ones that never reported `FW update success` or do not show the target in `get_version`.
+2. Group them by reason, because each has its own fix: low battery (`14`), too little flash (`8`), file not found (`9`), and update failed (`13`).
+3. For battery-low readers (FM-FW-04): defer until charged; group them into a charging-station-mounted batch and retry.
+4. For too little flash (FM-FW-02): free flash space or use a smaller package, then retry.
+5. For source-unreachable (FM-FW-03): verify the firmware URL is reachable from the failing readers' Wi-Fi segment. Often a different segment than the successful readers'.
+6. Re-issue [`set_os`](/api-reference/mqtt/mgmt/set-os) against the failed subset only.
+7. **Success check:** every targeted reader reports `FW update success` and shows the target firmware in `get_version`.
+
+**Related:** 🛟 [Recovery Playbooks](/guides/diagnose-and-recover/recovery-playbooks) · 📙 [Recover from Configuration Problems](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems) · 📙 [Update Firmware and Restart the Reader](/guides/manage-your-reader/update-firmware-and-restart) · 📕 [`set_os`](/api-reference/mqtt/mgmt/set-os) · 🩺 [Diagnose by System Area](/guides/diagnose-and-recover/diagnose-by-system-area)

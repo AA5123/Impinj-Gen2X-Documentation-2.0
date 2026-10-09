@@ -1,0 +1,47 @@
+---
+id: endpoints-and-configuration
+title: "Endpoints and Configuration"
+sidebar_label: "Endpoints and Configuration"
+sidebar_position: 4
+description: "Diagnose endpoint definitions and reader configuration: name collisions, topic caps, event routing, invalid operating-mode payloads, drift, and what survives reboot."
+sidebar_custom_props: { emoji: "🎛️", card: "Diagnose endpoint definitions and reader configuration: name collisions." }
+doc_type: how-to
+page_meta:
+  - "Audience: Solution Builder, Fleet Operator"
+  - "Use: the reader answers, but its configured state is wrong"
+---
+
+
+**Scope.** What the reader has been told to be: endpoint definitions, topic lists, event-reporting flags, operating-mode payloads, and configuration that has drifted from your baseline or was reset by a restart.
+
+The signature of this area is that the reader **answers** — commands get replies — but the replies carry a rejection code, or the configuration you expect is not the configuration you get. If nothing answers at all, start at [MQTT Connection](/guides/diagnose-and-recover/diagnose-by-system-area/mqtt-connection).
+
+## First Command
+
+[`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) returns the whole endpoint picture in one reply: which endpoints are saved, which are `activate: true`, their `protocol`, `url`, `port`, `verificationType`, their publish and subscribe topics, and each one's `eventConfiguration`. Compare it against what you believe you pushed before changing anything.
+
+## Start With
+
+| Symptom | Go to |
+|---|---|
+| [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) `add` returns code `10` — the name already exists | [FM-CFG-01](/guides/diagnose-and-recover/diagnose-by-system-area#fm-cfg-01) |
+| [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) returns code `25` or `26` — too many topics | [FM-CFG-02](/guides/diagnose-and-recover/diagnose-by-system-area#fm-cfg-02) |
+| [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) returns code `22` — `ADVANCED` without `advancedConfigurations` | [FM-CFG-03](/guides/diagnose-and-recover/diagnose-by-system-area#fm-cfg-03) |
+| The application receives no `mqttConnEVT` even though the broker sees the reader | [FM-EVT-01](/guides/diagnose-and-recover/diagnose-by-system-area#fm-evt-01) |
+| Heartbeats arrive but the `inventoryStatus` or `batteryAlert` blocks are missing | [FM-EVT-02](/guides/diagnose-and-recover/diagnose-by-system-area#fm-evt-02) |
+| One reader's configuration differs from your baseline | [RP-08: Reconcile Drift](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-08) |
+| The operating mode is back to the default after a restart | [What a Reboot Changes](/guides/core-concepts/the-configuration-model#reboots) |
+| The reader publishes on a topic you did not expect | [How a Topic Is Built](/guides/core-concepts/endpoints-topics-and-channels#topic-format): the `topic` field is only the middle segment, and position decides what goes where |
+| A configuration command is rejected while inventory is running | [RP-04: Stop inventory cleanly](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-04) |
+
+## Two Rules That Explain Most of These
+
+**A restart resets the operating mode.** The contract states that the settings made with [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) are lost on reboot. Re-apply them as part of your startup sequence rather than treating their absence as a fault. Whether other domains survive a restart is not specified in the available sources.
+
+**The limits are low and they are hard.** Three publish topics and one subscribe topic per endpoint, 32 select pre-filters, a 15-character endpoint name and a 48-character tenant ID. The maximum number of Wi-Fi profiles is not stated; code `19` reports it. A design that needs more capacity needs more endpoints, not a larger array — see [FM-CFG-02](/guides/diagnose-and-recover/diagnose-by-system-area#fm-cfg-02) and [Response Codes](/api-reference/mqtt/response-codes) for the full set.
+
+## Changes That Need a Reboot
+
+Event-reporting changes made with [`config_events`](/api-reference/mqtt/mgmt/config-events) take effect only after the reader reboots. If heartbeats or alerts you enabled do not arrive, confirm that the reader restarted after the change before you send it again. An endpoint change is refused with code `35` while the endpoint is active; see [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints#update).
+
+**Related:** ⚠️ [Diagnose by System Area](/guides/diagnose-and-recover/diagnose-by-system-area) · 📘 [Endpoints, Topics, and Channels](/guides/core-concepts/endpoints-topics-and-channels) · 📙 [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints) · 🛟 [Recovery Playbooks](/guides/diagnose-and-recover/recovery-playbooks) · 📕 [Response Codes](/api-reference/mqtt/response-codes)

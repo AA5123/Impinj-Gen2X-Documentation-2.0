@@ -1,0 +1,1157 @@
+/* ===========================================================================
+ * NAVBAR MENU — the Radix Primitives NavigationMenu treatment, on Docusaurus's
+ * own navbar markup and with no wrapper added to it.
+ *
+ * WHAT THIS REPRODUCES, AND FROM WHERE. The reference is the live
+ * NavigationMenu demo rendered in the hero of
+ * https://www.radix-ui.com/primitives/docs/components/navigation-menu — the
+ * `<nav aria-label="Main">` carrying `Learn` / `Overview` / `Github`. Its rules
+ * were read out of the site's own stylesheet
+ * (_next/static/chunks/2lh8zg7jzz4mb.css, class prefix
+ * `styles-module__IQqFqa__`) on 2026-08-28 rather than measured off a
+ * screenshot, so every number quoted below is the reference's own declaration:
+ *
+ *   Root           z-index:1; display:flex; justify-content:center; width:100vw
+ *   MenuList       display:flex; padding:4px; border-radius:6px;
+ *                  background:#fff; box-shadow:0 2px 10px var(--black-a7);
+ *                  margin:0; list-style:none
+ *   Trigger/Link   all:unset; padding:8px 12px; border-radius:4px;
+ *                  font-size:15px; font-weight:500; line-height:1;
+ *                  color:var(--violet-11); user-select:none
+ *   Trigger        display:flex; align-items:center;
+ *                  justify-content:space-between; gap:2px
+ *   :hover         background-color:var(--violet-3)
+ *   :focus         box-shadow:0 0 0 2px var(--violet-7)
+ *   CaretDown      color:var(--violet-10); position:relative; top:1px;
+ *                  transition:transform .25s          (15x15 glyph)
+ *   [data-state=open] > CaretDown   transform:rotate(-180deg)
+ *   ViewportPosition  position:absolute; top:100%; left:0; width:100%;
+ *                  display:flex; justify-content:center; perspective:2000px
+ *   Viewport       margin-top:10px; border-radius:6px; background:#fff;
+ *                  transform-origin:top; overflow:hidden;
+ *                  transition:width,height,all .3s;
+ *                  box-shadow:0 10px 38px -10px #0e121659,
+ *                             0 10px 20px -15px #0e121633
+ *   [data-state=open]   animation:.2s scaleIn
+ *   [data-state=closed] animation:.2s scaleOut
+ *   @keyframes scaleIn   0% opacity:0; transform:rotateX(-30deg) scale(.9)
+ *                       100% opacity:1; transform:rotateX(0) scale(1)
+ *   @keyframes scaleOut  0% opacity:1; transform:rotateX(0) scale(1)
+ *                       100% opacity:0; transform:rotateX(-10deg) scale(.95)
+ *   Indicator      position:absolute; top:100%; height:10px; overflow:hidden;
+ *                  display:flex; justify-content:center; align-items:flex-end;
+ *                  transition:width,transform .25s
+ *   Arrow          10x10; background:#fff; border-top-left-radius:2px;
+ *                  position:relative; top:70%; transform:rotate(45deg)
+ *                  (clipped by Indicator to a 5.07px x 10.14px triangle)
+ *   List           display:grid; padding:22px; column-gap:10px
+ *   List.two       grid-template-rows:repeat(3,1fr); grid-auto-flow:column
+ *                  (COLUMN-major — deliberately not reproduced, see the
+ *                   two-column rule)
+ *   ListItemLink   padding:12px; border-radius:6px; font-size:15px;
+ *                  line-height:1; hover background var(--mauve-3)
+ *
+ * THE NAVBAR IS THE MenuList. THAT IS THE LOAD-BEARING DECISION IN THIS FILE,
+ * and it is the owner's, recorded 2026-08-28: `Guides`, `API Reference` and
+ * `Resources` sit on the bar DIRECTLY, and no container is introduced around
+ * them. The reference's MenuList is a plate because its demo floats in a
+ * full-bleed hero with nothing else in it; this bar already IS that plate —
+ * it has the surface (--ifm-navbar-background-color), the containment and the
+ * bottom hairline the navbar block in custom.scss gives it. Adding a second
+ * padded, rounded, elevated box inside it would draw the same container twice.
+ * So the MenuList's own five declarations are the one part of the reference
+ * deliberately not reproduced, and every measurement the reference takes FROM
+ * the MenuList is re-anchored to the navbar instead — see the panel offset.
+ *
+ * THE SELECTORS HANG OFF `.theme-layout-navbar-left`, which is
+ * `ThemeClassNames.layout.navbar.containerLeft`, a documented theme class and
+ * not a hashed CSS-module name. It is what keeps this file off the RIGHT-hand
+ * group (search button, colour-mode toggle — explicitly out of scope), off the
+ * mobile drawer (`.menu__link`, a different component), and off every other
+ * `.dropdown` on the site, without inventing markup for any of them.
+ *
+ * THE FIVE DELIBERATE DEPARTURES, each because a destination convention that
+ * predates this work decides the value:
+ *
+ *   1. COLOUR. The reference paints the whole component in Radix's violet
+ *      ramp (violet-11 ink, violet-3 hover, violet-7 ring). This site's navbar
+ *      shares its ink with the Zebra wordmark, the search button and the
+ *      colour-mode toggle, none of which this work may restyle, so the
+ *      reference's colour ROLES are mapped onto the tokens that already govern
+ *      those neighbours: resting ink -> --ifm-navbar-link-color, and the accent
+ *      appears where the reference puts a tint, on hover / open / current
+ *      route.
+ *
+ *   2. THE PANEL SURFACE. The reference gives its MenuList and its Viewport the
+ *      SAME #fff. Here the bar keeps --ifm-navbar-background-color and the panel
+ *      keeps --ifm-dropdown-background-color (#FAFAFC light / #333336 dark),
+ *      which is the site's popover token and is what the panel already used.
+ *      The reference is a light-only demo and could afford one surface; this
+ *      site has a dark theme, in which a panel painted in the bar's own #1D1D1F
+ *      would be a page-coloured box separated from the page by nothing but a
+ *      shadow.
+ *
+ *   3. TYPE, AND ONLY TYPE. Every padding, margin, radius and gap below is the
+ *      reference's literal declaration, including the chip's `8px 12px`. What
+ *      is NOT the reference's is the two type values it multiplies: the
+ *      reference sets 15px / line-height 1, and this site's UI rung is
+ *      --zebra-fs-ui (14px) at --zebra-lh-caption (1.4).
+ *      NEITHER IS FREE TO CHANGE. The size is shared with the DocSearch
+ *      placeholder 12px to the right of this row — the navbar block in
+ *      custom.scss pins the two together on purpose, and that control is
+ *      explicitly out of scope, so a 15px row would visibly desync it. The
+ *      leading is the 1.25-1.4 band the same block argues for a UI control,
+ *      and the reference's 1.0 is below it.
+ *      THE VISIBLE CONSEQUENCE, stated rather than buried: 14px x 1.4 is a
+ *      19.6px line box where the reference has 15px, so with the reference's
+ *      own 8px block padding the chip measures 35.6px against its 31px. It
+ *      still sits clear inside the 43px navbar interior (3.7px above and
+ *      below), and against ITS container it is the same proportion the
+ *      reference's chip is against the MenuList — 83% here, 79% there.
+ *
+ *   4. TEMPO. The reference runs .2s (open/close), .25s (caret, indicator) and
+ *      .3s (viewport resize). Section 7.1(2) of this site's rulebook closes the
+ *      duration set at the five --motion-* values, and the token comments name
+ *      these exact jobs: "overlay OPEN" -> --motion-base (.15s), "overlay CLOSE
+ *      half" -> --motion-fast (.12s), "disclosure" -> --motion-base. The
+ *      CURVES and the KEYFRAMES are the reference's, unchanged.
+ *
+ *   5. FOCUS. The reference rings on `:focus` with `box-shadow: 0 0 0 2px`.
+ *      This site rings on `:focus-visible` with the section 8.2(1) recipe
+ *      (`outline: 2px solid var(--focus-ring-color); outline-offset: 2px`),
+ *      already applied to `.navbar__link` by the seven-selector chrome rule in
+ *      custom.scss — and `:focus-visible` is strictly better, because the
+ *      reference's `:focus` also rings on a mouse press. Nothing is declared
+ *      here for the trigger; the one thing this work adds is `.dropdown__link`
+ *      to that existing rule, which had no ring at all.
+ *
+ * WHAT IS NOT REPRODUCED, because it would mean replacing the navigation
+ * architecture rather than styling it:
+ *
+ *   - THE SHARED VIEWPORT. Radix hoists every panel into ONE centred box that
+ *     morphs width and height between menus and slides the outgoing panel out
+ *     (`enterFromLeft` / `exitToRight`, 250ms). Docusaurus positions each
+ *     `.dropdown__menu` under its own trigger. Reproducing the shared viewport
+ *     means owning the open-state machine for the whole bar, which is a
+ *     different component, not a different stylesheet. The per-panel open and
+ *     close animations below ARE the reference's scaleIn / scaleOut.
+ *   - THE SLIDING INDICATOR. Same reason: one indicator that travels between
+ *     triggers presupposes the shared viewport. The ARROW it carries WAS
+ *     reproduced per dropdown with the reference's geometry, and was DELETED on
+ *     2026-09-08 — see --navbar-menu-panel-offset for the reasoning.
+ *   - RICH PANEL CONTENT. The reference's panels carry a gradient callout and
+ *     two-line heading/description rows. This site's panels are link lists and
+ *     the navbar data model in docusaurus.config.ts is out of scope, so the
+ *     ROW chrome is reproduced (12px padding, 6px radius, neutral hover) and
+ *     the second line is not invented.
+ *   - THE 600px BREAKPOINT. The reference's only media query switches the
+ *     panel from `width:100%` single-column to a sized multi-column grid. This
+ *     row does not exist below 997px — Docusaurus swaps the whole bar for the
+ *     mobile drawer there — so there is no viewport at which the rule could
+ *     apply. That is also why everything below the tokens sits inside one
+ *     `@media (min-width: 997px)`: several of these rules set `display`, and
+ *     outside that guard they would out-specify Infima's own
+ *     `@media (max-width: 996px) { .navbar__item { display: none } }` and put
+ *     the row back on top of the mobile bar.
+ * ======================================================================== */
+
+:root {
+  /* THE HOUSE ELEVATION RUNG, 2026-09-08. Was the reference's Viewport elevation
+     verbatim (`0 10px 38px -10px rgb(14 18 22 / 35%), 0 10px 20px -15px rgb(14 18 22 /
+     20%)`) — a marketing-demo value roughly double this system's weight for the same
+     role. datum names --elevation-2 for "menu and popover", and custom.scss:2448
+     already maps --ifm-global-shadow-md to it, so the panel was the one menu surface
+     on the site not using its own rung.
+     IT ALSO MEASURABLY BLED UPWARD. With the panel attached, the old shadow washed the
+     bottom ~10px of the bar across the panel's width (up to 12/255) and darkened the
+     bar's own hairline from 202 to 200 near the panel's edges — it painted on the
+     chrome rather than on the page. Detaching the panel (see the offset token) and
+     lightening the shadow both remove that.
+     WHY THIS RUNG AND NOT ITS PREDECESSOR: token conformance. --elevation-2 is the rung
+     datum names for this surface; the value it replaced was an off-system marketing
+     figure. That, not recency, is the reason it stays.
+     THE TOP EDGE GETS NO SHADOW SUPPORT, AND THAT IS NOW ACCEPTED RATHER THAN OPEN
+     (2026-09-08). `0px 5px 10px -5px` is downward-only with a negative spread, so it
+     puts zero ink on the bar and only a few /255 in the single row above the panel. The
+     candidate fix — one 0-offset ambient layer, `0 0 1px rgb(14 18 22 / 20%)` in front
+     of the rung — was rejected, not deferred, on this basis:
+       * MEASURED, Chromium at DPR 1: the layer's own signal is ~3-5/255 in a single 1px
+         row. MEASURED, Firefox at DPR 1: byte-identical with and without it, i.e. nil.
+         BOTH FIGURES ARE DPR-1 ONLY and do not generalise — an independent re-measure
+         found the layer does carry ink at DPR 1.25, 1.5 and 2 in Firefox, so "no payoff
+         in one of the three engines" would be false as a general claim.
+       * A cheaper instrument was available and was used: reverting the lightened top
+         border (see the panel rule) at no governance cost. On PEAK edge contrast the
+         revert ties the ambient layer at DPR 1.25, trails it slightly at 1.5, and beats
+         it clearly at DPR 1 and 2; on TOTAL integrated ink the ambient layer is ahead at
+         the fractional DPRs. Neither instrument wins on both metrics — this is a
+         judgement that the cheaper one is good enough, NOT a measurement that the layer
+         is useless.
+       * The candidate's GEOMETRY IS mainstream — Atlassian ships `0px 0px 1px` for
+         dropdown menus, verified from the published package. Primer's and Radix's
+         `0 0 0 1px` is a zero-blur ring standing in for a border on a borderless panel
+         and is NOT precedent for this. Do not cite them for it.
+     WHY A SHADOW AT ALL, since every measurement above is about the TOP edge where this
+     rung admittedly does nothing: because the rung's work is below the panel, and that
+     was the one thing nobody had measured. MEASURED: it paints -16 to -18/255
+     immediately under the bottom edge, decaying to zero by ~12px, in all three engines.
+     `box-shadow: none` is therefore ruled out on evidence rather than left unexamined —
+     at a 1.00:1 fill the panel needs that lift.
+     If the edge ever does read flat, THE NEXT LEVER IS THE BORDER'S OWN VALUE, not a
+     second shadow layer: a stronger edge is the only instrument measured to help
+     WebKit at fractional DPR, which no shadow change can reach. */
+  --navbar-menu-panel-shadow: var(--elevation-2);
+
+  /* The reference's `--violet-3` trigger hover, as a role rather than a hue:
+     "the accent at wash strength". `color-mix` over a literal so the accent
+     stays a TOKEN — the same argument, and the same in-srgb form, that
+     sidebar.scss uses for --ifm-menu-color-background-active. 10% rather than
+     that block's 16% because the sidebar's wash marks a PERSISTENT selection
+     and this one is a transient hover on the brightest surface on the page. */
+  --navbar-menu-trigger-tint: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+
+  /* The two radii, which the reference states as raw values and which have no
+     token to read: 6px for the surfaces (Viewport, ListItemLink) and 4px for
+     the chip (Trigger, Link). 6px is also what the navbar block in custom.scss
+     gives the search button through --navbar-control-radius, but that property
+     is declared on `.navbar` and is therefore not readable from `:root`; the
+     value agreeing is a fact worth knowing, not a dependency to create. */
+  /* THE ROW'S RADIUS IS THE AUTHORED ONE, and the panel's is derived from it.
+     That is the inversion of what this file did until 2026-08-29, and the reason
+     is which value the owner cares about: the hover plate has to stay visibly
+     rounded. Deriving the plate instead drove it to 1px — geometrically correct,
+     but it read as square, which was not the ask.
+     6px IS THE REFERENCE'S OWN ListItemLink RADIUS, unchanged from the first
+     revision of this file. */
+  /* DERIVED, NOT AUTHORED — the derivation was INVERTED on 2026-09-09 with Scale B, and the
+     long note below is the history of it going the other way. Read that first; what changed is
+     only which end is the free variable.
+     Under Scale B the panel is not a free number any more. A dropdown panel is a surface that
+     floats free of the document, which is exactly what --radius-overlay names, so the panel
+     takes 16px BECAUSE OF WHAT IT IS and the row follows from the concentric rule. Deriving the
+     panel from the row, as this did, produced 8 + 4 + 1 = 13px — a value on no rung, chosen by
+     nothing, and reached only because the row happened to be 8. */
+  --navbar-menu-row-radius: calc(
+    var(--navbar-menu-radius) - var(--navbar-menu-panel-padding) - 1px
+  );
+
+  --navbar-menu-chip-radius: var(--radius-control);  /* PILL, 2026-08-30 — a chip is operable */
+
+  /* THE PANEL'S RADIUS IS DERIVED FROM THE ROW'S, and that derivation is the fix
+     for a defect the owner spotted on 2026-08-29: the hover plate's corners were
+     "not in sync" with the panel's.
+     THE RULE. Two nested rounded rectangles have a CONSTANT gap between their
+     curves only when the inner radius is the outer radius less the gap — put
+     another way, only when the two corner arcs share a centre. Miss it and the
+     corners open up: the arc centres sit a diagonal apart, so the distance
+     between the arcs THROUGH the corner is that diagonal plus the radius
+     difference, while the straight edges stay at the gap. Measured on what
+     shipped — panel 6px, its padding-box curve 5px, a 4px inset and a 6px plate —
+     the corner gap was 6.657px against 4.000px on the edges. 166%. That is what
+     reads as the plate pulling away from the panel at every corner.
+     THE REFERENCE BREAKS THE SAME RULE AND GETS AWAY WITH IT, which is why this
+     was invisible for so long: its ListItemLink is 6px inside a 6px Viewport too,
+     but at `padding: 22px` the two curves are 31px apart at the corner and are
+     never read as a pair. The defect is not inherited from it — it was CREATED
+     here, by taking the inset down 22 -> 16 -> 8 -> 4 at the owner's request.
+     Below roughly 8px the two curves become a pair and the rule starts to bind.
+     WHICH SIDE MOVES IS THE OWNER'S CALL, AND IT WENT THE OTHER WAY ONCE. The
+     equation has two solutions: shrink the plate to 1px, or grow the panel to
+     11px. The first shipped, was geometrically exact, and read as a square plate
+     — so the panel grows instead and the plate keeps the reference's 6px. The
+     panel is now the roundest corner in the bar (chips 4px, the Guides box and
+     the search field 6px), which is the price of a 4px inset and a rounded row;
+     it is a card rather than a control, so it can carry it.
+     `- 1px` IS THE PANEL'S BORDER: the plate is inset from the panel's PADDING
+     box, whose curve is the border-box radius less the border's width, so the
+     border has to be subtracted when going this way. The row resolves to
+     16 - 4 - 1 = 11px, which is visibly rounded — the property the owner asked
+     for when this derivation last changed direction. */
+  --navbar-menu-radius: var(--radius-overlay);
+
+  /* THE PANEL'S COLUMN, and every panel width is arithmetic on it. The reference
+     pins its six-item menu at `width: 600px` with `padding: 22px` and
+     `column-gap: 10px`, so its column measures (600 - 44 - 10) / 2 = 273px —
+     read back off the live demo as 270.586px + 275.414px = 546px, which is that
+     546 split by content. Deriving the widths from the column instead of pinning
+     600px is what lets a two-item menu and a six-item menu share one rule and
+     still both look like the reference. */
+  --navbar-menu-column: 273px;
+
+  /* THE GAP BETWEEN TWO PLATES, in either direction. It started as the
+     reference's `column-gap: 10px` horizontally and a 4px row gap this file added
+     (the reference has none — its rows are flush, and its plates never touch
+     because only one is ever plated; ours can, because the CURRENT row keeps its
+     plate while a neighbour is hovered). Owner, 2026-08-29: the horizontal gap
+     was too wide. Both are now one value, so the six plates sit on a single
+     rhythm and a change to one axis cannot leave the other behind.
+     4px IS THE SMALLEST THAT STILL SEPARATES. Below it two tinted boxes read as
+     one wide box, which is the failure the row gap was introduced to fix; at 4px
+     they read as two, and it steps cleanly against the 5px the plates sit from
+     the panel's edge. The text gutter it leaves is not tight — each plate carries
+     12px of its own padding, so column text is still 28px from column text. */
+  --navbar-menu-plate-gap: 4px;
+
+  /* THE PANEL'S OWN INSET, and the one measurement in this file taken DOWN from
+     the reference rather than off it (owner, 2026-08-28, after seeing 22px twice).
+     The reference's `padding: 22px` sits around 15px type; this panel is 14px, and
+     the honest transfer of the ratio is 22 x 14/15 = 20.5px, which is not the
+     change that was asked for. So the argument is not arithmetic, it is what the
+     padding BUYS: a row's own 12px is the hover plate's target and is visible the
+     moment a pointer lands, and the reference's value for it is kept untouched;
+     the panel's is pure margin outside every target, and at 14px it read as a
+     34px inset of nothing before the first word.
+     22 -> 16 -> 8 -> 4, IN THREE PASSES, ALL THE OWNER'S. The end state is the
+     inset-list relationship rather than the card one: the panel's edge is now far
+     CLOSER to a plate than the plate's own 12px text inset, so the plates read as
+     filling the panel instead of floating in it, and the eye stops seeing a frame
+     of nothing. Text still sits 16px from the edge, because the row padding — the
+     half that works, and the reference's own value — was never touched.
+     4px IS ALSO THE REFERENCE'S OWN CONTAINER PADDING, which is worth recording
+     even though it is not where the number came from: its MenuList is `padding:
+     4px` around its chips. The panel has landed on the same inset the reference
+     gives the only other box in the component that wraps a row of targets.
+     EVERY PANEL WIDTH READS THIS, so the two stay in step. */
+  --navbar-menu-panel-padding: 4px;
+
+  /* THE HAIRLINE, an ADDITION to the reference rather than a reading of it, and the
+     reason is the ground rather than taste. The reference's Viewport is #fff on a
+     saturated purple hero: it has an edge because its surface is the lightest thing
+     on screen. Here the panel is --popover on a --surface-page page, so it has
+     NOTHING to outline and the identical shadow lands on nothing — the border is the
+     whole of the panel's edge.
+     TWO CLAIMS IN THIS NOTE WERE WRONG AND ARE CORRECTED, 2026-09-08. It said the
+     panel was "--popover (#FAFAFC)" at 1.02:1, and that dark theme "gets a defined
+     edge for free from #333336 on #1D1D1F". Verified values: --popover resolves to
+     #FFFFFF in light and #17191b in dark. In dark the panel's fill is 1.04:1 against
+     the page AND the shadow is invisible there (measured: a 1/255 difference), so the
+     border is not a bonus in dark — it is the panel's ONLY definition, and at
+     --gray-7 it was 2.06:1 there and 1.5699:1 in light. Both are now carried by the
+     colour token below, which is --gray-8 in both themes; no per-theme override is
+     needed or present.
+     The third claim, that the arrow's two upper edges read this token so the outline
+     stays continuous around the join, went with the arrow. */
+  /* THE EDGE'S COLOUR IS ITS OWN TOKEN, AND IT IS --gray-8 RATHER THAN THE SITE
+     HAIRLINE, 2026-09-08. This is the "next lever" the shadow note points at, taken
+     deliberately after the cheaper instruments were exhausted.
+     WHY A STRONGER VALUE RATHER THAN A SECOND SHADOW LAYER: the panel's fill is
+     1.0000:1 against the page in light theme, so this border is the ENTIRE definition
+     of the panel — and at --gray-7 it was 1.5699:1, the weakest edge on the ramp
+     carried by the surface least able to afford one. --gray-8 takes it to 1.9131:1.
+     It is also the only instrument that reaches the damage: at fractional device
+     scaling the edge is diluted in all three engines, and in Firefox and WebKit that
+     happens with `box-shadow: none` — WebKit computes border-top-width down to 0.8px
+     at DPR 1.25 — so shadow-independent dilution is unreachable by any shadow change.
+     Only the border's own value reaches it.
+     IT DEPARTS FROM --ifm-toc-border-color ON PURPOSE. That token is the site's
+     DECORATIVE divider (design-tokens.scss labels it "gray-7, decorative") and it is
+     right for a rule drawn ON a surface. This is the edge that CONSTITUTES a floating
+     surface hovering over an identical fill, which is a different job.
+     ONE TOKEN, BOTH THEMES, NO OVERRIDE: --gray-8 is theme-scoped in primitives.css
+     (#b7bcc1 light, #596269 dark), so dark stays at the 3.036:1 it already cleared and
+     the `[data-theme]` override this rule used to need is deleted rather than doubled.
+     THE ⌘K MODAL FOLLOWS THIS TOKEN, because custom.scss states the search modal and
+     this panel "are meant to look like one control in two places". DocSearch exposes
+     only a shadow hook, so its edge is a `0 0 0 1px` ring stacked into
+     --docsearch-modal-shadow; that ring reads the colour token below. Change the colour
+     here and both surfaces move together — which is the whole reason it is a token and
+     not a literal. */
+  --navbar-menu-panel-border-color: var(--gray-8);
+  --navbar-menu-panel-border: 1px solid var(--navbar-menu-panel-border-color);
+
+  /* THE PANEL'S DAYLIGHT BELOW THE BAR, 4px, REWRITTEN 2026-09-08.
+     WHAT IT MEASURES FROM, which is the whole point of this rewrite: the bar's
+     PAINTED bottom edge. The dropdown wrapper is now stretched to that edge (see the
+     item-wrapper rule and its hover-corridor note), so `100%` in the panel's `top`
+     resolves to the painted edge and this token is literally the visible gap. It used
+     to resolve to `.navbar__inner`'s CONTENT edge, 8.8px higher, so the old `8px`
+     produced -1px of gap — the panel's top border landing on the bar's hairline — and
+     the token's name did not describe what the token did.
+     WHY 4px AND NOT 8px. 12.7px of the budget is already spent invisibly: the trigger
+     chip's bottom is at y=47.3 while the bar's painted edge is at y=60, all of it
+     white on white. At 4px the chip-to-panel distance is 16.9px, within 3px of the
+     visual reference's own 14px (its 4px MenuList padding plus its 10px Viewport
+     margin). At 8px it would be 20.9px — about 1.5x the reference and ~2.6x the top of
+     the measured live peer distribution. The peers measured from a container's painted
+     edge cluster at 4-7px (Supabase +4, Carbon v12 +4, Grafana +5.2, Netlify +7.2).
+     Note that published design-system offsets (Radix `sideOffset`, Atlassian `[0, 8]`,
+     Spectrum `offset: 8`, Primer `anchorOffset: 4`) are ANCHOR-to-panel values, not
+     container-hairline values, and do not transfer to this question: applied as those
+     systems author them they would land this panel inside the bar.
+     IT IS --space-1 AND NOT A LITERAL, and that is the defect fix rather than a
+     tidy-up. The old `8px` was a px literal compared against rem-derived values, so
+     the intended geometry was true at exactly one root font size: the gap computed
+     -1px at root 16 but -2.8px at 20, -4.8px at 24, and +1px at 12. Chrome's
+     Appearance > Font size reaches all of those with no assistive technology, so the
+     component silently became one of the states this comment used to enumerate and
+     reject. With the wrapper anchored to the painted edge in the bar's own rem-derived
+     units, the daylight is now ~4px at root 16, 20 and 24 alike.
+     THE TRILEMMA THAT USED TO BE DOCUMENTED HERE IS GONE WITH THE ARROW. It read
+     "offset 6-7 puts the bar's line inside the panel / 8 merges them / 9-13 makes the
+     arrow cross the hairline", and every branch of it was a consequence of an SVG
+     caret pinned to this token. The caret is deleted (see the swizzle), so the
+     constraint no longer exists. Do not re-derive 8px from it. */
+  --navbar-menu-panel-offset: var(--space-1);
+}
+
+/* The reference's keyframes, verbatim in shape. `perspective(2000px)` is
+   written into the transform rather than declared as a `perspective` property
+   on the parent — the reference puts it on ViewportPosition, a wrapper this
+   markup does not have, and the function form is equivalent for a single
+   transformed element while creating no containing block for the panel.
+   OUTSIDE THE MEDIA QUERY because a keyframe set is a definition, not a rule:
+   nothing references these below 997px, and nesting them would only make them
+   harder to find.
+
+   `translateX(-50%)` IS IN EVERY KEYFRAME, AND IT MUST BE. It is not decoration:
+   it is half of the `left: 50%` + `translateX(-50%)` pair that centres the panel
+   under its trigger (see the panel block for why centring, not Infima's `left:
+   0`). A keyframe that animates `transform` REPLACES the property outright, so
+   omitting it here would snap the panel a half-width to the right for the
+   duration of the animation. It composes cleanly with the scale rather than
+   fighting it: percentage translations resolve against the element's own
+   UNTRANSFORMED border box, so the offset is a constant and the box stays
+   centred at every frame. */
+@keyframes navbar-menu-scale-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) perspective(2000px) rotateX(-30deg) scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) perspective(2000px) rotateX(0) scale(1);
+  }
+}
+
+@keyframes navbar-menu-scale-out {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) perspective(2000px) rotateX(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-50%) perspective(2000px) rotateX(-10deg) scale(0.95);
+  }
+}
+
+@media (min-width: 997px) {
+  /* -------------------------------------------------------------------------
+   * The item wrappers.
+   *
+   * ONLY THE DROPDOWNS ARE STRETCHED, and the asymmetry is theme-classic's, not
+   * a choice: a plain item (`Guides`) is ONE element carrying both
+   * `navbar__item` and `navbar__link`, so stretching it would stretch the
+   * tinted chip itself to the full bar height. A dropdown is a `<div
+   * class="navbar__item dropdown">` WRAPPING the link, so the wrapper can take
+   * the height while the chip inside stays 31.6px and centred. That wrapper
+   * height is what the panel measures from — see --navbar-menu-panel-offset.
+   * ---------------------------------------------------------------------- */
+  .theme-layout-navbar-left .navbar__item.dropdown {
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+    padding-inline: 0;                           /* the chip owns it now */
+
+    /* THE HOVER CORRIDOR, 2026-09-08, AND IT IS AN ACCESSIBILITY FIX RATHER THAN A
+       REFINEMENT. `align-self: stretch` sizes this wrapper to `.navbar__inner`'s
+       CONTENT box, whose bottom edge is y=51.2 — but the panel hangs from the bar's
+       PAINTED edge at y=60. The 8.8px between them (the bar's own vertical padding
+       plus its hairline) belonged to NEITHER the trigger nor the panel, so a pointer
+       travelling from the chip to its own menu left every hover target on the way and
+       only CLOSE_GRACE_MS held the menu open.
+       MEASURED BEFORE THIS CHANGE, at default settings: a 400ms dwell at the band's
+       midpoint flipped `aria-expanded` from true to false, the panel went
+       `visibility: hidden`, and continuing on to the panel did NOT recover it. A fast
+       traverse (120ms) survived. That is WCAG 2.1 SC 1.4.13 Hoverable, technique F95
+       — it made reaching your own menu conditional on a minimum pointer speed of
+       roughly 53px/s.
+       THE FIX IS GEOMETRIC, NOT TEMPORAL. Negative block margins pull the wrapper's
+       margin box out to the bar's painted edge and equal padding puts that space back
+       INSIDE the wrapper, so the corridor is now inside the hover target. Both terms
+       are the bar's OWN metrics — `--ifm-navbar-padding-vertical` is 0.5rem and
+       `--navbar-hairline-width` is declared on `.navbar` in custom.scss — so this
+       tracks font scaling instead of restating 8px, which is precisely the
+       duplicated-literal bug the offset token used to have.
+       `align-self: stretch` sizes the MARGIN box, so the border box now extends past
+       the flex line while `align-items: center` keeps the chip centred inside it; the
+       chip's optical centre moves by half the hairline, 0.5px.
+       GROWING THE WRAPPER IS ONLY HALF OF IT, and the first pass of this fix stopped
+       here and did not work. The two halves close different spans. Growing the
+       wrapper closes the BAR'S OWN padding, 8.8px, which exists whether or not the
+       panel is detached. It cannot close the 4px of deliberate daylight below the
+       painted edge, because that gap IS the design — so after the first pass a 400ms
+       dwell in the remaining 4px still flipped `aria-expanded` to false. The bridge
+       below closes it; see that rule.
+       SIDE EFFECT THAT THE PANEL DEPENDS ON: `100%` in the panel's `top` is this
+       wrapper's padding box, so it now resolves to the bar's painted edge and
+       --navbar-menu-panel-offset finally means the gap you can see. */
+    margin-block:
+      calc(-1 * var(--ifm-navbar-padding-vertical))
+      calc(-1 * (var(--ifm-navbar-padding-vertical) + var(--navbar-hairline-width)));
+    padding-block:
+      var(--ifm-navbar-padding-vertical)
+      calc(var(--ifm-navbar-padding-vertical) + var(--navbar-hairline-width));
+  }
+
+  /* THE BRIDGE OVER THE DAYLIGHT, the second half of the hover-corridor fix above.
+     `top: 100%` is this wrapper's padding box, which the rule above grows out to the
+     bar's PAINTED edge, and the height is the SAME token the panel offsets itself by
+     — so the strip is exactly the visible gap by construction and the two cannot
+     drift apart when the offset changes.
+     INERT UNTIL OPEN. `pointer-events: none` by default, so a 4px strip of page
+     content under each trigger stays clickable while the menu is shut; `auto` only
+     while it is up, which is the only moment a pointer has any reason to cross. That
+     is why this is keyed on `[data-state='open']` rather than being always live.
+     WHY IT IS ON THE WRAPPER AND NOT THE PANEL: the wrapper carries the
+     pointerenter/pointerleave handlers (see the swizzle), and a pseudo-element is part
+     of its owner's hit region, so crossing this strip never fires `pointerleave` at
+     all — the menu is not being rescued by a timer, it is never asked to close.
+     Mounting it on the panel instead would not work: Infima sets `overflow-y: auto`
+     on `.dropdown__menu`, which clips a pseudo-element there.
+     MOBILE NEEDS NO SUPPRESSION: this whole block is inside `@media (min-width:
+     997px)`, and the drawer is a different component. */
+  .theme-layout-navbar-left .navbar__item.dropdown::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: var(--navbar-menu-panel-offset);
+    pointer-events: none;
+  }
+
+  .theme-layout-navbar-left .navbar__item.dropdown[data-state='open']::after {
+    pointer-events: auto;
+  }
+
+  /* THE GAP BETWEEN ITEMS, and the reference has none — its chips are flush
+     inside the MenuList and their 12px paddings are the whole separation. That
+     works there because only one chip is ever plated at a time. It does not work
+     here: this row's triggers hold their plate while their menu is OPEN, so
+     moving the pointer from an open `API Reference` onto `Resources` plates both
+     at once, and flush chips put two tinted boxes edge to edge with no seam
+     (owner, 2026-08-28). 0.5rem is not a new value — it is what the Dyte-parity
+     brief already gave the Guides item as its right margin, so making it the
+     row's uniform gutter both fixes the collision and removes a special case:
+     every pair in the row is now separated by the same 8px.
+     `margin-inline-end` on EVERY item, last one included. The trailing 8px falls
+     into the empty middle of a `flex: 1` container and is invisible; excluding it
+     with `:not(:last-child)` would buy nothing and would break the moment an item
+     is added or reordered. */
+  .theme-layout-navbar-left .navbar__item {
+    margin-inline-end: 0.5rem;
+  }
+
+  /* The brand gutter, unchanged in effect from what the row always had: Infima's
+     `.navbar__brand { margin-right: 1rem }` plus this 1.5rem, which is the value
+     the `.navbar-guides-item` rule used to own (Dyte-parity brief, 2026-08-14,
+     item 3A) and which now lives here instead — on WHATEVER item follows the
+     brand, rather than on the one that happens to follow it today. Reordering the
+     row in docusaurus.config.ts therefore cannot silently lose the gutter.
+     Adjacent-sibling rather than `:first-of-type`, because `:first-of-type`
+     counts per element NAME and this row mixes `<a>` (a plain item) with `<div>`
+     (a dropdown) — it would match Guides AND the first dropdown, and gutter both.
+     The reference has no equivalent: its list is centred in an empty hero with no
+     brand to clear. */
+  .theme-layout-navbar-left .navbar__brand + .navbar__item {
+    margin-left: 1.5rem;
+  }
+
+
+  /* -------------------------------------------------------------------------
+   * The chip — Trigger and Link, which the reference styles with one rule list
+   * and so does this. No gap between chips: the reference's items are adjacent
+   * inside the MenuList, so the 12px paddings are the whole separation.
+   * ---------------------------------------------------------------------- */
+  .theme-layout-navbar-left .navbar__link {
+    display: flex;                               /* reference (Trigger) */
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px;
+    padding: 8px 12px;                           /* reference; see departure 3 */
+    border-radius: var(--navbar-menu-chip-radius);
+    color: var(--ifm-navbar-link-color);
+    font-size: var(--zebra-fs-ui);
+
+    /* 600, AND IT IS A WEIGHT CHANGE MADE TO PRESERVE AN APPEARANCE RATHER THAN
+       to depart from one. The reference's Trigger computes `font-weight: 500`,
+       which is also what Infima gives `.navbar__link` — so this row and the
+       reference agreed on the NUMBER and disagreed on what the eye got, because
+       the two faces are not interchangeable at that step: the reference sets
+       untitledSans at 15px, and Inter's 500 at 14px is optically the lighter of
+       the two. 600 is where Inter lands on the reference's apparent weight.
+       WHY NOT --ifm-font-weight-bold. That token is 700, which is exactly what
+       `.navbar__title` (a `<b>`) uses one item to the left; matching it would
+       put the wordmark and the nav row on the same rung and flatten the only
+       weight hierarchy this bar has. 600 is a raw value because Infima's ladder
+       skips it — its "semibold" is 500 — and this file is not the place to add a
+       sixth site-wide weight token; `.markdown :is(h4, h5, h6)` in custom.scss
+       states 600 the same way and for the same reason. Inter is loaded as a
+       VARIABLE face over `font-weight: 400 700` (see fonts.scss), so 600 is a
+       real instance and not a synthesised one. */
+    font-weight: 600;
+
+    line-height: var(--zebra-lh-caption);
+    white-space: nowrap;
+    user-select: none;                           /* reference */
+    transition:
+      background-color var(--motion-base) ease,
+      color var(--motion-base) ease;
+  }
+
+  /* Hover and open share one plate — the reference's `:hover` treatment, extended
+     to the state the reference reaches by the same gesture.
+     THE ROUTE IS NOT ON THIS LIST, AND ITS ABSENCE IS THE FEATURE. A third arm,
+     `.navbar__link--active`, was here on 2026-08-28 and was withdrawn the same day
+     on the owner's verdict that a nav row recolouring itself by route "looks too
+     fancy". Dropping the arm does more than stop painting: the rule above declares
+     `color: var(--ifm-navbar-link-color)` at (0,2,0), which now OUT-RANKS Infima's
+     own `.navbar__link--active { color: var(--ifm-navbar-link-hover-color) }` at
+     (0,1,0) — so `Guides`, which is a `docSidebar` item and gets that class from
+     the docs plugin whatever this file does, stays neutral too and the row is
+     uniform on every page. That neutralisation is not a side effect to be tidied
+     away later; it is the whole reason the row reads as one thing.
+     To bring the behaviour back, this arm and the two `activeBasePath` lines in
+     docusaurus.config.ts go back together — one without the other paints a third
+     of the row. */
+  /* THE OPEN ARM STANDS DOWN THE MOMENT THE POINTER LEAVES — `:not([data-leaving])`, added
+     2026-09-11. Owner report: moving from "API Reference" to "Resources" left the plate lit for
+     about a second (measured 481ms: the 300ms close grace held `data-state="open"`, and the
+     150ms fade below only began when it expired). The swizzle now stamps `data-leaving` on the
+     trigger for the length of that grace, so the PANEL keeps its grace and the PLATE does not:
+     the fade starts on the frame the pointer leaves. Moving to a sibling trigger also closes this
+     menu outright (the swizzle's `openMenuYielders`), so the exchange is one plate out and one in
+     on the same frame. Nothing about the fade changed — same 150ms ease, just no longer late. */
+  .theme-layout-navbar-left .navbar__link:hover,
+  .theme-layout-navbar-left .navbar__link[data-state='open']:not([data-leaving]) {
+    background-color: var(--navbar-menu-trigger-tint);
+    color: var(--ifm-navbar-link-hover-color);
+    text-decoration: none;
+  }
+
+  /* ---------------------------------------------------------------------------
+   * THE BOXED `Guides` ITEM (Dyte-parity brief, 2026-08-14, item 3A), restored
+   * 2026-08-28 at the owner's instruction after one revision without it. It
+   * moved here from the navbar section of custom.scss, where it used to sit as
+   * "section 5", because it is now a MODIFIER ON THE CHIP above and no longer a
+   * rule that can be read on its own — see the padding line.
+   *
+   * THE BORDER IS 2px, not the 1px hairline it was until 2026-08-28 (owner's
+   * instruction, same day). 2px rather than an in-between value because this is a
+   * border and not a rule: 1.5px cannot land on a whole device pixel at 1x, so it
+   * is resolved by the renderer differently on each edge and the box reads
+   * slightly lopsided on a non-retina screen. 2px is exact at every ratio, and it
+   * is the weight the 600 label inside it now needs — a 1px hairline around
+   * semibold text reads as an accident of the layout rather than a frame.
+   *
+   * THE PADDING TRIM IS THE WHOLE POINT OF MOVING THE RULE HERE, and it tracks
+   * the border: `box-sizing: border-box` does not help an auto-height box,
+   * because a border is added to the content and padding, so the chip's own `8px`
+   * block padding plus a 2px border would make the boxed item 39.6px against its
+   * two unboxed neighbours' 35.6px — four pixels taller than the things it sits
+   * between, which is exactly the kind of misfit that reads as an accident.
+   * Trimming the block padding by the border's width absorbs it: 6 + 19.6 + 6 +
+   * 4 = 35.6px, identical, and verified in the browser rather than only here. The
+   * inline padding is left at the chip's 12px, because the items are separated by
+   * margins rather than butted together, so the 2px each side misaligns nothing.
+   * IF THE BORDER WIDTH CHANGES AGAIN, the padding changes with it, or the row
+   * goes uneven. That coupling is the reason these two declarations sit adjacent.
+   *
+   * THE RADIUS IS 6px AND THE CHIP'S IS 4px, and that is the value this box has
+   * always had (--navbar-control-radius, the same token the search button reads,
+   * declared on `.navbar` in custom.scss). Both belong to this element — the
+   * border AND the hover/active plate follow the 6px — so the item is internally
+   * consistent; it is only its neighbours' invisible 4px hover plates that
+   * differ, and by 2px on a shape you never see beside it.
+   * ------------------------------------------------------------------------ */
+  .theme-layout-navbar-left .navbar__link.navbar-guides-item {
+    /* `currentColor`, NOT A HAIRLINE TOKEN (owner, 2026-08-28). The box is drawn
+       in the label's own ink, so the frame and the word are one mark, and moving
+       `color` to the accent on hover moves the border with it. That is the entire
+       reason `currentColor` is the right answer here rather than naming the same
+       token twice and hoping the two stay in step.
+       AT 40%, NOT FULL STRENGTH, AND ONLY AT REST (owner, 2026-08-29). Two solid
+       pixels of the label's near-black ink made this the loudest mark in the bar
+       — heavier than the Zebra wordmark beside it and far heavier than the grey
+       search field — so a nav item read as a primary call to action. The box
+       stays, and stays 2px, because it marks Guides as the row's most important
+       destination (owner's ruling: it is NOT a leftover from the Dyte-parity
+       pass); 40% still says that at a glance while sitting below the wordmark in
+       the bar's weight order.
+       MIXED AGAINST `transparent`, not against the bar's own background, so the
+       result holds over whatever the item sits on — the same reason sidebar.scss
+       mixes its selection wash that way. The hover arm below restores full
+       strength, which is what makes the box read as LIT rather than merely
+       recoloured: ink and frame go to the accent together, at full weight. */
+    border: 2px solid color-mix(in srgb, currentColor 40%, transparent);
+    border-radius: var(--navbar-control-radius);
+    padding-block: 6px;                          /* 8px chip padding less the 2px border */
+  }
+
+  /* NO PLATE ON THE BOXED ITEM (owner, 2026-08-28). The two unboxed chips signal
+     hover, open and current-route with a tinted plate because a plate is the only
+     shape they have; this one already has a frame, and giving it both would make
+     one item in a row of three carry two affordances for one state. So the
+     general chip rule's `background-color` is put back to nothing here and the
+     item states itself entirely in ink — text and border together, via
+     `currentColor`.
+     (0,4,0) against the chip rule's (0,3,0), so it wins on specificity and not on
+     source order; `transparent` rather than a re-declaration of the navbar's own
+     background, because this element is not the thing that owns that surface. */
+  .theme-layout-navbar-left .navbar__link.navbar-guides-item:hover {
+    background-color: transparent;
+    border-color: currentColor;                  /* full strength — see above */
+  }
+
+  /* -------------------------------------------------------------------------
+   * The caret. Lucide's `chevron-down` at the reference's 15x15, drawn INSIDE
+   * the trigger by the swizzle at
+   * src/theme/NavbarItem/DropdownNavbarItem/Desktop — the same place the
+   * reference puts its `<svg class="CaretDown">`.
+   *
+   * NOT RADIX'S OWN GLYPH, and that is the icon rule rather than an oversight:
+   * src/components/icons/index.tsx says one library, and Radix Icons would be a
+   * second. `chevron-down` is the closest mark in the approved set — the same
+   * downward chevron, drawn as a 1.8px stroke on Lucide's 24x24 grid where
+   * Radix's is a filled path on a 15x15 one, so it reads a shade lighter at the
+   * same box size. The rotation, the box and the tempo below are the
+   * reference's.
+   *
+   * Infima's own caret is a solid CSS triangle on `.dropdown >
+   * .navbar__link:after`. It is suppressed by the `dropdown--nocaret` class the
+   * swizzle adds, which is Infima's own switch for exactly this (`content: none
+   * !important`), so nothing here has to out-shout a pseudo-element.
+   * ---------------------------------------------------------------------- */
+  .navbar__menu-caret {
+    position: relative;
+    top: 1px;                                    /* reference */
+    flex: none;
+    /* 150ms, WHERE THE REFERENCE DECLARES .25s (transcribed at the head of this
+       file), and the divergence is a decision rather than a slip. The caret's tempo
+       is not independently choosable: it sits inside a chip whose plate transitions
+       `background-color` and `color` at --motion-base, so any other duration puts the
+       glyph and its own plate on different clocks. Independently: this bar has no
+       OPEN delay (swizzle header, note 2), so during a pointer sweep the open state
+       can change faster than a 250ms rotation could finish. The reference can afford
+       .25s because it debounces the open; this bar deliberately does not. */
+    transition: transform var(--motion-base) ease;
+  }
+
+  /* The reference's selector shape exactly — `[data-state=open] > .CaretDown` —
+     which is why the swizzle stamps `data-state` on the trigger and not only on
+     the wrapper. State-keyed and NOT `:hover`-keyed, and that is load-bearing:
+     with the pointer parked off the bar, focus + Enter flips this caret, so it
+     stays honest for click, Enter, ArrowDown and touch as well as hover.
+     IT IS ALSO THE ONLY MARK IN THE CHIP THAT MOVES. Press Escape with focus in the
+     trigger and the pointer still on it: `data-state` is 'closed' and
+     `aria-expanded` is 'false', but the plate AND the label are still lit, because
+     both are fused to `:hover` in the trigger rule above. That state is identical to
+     the open state in background-color, color and outline, and differs ONLY in this
+     transform. Freeze the glyph and two opposite states paint the same pixels — which
+     is why the rotation stays, ahead of the published same-pattern majority (Fluent
+     MenuButton, SLDS, Primer ActionMenu, Atlaskit and Bootstrap all leave it static).
+     POSITIVE 180, CHANGED FROM -180 ON 2026-09-08, and the two are pixel-identical at
+     both endpoints — a chevron is MIRROR-symmetric about its vertical axis, not
+     2-fold rotationally symmetric, so 180 either way is a real V-to-caret shape
+     change (measured: the ink that changes exceeds the ink that exists by 33-55%,
+     with only 23-33% overlap between states). Only the mid-flight direction differs.
+     The sign is a drawing convention, not a pattern convention, and every other
+     rotating state mark this repository declares turns CLOCKWISE:
+     copy-page-button.module.scss:122 `rotate(180deg)` — the one true analogue, a chip
+     opening a role=menu panel, co-visible with this caret on every doc page —
+     api.scss:971 `rotate: 180deg`, api.scss:2042 `rotate(90deg)`, sidebar.scss:1186
+     `rotate(90deg)`. This caret was the only counter-clockwise one. */
+  [data-state='open'] > .navbar__menu-caret {
+    transform: rotate(180deg);
+  }
+
+  /* -------------------------------------------------------------------------
+   * The panel. Docusaurus's `.dropdown__menu` standing in for the reference's
+   * Viewport: same radius, same List padding, same open and close keyframes, and a
+   * 4px stand-off from the bar's painted edge where the reference stands 10px off a
+   * borderless pill (see --navbar-menu-panel-offset for why the numbers differ).
+   * ---------------------------------------------------------------------- */
+  .theme-layout-navbar-left .dropdown__menu {
+    /* `100%` is the stretched wrapper's padding box, which the item-wrapper rule now
+       grows out to the bar's PAINTED edge — so this resolves to the painted edge plus
+       the offset, and the offset is the gap you can see. Replaces Infima's
+       `calc(100% - var(--ifm-navbar-item-padding-vertical) + 0.3rem)`, which measured
+       from an item padding this file has just zeroed. */
+    top: calc(100% + var(--navbar-menu-panel-offset));
+
+    /* CENTRED UNDER THE TRIGGER, replacing Infima's `left: 0`. Re-opened on 2026-09-08
+       when the arrow was deleted, because the arrow was part of the original first
+       reason; the two REMAINING reasons are arrow-independent and measured, so it
+       stays. (1) It halves the worst-case overflow: the 600px six-item panel opened
+       from `Resources` at a 997px viewport runs 260-860px centred, against 504-1104px
+       left-aligned, which would have hung 107px off the screen. (2) It needs no
+       breakpoint of its own to stay inside the viewport, so the row keeps one
+       behaviour at every width it exists at. SLDS is the one mainstream system that
+       centres a menu by default and publishes it.
+       The paired `translateX(-50%)` lives in the transform, and therefore also in
+       every keyframe — see the note above them. */
+    left: 50%;
+
+    /* One column, plus the inset either side, plus the two 1px borders — which
+       have to be counted because `box-sizing: border-box` takes them OUT of the
+       declared width, and the column is the thing that must stay 273px. */
+    width: calc(
+      var(--navbar-menu-column) + 2 * var(--navbar-menu-panel-padding) + 2px
+    );
+
+    padding: var(--navbar-menu-panel-padding);
+    border: var(--navbar-menu-panel-border);
+
+    /* THE BORDER IS UNIFORM ON ALL FOUR EDGES, IN BOTH THEMES, AND THAT IS A DECISION
+       (2026-09-08). A `border-top-color: var(--gray-6)` shipped here for a few hours,
+       one step lighter than the sides, on a Polaris-bevel argument. It was reverted.
+       The Polaris precedent is real — its bevel's top layer genuinely is the quiet one,
+       and it genuinely applies to Popover — but its enabling condition is absent here.
+       Polaris lightens the top of a panel whose FILL already stands ~1.13:1 off a
+       #f1f1f1 canvas, so the bevel is decoration over load-bearing fill. This panel's
+       fill is 1.00:1 against the page in light theme, which makes the border the entire
+       definition of the shape. Quieting the only thing defining the shape is not a
+       refinement.
+       AND "LIGHTEN THE TOP EDGE" CANNOT MEAN WHAT IT MEANS IN A BEVEL, because the ramp
+       has no headroom above white: the only direction available is toward the page
+       colour, i.e. toward erasure. A bevel's top facet reads lighter because of its
+       ORIENTATION to a light source, which a 1px CSS border does not have.
+       MEASURED, and this is the cleanest fact in the file: uniform gray-7 beats the
+       lightened gray-6 top on BOTH peak edge contrast AND total edge ink in 14 of 14
+       engine x DPR cells (Chromium 149/151, Firefox 151, WebKit 26.5, at DPR 1/1.25/
+       1.5/2).
+       DO NOT READ THAT AS A gray-6 DEFECT — fractional device scaling dilutes EVERY
+       value on the ramp (Chromium 151 at DPR 1.25: gray-6 -17%, gray-7 -14%, gray-8
+       -20% in peak contrast). What is specific to gray-6 is that it starts lowest and
+       therefore ends lowest, and that it is the only value whose total edge ink goes
+       DOWN once the shadow is applied; gray-7 and gray-8 both GAIN. The rule is
+       "the weakest value is the wrong one to weaken further", not "gray-6 rasterises
+       badly". Engine rasterisation is corroborating weight here, not the primary reason.
+       ALSO RETIRED, because it is false: the fear that a 1.41:1 edge simply vanishes.
+       MEASURED — unshadowed, gray-6 holds one full-strength device row at #d6dadd
+       (1.4064:1) at DPR 1, 1.25, 1.5 and 2 in all three engines. It was never invisible;
+       it was merely the weakest edge available, on the surface least able to afford one.
+       It was also the ONLY per-edge border-colour override in this site's CSS. */
+
+    /* NO `data-theme` OVERRIDE IS NEEDED HERE, and there is none in this file. The
+       edge reads --navbar-menu-panel-border-color, which resolves to --gray-8, which is
+       itself theme-scoped: 1.9131:1 in light and 3.036:1 in dark against each theme's
+       page. Dark cleared the 3:1 non-text floor before this change and still does.
+       THE HONEST LIMIT, WHICH THIS CHANGE NARROWS RATHER THAN CLOSES: the panel's fill
+       is 1.0000:1 against the page in light and 1.0712:1 in dark, so a 1px edge is
+       still the whole of the panel's definition. Raising it to --gray-8 is the largest
+       improvement available WITHOUT touching the fill; the fill or canvas separation
+       that would actually take the load off the border is a site-wide token decision
+       and remains a follow-up. */
+    border-radius: var(--navbar-menu-radius);
+    box-shadow: var(--navbar-menu-panel-shadow);
+
+    /* ALWAYS A GRID, which is the reference's `.List` (`display: grid`) and not
+       only its multi-column variant. Two things follow, and the second is why it
+       is done here: the `:has()` rule below then adds two declarations rather
+       than four, and `row-gap` works in BOTH layouts from one declaration. In
+       block flow it would not — sibling margins collapse, so the same 4px would
+       come out as 4px between grid rows and 2px between block ones. */
+    display: grid;
+
+    /* Both axes from one token — see --navbar-menu-plate-gap for why they are the
+       same number and why the number is 4. The reference's own `column-gap: 10px`
+       is what this replaces on the horizontal. */
+    gap: var(--navbar-menu-plate-gap);
+    transform-origin: top center;                /* reference: transform-origin: top */
+
+    /* The closed resting state is the END of the reference's scaleOut, so the
+       first paint of a menu that has never been opened is already where a close
+       would have left it and no animation runs at mount. `visibility` is a step
+       switch held open for the length of the close so the exit animation is
+       actually seen — the delayed-visibility idiom, with the delay dropped to
+       zero on open below. */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-50%) perspective(2000px) rotateX(-10deg) scale(0.95);
+    transition: visibility var(--motion-none) linear var(--motion-fast);
+  }
+
+  /* THE TWO-COLUMN PANEL, AND THE QUANTITY QUERY THAT PICKS IT.
+     `:has(> li:nth-child(4))` makes the panel choose its own layout: four or more
+     rows and it goes to two columns, three or fewer and it stays the single
+     column declared above. `Resources` has six and gets 3x2; `API Reference` has
+     two and stays a column of two. The alternative was a class chosen in the
+     swizzle, which would have put a layout decision in a component for no gain.
+     A BROWSER WITHOUT `:has()` GETS THE SINGLE COLUMN, which is the pre-`:has()`
+     layout and entirely usable — this is the one rule in the file that degrades
+     rather than breaks, and it degrades to a layout the reference also ships.
+
+     THE FILL ORDER IS ROW-MAJOR, AND THE REFERENCE'S IS NOT. Radix declares
+     `grid-template-rows: repeat(3, 1fr); grid-auto-flow: column`, which fills
+     top-to-bottom down the FIRST column and then down the second — so its six
+     items land 1,2,3 on the left and 4,5,6 on the right. Reproduced literally,
+     `Resources` read Glossary / FAQs / Quick Reference down one side and
+     Additional Reference / API Changelog / Support down the other, which means
+     the second item in the config sits at the BOTTOM of the panel and the reader
+     has to scan a column, jump back up, and scan again to recover the order the
+     menu was authored in.
+     Owner's instruction, 2026-08-29: fill left-to-right, then down. That is what
+     `grid-template-columns: repeat(2, 1fr)` with the DEFAULT `grid-auto-flow: row`
+     does, and it is the order every reader already has for a list — item 1 top
+     left, item 2 top right, item 3 middle left, and so on. The reference's own
+     demo can afford column-major because its six links are six unrelated product
+     names in no particular sequence; this menu's order is editorial and set in
+     docusaurus.config.ts, so the panel has to preserve it.
+
+     IT ALSO REPLACES THE `grid-auto-columns: 1fr` WORKAROUND. Under column flow
+     the columns were IMPLICIT, so their default `auto` sizing measured them by
+     content and produced two visibly different widths (268.906px + 277.094px
+     here, and 270.586px + 275.414px on the live reference, which has the same
+     latent bug). An EXPLICIT `repeat(2, 1fr)` is equal by construction, so the
+     fix and the fill order arrive in the same declaration.
+     `grid-auto-rows: 1fr` keeps what the reference's `repeat(3, 1fr)` was
+     actually buying — rows of equal height whatever their content wraps to. */
+  .theme-layout-navbar-left .dropdown__menu:has(> li:nth-child(4)) {
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 1fr;
+
+    /* The gap term is the TOKEN, not a repeated literal: the column must stay
+       273px, so any change to the plate gap has to move the panel's width by the
+       same amount or the two columns stop being equal. */
+    width: calc(
+      var(--navbar-menu-column) * 2 + var(--navbar-menu-plate-gap) +
+      2 * var(--navbar-menu-panel-padding) + 2px
+    );
+  }
+
+  /* `[data-state]` is stamped by the swizzle only AFTER a menu has been opened
+     once, which is what keeps scaleOut off the first paint. Infima's own
+     `.dropdown--show .dropdown__menu` is (0,2,0) and still applies — it carries
+     `pointer-events: all`, which is load-bearing and deliberately left to it. */
+  .theme-layout-navbar-left .dropdown[data-state='open'] .dropdown__menu {
+    /* THE RESTING OPEN STATE IS DECLARED, NOT LEFT TO `animation-fill-mode`, and
+       that restructuring is what makes the skip below possible. It used to be
+       `animation: … forwards` with no declarations of its own, so the panel's
+       open appearance existed ONLY as the last frame of a keyframe — remove the
+       animation and the panel stayed at `opacity: 0`. Declaring the end state
+       here and running the keyframes as a flourish over the top means dropping
+       `animation` changes the entrance and nothing else. `forwards` is now
+       redundant in both arms for the same reason: each animation ends exactly
+       where its rule already says the element sits. */
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) perspective(2000px) rotateX(0) scale(1);
+    transition-delay: var(--motion-none);
+    animation: navbar-menu-scale-in var(--motion-base) ease;
+  }
+
+  .theme-layout-navbar-left .dropdown[data-state='closed'] .dropdown__menu {
+    animation: navbar-menu-scale-out var(--motion-fast) ease;
+  }
+
+  /* -------------------------------------------------------------------------
+   * THE SWITCH. Moving the pointer from one open trigger to the next used to run
+   * two 3D animations against each other — the outgoing panel rotating and
+   * scaling away while the incoming one rotated and scaled in — which is the
+   * mush the owner called out on 2026-08-28 as "not as buttery smooth as the
+   * source".
+   *
+   * THE REFERENCE DOES NOT ANIMATE A SWITCH AT ALL, and that is the fix rather
+   * than a compromise. Its `scaleIn` / `scaleOut` are OPENING and CLOSING
+   * gestures: they play when the menu appears from nothing and when it leaves.
+   * Moving BETWEEN triggers keeps one viewport mounted and morphs it — Radix's
+   * `skipDelayDuration` is the same idea one level up — so the scale never
+   * replays mid-session. Reproducing the morph needs the shared viewport this
+   * file does not have; reproducing the ABSENCE of a re-entrance needs one
+   * declaration, and it removes the exact thing that read as unpolished.
+   *
+   * `data-switch` is stamped by the swizzle on both halves of the exchange — the
+   * panel arriving and the panel leaving — whenever another menu in the row is
+   * already open. The two then swap on the same frame, which reads as one panel
+   * moving rather than two animating.
+   *
+   * WHERE IT SITS IS CASCADE-SENSITIVE, and it must stay LAST among the
+   * `[data-state]` rules. Every selector involved is (0,3,1), so ties break on source
+   * order and this rule has to be able to out-rank the panel's own
+   * `[data-state='open']` rule. It originally sat immediately below the panel's state
+   * rules — far enough up the file to work for the panel but NOT for the SVG caret,
+   * whose open rule was declared much lower down. Measured in the shipped bundle at
+   * the time: the panel teleported on a switch (its open rule sat above the
+   * suppression, so the suppression won) while the caret cross-faded 150ms behind it,
+   * and one half of an object animating while the other does not is what read as lag.
+   * The caret was deleted on 2026-09-08, so only the panel is left to suppress — but
+   * the ordering constraint is unchanged. If a new `[data-state]` rule is ever added
+   * after this block, move this block down again.
+   * ---------------------------------------------------------------------- */
+
+  /* THE SWITCH SUPPRESSION, and it has to be the LAST of the state rules — the
+     block that used to sit up beside the panel's state rules explains at length
+     why it is down here instead. In one line: every one of these selectors is
+     (0,3,1), so the cascade is decided by source order, and this has to be able
+     to out-rank the panel's `[data-state]` rules above.
+     `animation` AND `transition` are both silenced: the panel is animated
+     (keyframes) and it also transitions, and the switch has to silence both or the
+     exchange plays a partial gesture. This carried a second selector for the SVG
+     caret until 2026-09-08; the caret is deleted, so there is one object left to
+     suppress. */
+  .theme-layout-navbar-left .dropdown[data-switch='true'] .dropdown__menu {
+    animation: none;
+    transition: none;
+  }
+
+  /* -------------------------------------------------------------------------
+   * The panel rows — the reference's ListItemLink chrome. Its rows carry a
+   * heading and a description; ours carry one label, because the navbar data
+   * model is out of scope, so what transfers is the box: 12px padding, 6px
+   * radius, adjacent rows, and a NEUTRAL hover (the reference uses `--mauve-3`
+   * here, not the violet it gives the trigger — the tint is reserved for the
+   * bar). `--ifm-dropdown-hover-background-color` is already that neutral wash.
+   * ---------------------------------------------------------------------- */
+  .theme-layout-navbar-left .dropdown__link {
+    margin-top: 0;                               /* reference rows are adjacent */
+    padding: 12px;                               /* reference */
+
+    /* The reference's own ListItemLink radius. The PANEL's is derived from this
+       one so the two curves stay concentric — see --navbar-menu-radius. */
+    border-radius: var(--navbar-menu-row-radius);
+
+    font-size: var(--zebra-fs-ui);
+
+    /* A TWO-TRACK GRID, so the description starts where the TITLE starts rather
+       than under the icon (owner, 2026-08-29). The alternative was a
+       `padding-left` on the description sized to the icon plus its gap, which is
+       the same measurement written twice and silently wrong the day either
+       changes. Here the icon owns column one, the title and the description share
+       column two, and the alignment is a consequence of the layout rather than a
+       number to maintain.
+       A ROW WITH NO ICON KEEPS THE INDENT, and that is deliberate: the column
+       still exists at zero width, so its text stays aligned with every other
+       row's rather than jutting 26px left of them. All eight rows carry an icon
+       today, so this is insurance, not a case in use.
+       `row-gap` REPLACES THE TITLE'S `margin-bottom`. It is the reference's same
+       5px, moved onto the grid so row one is exactly the title's line box —
+       which is what lets the icon centre on it without a magic offset. */
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 10px;
+    row-gap: 5px;                                /* reference's ListItemHeading margin */
+    align-items: start;
+
+    /* Infima nowraps a dropdown row, which was right when a row was one word and
+       is wrong now that it carries a sentence. The reference's ListItemLink
+       computes `white-space: normal`. */
+    white-space: normal;
+  }
+
+  /* The reference's ListItemHeading — `line-height: 1.2`, `margin-bottom: 5px`,
+     in the popover's strongest ink (it uses violet-12; the equivalent role here
+     is the token the row already reads, so the heading simply does not restate a
+     colour).
+     600 RATHER THAN THE REFERENCE'S 500, and for the same reason the trigger
+     above is 600 rather than 500: Inter at 14px does not reach untitledSans at
+     15px on the same number, and a row heading that is lighter than the trigger
+     it hangs from inverts the hierarchy. Owner's instruction, 2026-08-28. The
+     description below stays at 400, which is what keeps the pair legible as a
+     heading and a caption rather than as two weights of the same thing. */
+  .navbar__menu-row-title {
+    grid-column: 2;
+    grid-row: 1;
+    display: block;
+    font-weight: 600;
+    line-height: 1.2;                            /* reference */
+  }
+
+  /* The icon column. One of the semantic marks from src/components/icons —
+     `Glossary`, `Faq`, `QuickReference` and the rest — which the SIDEBAR already
+     draws for these same six pages, so a reader meets the same glyph in the menu
+     and in the sidebar it opens.
+     QUIETER THAN THE TITLE AT REST, which is the sidebar's own treatment of a
+     resting row (see the --ifm-menu-color note in custom.scss: this site
+     de-emphasises the resting row and saves full strength for the current one).
+     It puts the row's weight order where it belongs — title first, icon and
+     description supporting — and leaves the accent somewhere to go on hover.
+     `align-self: center` against a row that is exactly the title's 16.8px line
+     box, so a 16px glyph sits on the title's optical centre with no nudge. */
+  .navbar__menu-row-icon {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    color: var(--ifm-color-content-secondary);
+    transition: color var(--motion-base) ease;
+  }
+
+  /* The reference's ListItemText — same size, regular weight, `line-height:
+     1.4`, and its own quieter ink (mauve-11, "a step below the heading on the
+     same surface"). --ifm-color-content-secondary is this site's token for
+     exactly that role, and the contrast note in custom.scss records its ratios.
+     Two lines is the design budget: three would break the equal row heights the
+     3x2 grid depends on, which is why the descriptions in docusaurus.config.ts
+     are written to about forty characters. */
+  .navbar__menu-row-text {
+    grid-column: 2;
+    grid-row: 2;
+    display: block;
+    font-weight: var(--ifm-font-weight-normal);
+    line-height: var(--zebra-lh-caption);        /* 1.4 — reference */
+    color: var(--ifm-color-content-secondary);
+
+    /* NO ONE-WORD LAST LINES (owner, 2026-08-29). Several of these descriptions
+       broke with a single short word stranded on line two — "…report a / bug." —
+       which reads as a typesetting accident in a box this small. `pretty` asks
+       the browser to weigh the last few lines together and pull a word down
+       rather than leave a widow.
+       IT IS A HINT, NOT A LAYOUT CHANGE, which is why it is safe to add without
+       re-measuring anything: where it is unsupported the text wraps exactly as it
+       did before, so there is no fallback to write and no reflow to guard. It is
+       also the durable fix — rewriting six strings would only hold at one panel
+       width, and this panel has two. */
+    text-wrap: pretty;
+  }
+
+  /* THE HOVERED ROW TAKES THE ACCENT ON ITS TITLE ONLY (owner, 2026-08-28). The
+     reference recolours nothing on hover — it moves the plate and leaves the ink
+     alone — but this panel's rows are a heading over a caption, and the heading is
+     the thing being chosen; accenting it names the target, where accenting the
+     caption with it would tint the whole row blue and lose that distinction.
+     `--ifm-link-color` and not `--ifm-color-primary`: this is popover ink, and
+     Infima already paints the CURRENT row with `--ifm-link-color` (through
+     `--ifm-dropdown-link-color`), so hover and current land on the same blue and
+     the panel keeps one accent instead of two. */
+  .theme-layout-navbar-left .dropdown__link:hover .navbar__menu-row-title,
+  .theme-layout-navbar-left .dropdown__link:hover .navbar__menu-row-icon,
+  .theme-layout-navbar-left .dropdown__link--active .navbar__menu-row-icon {
+    color: var(--ifm-link-color);
+  }
+
+  /* The description is supporting copy in EVERY state, so it holds its own ink
+     against both of the above: Infima's active row re-points
+     `--ifm-dropdown-link-color`, which the row's `color` would otherwise pass down
+     to both spans, and the hover rule above is scoped to the title precisely so
+     this one can stay put. One selector list covers both states because it
+     re-asserts rather than reacts. */
+  .theme-layout-navbar-left .dropdown__link:hover .navbar__menu-row-text,
+  .theme-layout-navbar-left .dropdown__link--active .navbar__menu-row-text {
+    color: var(--ifm-color-content-secondary);
+  }
+
+  /* -------------------------------------------------------------------------
+   * forced-colors. One thing here is drawn with a background and no border and
+   * would therefore lose its shape to a forced palette: the tinted chip, which
+   * takes a boundary the forced palette keeps.
+   * The panel's border is only RE-COLOURED here, not introduced. The SVG caret used
+   * to need two rules of its own in this block — a Canvas fill and a ButtonBorder
+   * stroke — and they were deleted with it on 2026-09-08. With the panel now standing
+   * 4px clear of the bar, its top edge is unambiguous in a forced palette instead of
+   * being one of two adjacent system-coloured lines.
+   * ---------------------------------------------------------------------- */
+  @media (forced-colors: active) {
+    .theme-layout-navbar-left .navbar__link:hover,
+    .theme-layout-navbar-left .navbar__link[data-state='open']:not([data-leaving]),
+    .theme-layout-navbar-left .navbar__link--active {
+      outline: 1px solid Highlight;
+      outline-offset: -1px;
+    }
+
+    .theme-layout-navbar-left .dropdown__menu {
+      border-color: ButtonBorder;
+    }
+  }
+}

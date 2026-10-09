@@ -1,0 +1,167 @@
+/* Ejected from @docusaurus/theme-classic with index.tsx on 2026-08-29. Everything above
+   the TOOLTIP banner is upstream's file, unmodified except for `position: relative` on
+   .toggleButton, which the chip below needs as its containing block. */
+
+.toggle {
+  width: 2rem;
+  height: 2rem;
+}
+
+.toggleButton {
+  -webkit-tap-highlight-color: transparent;
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  transition: background var(--ifm-transition-fast);
+  /* ADDED: the anchor for the ::after chip. */
+  position: relative;
+}
+
+.toggleButton:hover {
+  background: var(--ifm-color-emphasis-200);
+}
+
+.toggleIcon {
+  display: none;
+}
+
+[data-theme-choice='system'] .systemToggleIcon,
+[data-theme-choice='light'] .lightToggleIcon,
+[data-theme-choice='dark'] .darkToggleIcon {
+  display: initial;
+}
+
+.toggleButtonDisabled {
+  cursor: not-allowed;
+}
+
+/* ===========================================================================
+ * TOOLTIP — the site's chip, not the browser's.
+ *
+ * WHY THIS EXISTS AT ALL. index.tsx replaced the native `title` attribute with
+ * `data-tooltip`, so something has to draw it. The native tooltip was worth losing on its
+ * own merits: roughly a second of hover delay, no styling, nothing on keyboard focus, and
+ * nothing at all on touch. This chip appears on :focus-visible too, so the control is
+ * discoverable to a keyboard user, which is the same argument api.scss makes for the
+ * Schema panel's icon buttons.
+ *
+ * IT READS THE SHARED --tip-* TOKENS, declared and argued once in src/css/custom.scss.
+ * Not one literal here is a colour, a radius or a duration of its own.
+ *
+ * THIS IS THE THIRD CONSUMER OF THAT TOKEN SET, and that is worth recording rather than
+ * quietly repeating: the Schema panel's icon buttons (src/css/api.scss) and the collapsed
+ * sidebar's label (src/css/sidebar.scss) are the other two. The house pattern is a
+ * component-scoped block reading shared tokens, which is what this is, and a CSS module
+ * makes the scoping literal — none of these rules can reach another component even by
+ * accident. But three copies of one chip is the point at which a shared `[data-tooltip]`
+ * utility starts paying for itself. IF A FOURTH APPEARS, extract it; the blocker today is
+ * that api.scss's copy carries edge-aware alignment and panel-overflow constraints that a
+ * generic utility would have to grow anyway.
+ *
+ * THE CHIP IS RIGHT-ALIGNED, NOT CENTRED, and that is geometry rather than taste. This
+ * control is the last item in the navbar. The button is 32px wide and "Switch to dark mode"
+ * sets about 118px at --tip-font-size, so a centred chip would put roughly 43px of itself
+ * past the button on each side and hang over the viewport edge. Right-aligning grows it
+ * leftward, into the bar, away from the edge — the same fix, for the same reason, that
+ * api.scss applies to the Schema panel's corner control.
+ * ======================================================================== */
+
+.toggleButton::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  /* sideOffset 0: the chip meets the button's edge and the arrow bridges the gap. */
+  /* --tip-offset, 2026-09-10 — owner: "the tooltip for dark/light toggle mode is too close to
+     the icon; it should be slightly below the icon". Same correction, same token and same
+     reasoning as the schema controls' chip in src/css/api.scss: the chip was flush on the
+     button and the arrow was drawn inside it rather than bridging a gap.
+     NO FLIP RULE HERE. This anchor is in the navbar, which is pinned to the top of the
+     viewport at every scroll position, so the downward chip is the only case that can occur —
+     src/theme/Root still measures it and will simply never find it short of room. */
+  top: calc(100% + var(--tip-offset));
+  right: 0;
+  padding: var(--tip-pad-y) var(--tip-pad-x);
+  border-radius: var(--tip-radius);
+  background: var(--tip-bg);
+  color: var(--tip-fg);
+  font-size: var(--tip-font-size);
+  line-height: var(--tip-line-height);
+  font-weight: var(--tip-font-weight);
+  letter-spacing: var(--tip-tracking);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  z-index: var(--tip-z);
+  /* The anchor point is the corner the chip is pinned by, so the settle grows out of the
+     top-right rather than out of a centre this chip does not have. */
+  transform-origin: top right;
+}
+
+/* THE ARROW STAYS CENTRED ON THE BUTTON while the chip hangs left of it. The arrow points
+   at the control; the chip only has to fit. Same real-triangle construction as api.scss:
+   an 11px base over a 7px rise via clip-path, seated 1px into the chip so antialiasing
+   cannot paint a hairline along the join. */
+/* NO ARROW — removed 2026-09-10 with every other tooltip arrow on the site (owner: "there
+   should be no such arrows for this tooltip or any other tooltip across the entire
+   documentation"). The rule that stood here drew the same clip-path triangle the schema
+   controls' chip used; see src/css/api.scss for the full note. `--tip-offset` now carries the
+   clearance the arrow used to bridge. */
+
+/* The hover background on .toggleButton is a real background and ::after paints above it, so
+   no stacking work is needed here. */
+.toggleButton:hover::after,
+.toggleButton:focus-visible::after {
+  opacity: 1;
+  animation: tipInBelowPinned var(--tip-duration)
+    var(--ifm-transition-timing-default, ease-out);
+}
+
+/* ONE KEYFRAME SET NOW, where there used to be two. The second existed because the chip and the
+   arrow carried different resting transforms and an animation replaces the WHOLE transform
+   rather than composing with it. There is no arrow. */
+@keyframes tipInBelowPinned {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--tip-slide) * -1))
+      scale(var(--tip-scale-from));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tipInBelowCentred {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(calc(var(--tip-slide) * -1))
+      scale(var(--tip-scale-from));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* Reduced motion: the chip still appears, instantly. Suppress the movement, not the
+   information. custom.scss's blanket rule forces `transition-duration` and does not reach
+   an `animation`, so this opts out for itself. */
+@media (prefers-reduced-motion: reduce) {
+  .toggleButton:hover::after,
+  .toggleButton:focus-visible::after {
+    animation: none;
+  }
+}
+
+/* Forced colours drop `background`, which would leave the chip's text floating on the page. */
+@media (forced-colors: active) {
+  .toggleButton::after {
+    background: Canvas;
+    color: CanvasText;
+    border: 1px solid CanvasText;
+  }
+}

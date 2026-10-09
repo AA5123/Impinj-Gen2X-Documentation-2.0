@@ -1,0 +1,30 @@
+---
+id: index
+title: "Device Info and Status"
+sidebar_label: "Device Info and Status"
+sidebar_position: 1
+draft: false
+description: "Query device status, firmware and API version, and the regulatory region."
+sidebar_custom_props: { emoji: "📟", card: "Query device status, firmware and API version, and the regulatory region." }
+---
+
+
+Three read commands report what a reader is and what state it is in. Each is safe to send again, and each can return [code `3`](/api-reference/mqtt/response-codes#code-3) when the reader cannot gather the information at that moment.
+
+| Command | Reports |
+| --- | --- |
+| [`get_version`](/api-reference/mqtt/mgmt/get-version) | Model, serial number, SKU and firmware versions |
+| [`get_status`](/api-reference/mqtt/mgmt/get-status) | Power source, battery, radio activity and connection, system time |
+| [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region) | The [regulatory region](/api-reference/mqtt/mgmt/get-current-region): country, standard, channels, and power limits |
+
+No MQTT command changes the region. See [Inspect Reader Identity and Status](/guides/manage-your-reader/inspect-reader-identity-and-status).
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

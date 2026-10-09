@@ -1,0 +1,36 @@
+---
+id: index
+title: "Protocol"
+sidebar_label: "Protocol"
+sidebar_position: 2
+draft: false
+description: "The wire rules of the MQTT API: how topics are built, what commands, responses, and events contain, how replies are correlated, and how delivery, retention, and the Last Will behave."
+sidebar_custom_props: { emoji: "🧬", card: "Topics, envelopes, correlation, delivery, and the Last Will." }
+---
+
+These pages define the rules that every command and event follows. The operation pages under [Management](/api-reference/mqtt/management), [Control](/api-reference/mqtt/control), and [Events](/api-reference/mqtt/events) assume them.
+
+## One Exchange, End to End {#one-exchange}
+
+| Stage | What happens | Specified on |
+| --- | --- | --- |
+| Address | Your application builds the reader's command and response topics from the endpoint's configuration. | [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure) |
+| Subscribe | Your application subscribes to the response topic, and to the event topic if the command finishes asynchronously. | [Delivery and Retry Semantics](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#retain) |
+| Publish | Your application publishes a command envelope at [QoS 1](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#qos). The broker's PUBACK means only that the broker received it. | [Message Envelopes and Correlation](/api-reference/mqtt/protocol-reference/message-envelope), [Delivery and Retry Semantics](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics) |
+| Reply | The reader publishes one response with your [`requestId`](/api-reference/mqtt/protocol-reference/message-envelope#correlating-responses). Most commands finish with this reply; three acknowledge with [code `1`](/api-reference/mqtt/response-codes#code-1) and finish later. | [Message Envelopes and Correlation](/api-reference/mqtt/protocol-reference/message-envelope#correlation-and-request-response-pairing) |
+| Outcome | Your application reads `response.code`, or waits for the event that reports the outcome. | [Response Codes](/api-reference/mqtt/response-codes) |
+
+## Choose a Page {#choose-a-page}
+
+| If you need to… | Read |
+| --- | --- |
+| Connect the reader to your broker, and understand its session | [Connection and Session](/api-reference/mqtt/protocol-reference/connection-and-session) |
+| Encrypt the connection, and authenticate the reader and your application | [TLS and Authentication](/api-reference/mqtt/protocol-reference/tls-and-authentication) |
+| Build a topic, or find which topic carries which traffic | [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure) |
+| Look up the [topic slots](/api-reference/mqtt/protocol-reference/endpoints-and-topic-slots) of each endpoint type | [Endpoints and Topic Slots](/api-reference/mqtt/protocol-reference/endpoints-and-topic-slots) |
+| Build a command, recognize an event, and pair a reply with its request | [Message Envelopes and Correlation](/api-reference/mqtt/protocol-reference/message-envelope) |
+| Handle lost and duplicate messages, retained messages, and the [Last Will](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#retention-and-last-will) | [Delivery and Retry Semantics](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics) |
+
+## In This Section {#in-this-section}
+
+<HubCards />

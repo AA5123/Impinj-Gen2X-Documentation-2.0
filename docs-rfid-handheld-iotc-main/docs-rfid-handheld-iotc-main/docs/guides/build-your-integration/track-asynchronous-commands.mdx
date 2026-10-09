@@ -1,0 +1,74 @@
+---
+id: track-asynchronous-commands
+title: "Track Asynchronous Commands"
+sidebar_label: "Track Asynchronous Commands"
+sidebar_position: 3
+draft: false
+description: "Follow set_os, install_certificate and reboot past their code 1 reply: subscribe first, watch for the FIRMWARE_UPDATE and FILE_DOWNLOAD alerts, confirm the result from the reader, and set your own timeout."
+sidebar_custom_props: { emoji: "⏳", card: "Follow set_os, install_certificate and reboot to their real outcome." }
+doc_type: how-to
+page_meta:
+  - "Audience: Solution builders"
+  - "Read time: 6 min"
+---
+
+Three commands finish after they reply: [`set_os`](/api-reference/mqtt/mgmt/set-os), [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) and [`reboot`](/api-reference/mqtt/mgmt/reboot). Each replies with code `1`, `Command payload is accepted`, which means the reader took the request, not that the work succeeded. This page shows how to follow each one to its outcome.
+
+| Command | Outcome arrives as | Confirm it with |
+|---|---|---|
+| `set_os` | `alerts` with `id: "FIRMWARE_UPDATE"` | `get_version` |
+| `install_certificate` | `alerts` with `id: "FILE_DOWNLOAD"` | `get_installed_certificates` |
+| `reboot` | No event | The next `CONNECTED` `mqttConnEVT`, with the limits below |
+
+## Before You Begin {#before-you-begin}
+
+1. Enable the events with [`config_events`](/api-reference/mqtt/mgmt/config-events): `firmwareUpdate` for `set_os`, `fileDownload` for `install_certificate`. A `config_events` change takes effect after a reboot, so do this in advance.
+2. Subscribe to the endpoint's event topic, and for `reboot` to its connection-state topic, **before** you send the command. Events are not retained, so an outcome published before you subscribe is lost.
+
+## Track `set_os` {#set-os}
+
+1. Send `set_os` and record the time.
+2. Expect a code `1` reply. A different code means the update did not start: see [Update Firmware and Restart the Reader](/guides/manage-your-reader/update-firmware-and-restart#set-os-reply).
+3. Follow `alerts` events with `id: "FIRMWARE_UPDATE"`. Show `alertDetails.fwUpdateStatus.overallProgress`, when present, to people.
+4. Treat the update as complete when `updateStatus` equals `FW update success`. Compare it with that value only: `updateStatus` is free text, and the reader emits display sentences such as `Updating file 2 of 7`. Do not wait for `state: "CLEAR"`; the contract records that every notification in an observed update was `ONESHOT`.
+5. Confirm with [`get_version`](/api-reference/mqtt/mgmt/get-version) that `firmwareVersion` changed.
+
+While the update runs, the reader refuses other commands with code `4`.
+
+## Track `install_certificate` {#install-certificate}
+
+1. Send `install_certificate` and expect a code `1` reply.
+2. Follow `alerts` events with `id: "FILE_DOWNLOAD"` and `alertDetails.downloadInfo.fileType: "FILE_TYPE_CERT"`. `downloadInfo.status` moves through `DOWNLOAD SUCCESS` to `SAVE SUCCESS` when the install succeeds; `DOWNLOAD FAIL` or `SAVE FAIL` ends it.
+
+   ```json title="alerts — event (contract example: File saved alert)"
+   {
+     "type": "NOTIFICATION",
+     "timestamp": "2026-06-17T10:16:34.793Z",
+     "state": "ONESHOT",
+     "id": "FILE_DOWNLOAD",
+     "priority": "HIGH",
+     "alertDetails": {
+       "downloadInfo": {
+         "fileType": "FILE_TYPE_CERT",
+         "fileName": "mqtt_ca_cert",
+         "status": "SAVE SUCCESS"
+       }
+     }
+   }
+   ```
+
+3. Confirm with [`get_installed_certificates`](/api-reference/mqtt/mgmt/get-installed-certificates).
+
+An alert carries no `requestId`. When several installs run at once, tell them apart by `fileName`, or run them one at a time.
+
+## Track `reboot` {#reboot}
+
+`reboot` has no outcome event, and the contract specifies no time for a restart. After `reboot` is accepted with code `1`, the next `CONNECTED` `mqttConnEVT` shows that a new session was established. On its own, it does not show that a restart occurred, because a network reconnect produces the same message. The `upTime` in `heartBeatEVT` shows a restart to a person reading it; it is free text, not machine-readable.
+
+After the reader reconnects, re-apply its operating mode: the mode is lost on reboot.
+
+## Set Your Own Timeout {#timeout}
+
+The contract specifies no timeout for these commands or any other. Choose one per command, based on what you observe in your environment, and decide what your application does when it expires: read the reader's state with `get_version`, `get_installed_certificates` or `get_status` before you conclude anything or send the command again.
+
+**Related:** 📙 [Send Commands and Handle Responses](/guides/build-your-integration/send-commands-and-handle-responses) · 📙 [Update Firmware and Restart the Reader](/guides/manage-your-reader/update-firmware-and-restart) · 📙 [Install and Manage Certificates](/guides/manage-your-reader/install-and-manage-certificates) · 📙 [Respond to Alerts](/guides/operate-and-monitor/respond-to-alerts) · 📕 [`alerts`](/api-reference/mqtt/events/alerts-event)

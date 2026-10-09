@@ -1,0 +1,216 @@
+{
+  "$comment": [
+    "THE PUBLISHED ORDER OF EVERY VARIANT DROPDOWN. Read by scripts/api/mqtt/variant_labels.py.",
+    "SINCE 2026-09-22 THE ORDER IS THE CONTRACT'S. By owner decision every dropdown lists its message's",
+    "examples in the contract's examples[] order -- the order of example_description.json in the API",
+    "definition -- and variant_labels.py checks that directly (CONTRACT ORDER), including that no",
+    "example is missing. This file keeps the `value` slugs pinned, so that an unintended reorder or a",
+    "renamed slug still fails loudly: VariantSelect.tsx:288 selects by `value`.",
+    "The docs-owned orders of 2026-09-09 (family-contiguous, plain-before-TLS) are retired; git history",
+    "keeps them.",
+    "WHY IT IS EXHAUSTIVE. Ordering specification 1.1: 'Make the list exhaustive, including the messages",
+    "that never change. A partial list appends silently when a source adds an example. A complete one",
+    "fails loudly, which is the point.' All 17 controls are listed.",
+    "TO CHANGE AN ORDER: change it upstream in example_description.json, rebuild the contract, then edit",
+    "the prose AND this file in the same commit."
+  ],
+  "contract_version": "1.22.0",
+  "seeded": "2026-09-09",
+  "controls": {
+    "alerts-event": {
+      "page": "events/alerts-event.mdx",
+      "control": "Alert category",
+      "order": [
+        "battery",
+        "power",
+        "network-wifi",
+        "network-ethernet",
+        "firmware-update",
+        "file-download",
+        "file-saved"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Unchanged: the published order already matched it."
+    },
+    "config-endpoint-request": {
+      "page": "mgmt/config-endpoint.mdx",
+      "control": "Operation / endpoint",
+      "order": [
+        "add-mgmt-tls",
+        "add-ctrl-tls",
+        "add-data",
+        "add-mdm",
+        "add-ctrl",
+        "add-data-tls",
+        "add-data-batching",
+        "delete",
+        "update"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Reordered from the docs-owned order of 2026-09-09."
+    },
+    "config-events-request": {
+      "page": "mgmt/config-events.mdx",
+      "control": "Event set",
+      "order": [
+        "enable-all",
+        "selective"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Unchanged: the published order already matched it."
+    },
+    "control-operation-request": {
+      "page": "ctrl/control-operation.mdx",
+      "control": "Operation",
+      "order": [
+        "start",
+        "stop"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Unchanged: the published order already matched it."
+    },
+    "data-event": {
+      "page": "data/tag-data-event.mdx",
+      "control": "Read detail",
+      "order": [
+        "base",
+        "additional-details",
+        "access-operations",
+        "barcode"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Reordered from the docs-owned order of 2026-09-09."
+    },
+    "delete-certificate-request": {
+      "page": "mgmt/delete-certificate.mdx",
+      "control": "Certificate scenario",
+      "order": [
+        "wifi",
+        "mqtt",
+        "filestore"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Unchanged: the published order already matched it."
+    },
+    "delete-wifi-profile-response": {
+      "page": "mgmt/delete-wifi-profile.mdx",
+      "control": "Result",
+      "order": [
+        "success",
+        "active-ssid",
+        "not-found"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Unchanged: the published order already matched it."
+    },
+    "get-endpoint-config": {
+      "page": "mgmt/get-endpoint-config.mdx",
+      "control": "Scope",
+      "order": [
+        "active",
+        "specific"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Unchanged: the published order already matched it."
+    },
+    "get-eth-response": {
+      "page": "mgmt/get-eth.mdx",
+      "control": "Interface state",
+      "order": [
+        "enabled",
+        "disabled"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Unchanged: the published order already matched it."
+    },
+    "get-wifi-response": {
+      "page": "mgmt/get-wifi.mdx",
+      "control": "Connection scenario",
+      "order": [
+        "wpa2-personal",
+        "wpa2-enterprise",
+        "wpa3-enterprise",
+        "wifi-disabled"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Unchanged: the published order already matched it."
+    },
+    "install-certificate-request": {
+      "page": "mgmt/install-certificate.mdx",
+      "control": "Certificate scenario",
+      "order": [
+        "mqtt-cert-auth",
+        "filestore-cert-auth",
+        "mqtt-no-auth",
+        "wifi-no-auth",
+        "wifi-direct",
+        "server-cert",
+        "mqtt-direct",
+        "mqtt-base64-direct",
+        "mqtt-base64-url"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Reordered from the docs-owned order of 2026-09-09."
+    },
+    "install-certificate-response": {
+      "page": "mgmt/install-certificate.mdx",
+      "control": "Result",
+      "order": [
+        "accepted",
+        "url-missing",
+        "content-missing"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Unchanged: the published order already matched it."
+    },
+    "mqtt-connection-event": {
+      "page": "events/mqtt-connection-event.mdx",
+      "control": "Connection state",
+      "order": [
+        "connected",
+        "disconnected"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Unchanged: the published order already matched it."
+    },
+    "set-operating-mode-request": {
+      "page": "ctrl/set-operating-mode.mdx",
+      "control": "Configuration section",
+      "order": [
+        "profile",
+        "full",
+        "access-operations",
+        "radio-conditions",
+        "query",
+        "select",
+        "query-select",
+        "tag-metadata"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Product review of 2026-09-29: Profile setting (basic inventory) is the first example in the contract and the API definition, so it leads here too."
+    },
+    "set-os-request": {
+      "page": "mgmt/set-os.mdx",
+      "control": "Update source",
+      "order": [
+        "no-auth",
+        "ca-installed",
+        "ca-inline"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Unchanged: the published order already matched it."
+    },
+    "set-post-filter-request": {
+      "page": "ctrl/set-post-filter.mdx",
+      "control": "Post filter scenario",
+      "order": [
+        "prefix",
+        "regex",
+        "suffix",
+        "delete"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Reordered from the docs-owned order of 2026-09-09."
+    },
+    "set-wifi-request": {
+      "page": "mgmt/set-wifi.mdx",
+      "control": "Profile scenario",
+      "order": [
+        "create-wpa2-personal",
+        "modify-wpa2-personal",
+        "set-preferred-ap",
+        "wpa2-enterprise-tls",
+        "wpa2-enterprise-ttls",
+        "wpa2-enterprise-peap",
+        "wpa3-enterprise-tls",
+        "wpa3-enterprise-ttls",
+        "wpa3-enterprise-peap"
+      ],
+      "note": "CONTRACT ORDER (owner decision, 2026-09-22): the contract's examples[] order, which is the order of example_description.json in the API definition. Unchanged: the published order already matched it."
+    }
+  }
+}

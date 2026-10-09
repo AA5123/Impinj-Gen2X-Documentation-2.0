@@ -1,0 +1,140 @@
+---
+id: the-tag-data-stream
+title: "The Tag Data Stream"
+sidebar_label: "The Tag Data Stream"
+sidebar_position: 2
+description: "How a reader turns reads into dataEVT messages: where tag data is published, how batching and the 6144-byte limit shape each message, what a tag record carries, and why the stream is a statistical view rather than a log."
+sidebar_custom_props: { emoji: "📥", card: "Where tag data is published, how it is batched, and what each record carries." }
+doc_type: explanation
+page_meta:
+  - "Audience: API consumers"
+  - "Read time: 7 min"
+  - "Ties to: [Tag Data Stream](/api-reference/mqtt/data/tag-data-events/)"
+---
+
+While an inventory runs, the reader publishes what it reads as [`dataEVT`](/api-reference/mqtt/data/tag-data-event) messages. This page explains where those messages go, what decides their size and timing, and what a consumer can and cannot conclude from them. The field-by-field reference is the [`dataEVT`](/api-reference/mqtt/data/tag-data-event) page.
+
+## Where Tag Data Is Published {#topic-routing}
+
+Tag data goes to a data endpoint: an endpoint whose `epType` is `DATA1`. The contract also declares `DATA2`, but it is currently not supported. The contract gives each one its own topic:
+
+| Endpoint | Topic |
+|---|---|
+| `DATA1` | `{tenantId}/DATA/clients/data1event/{deviceSerialNumber}` |
+| `DATA2` | `{tenantId}/DATA/clients/data2event/{deviceSerialNumber}` (currently not supported) |
+
+The endpoint must exist and be active. Create it with [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) with `activate: true`. Without an active data endpoint no tag data arrives, whatever the radio is doing; the contract names this as the most common reason an integrator sees an inventory running and no data.
+
+A data endpoint publishes tag data on its second publish topic, `publishTopics[1]`. The reader decides by position, not by the topic text, so a data endpoint needs two entries. See [Publish Topics Are Slots](/guides/core-concepts/endpoints-topics-and-channels#publish-topic-slots).
+
+`DATA2` is currently not supported, so `DATA1` is the only dedicated tag-data channel.
+
+Tag data can also go to a shared management or control endpoint, where it arrives on that endpoint's connection-state topic, for example `{tenantId}/MGMT/clients/rfid/{deviceSerialNumber}`. The contract calls this the fallback placement: it puts high-rate tag traffic on the same topic tree as connection-state events, and it recommends a dedicated data endpoint for sustained inventory. See [Choose Shared or Dedicated Data Endpoints](/guides/build-your-integration/choose-shared-or-dedicated-data-endpoints).
+
+## How Reads Become Messages {#batching}
+
+The reader does not publish one message per read. It collects tag reports and publishes them in batches, and the endpoint's `batching` block sets when a batch is published:
+
+| Member | Reader default | Declared range |
+|---|---|---|
+| `reportingInterval` | `1000` ms | `1000` to `60000` ms |
+| `maxPayloadSizePerReport` | `1024` bytes | `1024` to `5120` bytes |
+
+A batch is published when either limit is reached. The contract does not say which of the two wins when both are reached. Sending `0` for a member does not turn batching off: the reader uses that member's minimum. When the `batching` block is absent, the reader's built-in batching applies, and no source states what that is. The member names and the case where only one member is sent are covered on [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint).
+
+Whatever the batching settings, a whole `dataEVT` message is limited to **6144 bytes**. The limit is on bytes, not on tag records: there is no maximum number of records in a batch. A message over the limit is dropped by the reader and the connection stays up, so the symptom is a message that never arrives, not an error you can catch. How many records fit depends on which metadata fields each record carries.
+
+## One Record per Tag Report {#tag-records}
+
+Each message carries an array of tag records in `data.tagData`. A record reports one tag since that tag's previous report, not one read:
+
+- **`seenCount`** is the number of times the tag was inventoried since its previous report. It is `1` when every individual read is reported.
+- **`peakRssi`** is the peak signal strength, in dBm, since the last reported read.
+- **`channel`** and **`phase`** are present only when every individual read is reported. When reads are aggregated, neither is emitted. `channel` is an opaque channel index, not a frequency.
+- **`eventNum`** is the per-report sequence counter and the only ordering signal a subscriber has. Every record also carries `EPCid`. The contract documents no wrap-around or reset rule.
+
+The same tag can appear more than once in one message. In the contract's "Tag data event" example, the EPC `11113333333344445555AAAA` appears at `eventNum` 47, 49 and 54 of the same batch. Deduplicate in your application; see [Consume Tag Data](/guides/build-your-integration/consume-tag-data).
+
+```json title="dataEVT — event (contract example: Tag data with additional details)"
+{
+  "type": "BALANCED_PERFORMANCE",
+  "timestamp": "2026-06-16T06:14:26.782Z",
+  "data": {
+    "tagData": [
+      {
+        "EPCid": "AAAABBBB11112222CCCCDDDD",
+        "EPC": "D98A3000AAAABBBB11112222CCCCDDDD",
+        "TID": "E2003412012DFA000FF5D1E4031D0136000D5FFBFFFFDC60",
+        "channel": 9216,
+        "eventNum": 91,
+        "peakRssi": -62,
+        "phase": 64,
+        "seenCount": 256,
+        "MAC": "AC:3F:A4:00:2B:15",
+        "HOSTNAME": "RFD40-211545201D0034"
+      },
+      {
+        "EPCid": "CCCCCCCCA5050077AB3800CC",
+        "EPC": "3BA23000CCCCCCCCA5050077AB3800CC",
+        "TID": "E28011B02000A0CC59C003BD000000000000",
+        "channel": 9472,
+        "eventNum": 92,
+        "peakRssi": -76,
+        "phase": -171,
+        "seenCount": 256,
+        "MAC": "AC:3F:A4:00:2B:15",
+        "HOSTNAME": "RFD40-211545201D0034"
+      }
+    ]
+  }
+}
+```
+
+Around the records, `type` names the operating-mode profile that was active when the reads were reported, and `timestamp` is when the reader generated the event. Each tag record carries `EPCid` and `eventNum`. A tag-data message has no `command`, `requestId` or `response`: it is an event, not a reply.
+
+## What Decides Which Fields Appear {#metadata-flags}
+
+Which optional fields a record carries is set by the `tagMetaDataToEnable` flags of the operating mode, sent with [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode). Every metadata field is therefore optional by construction. Three things about the flags matter to a consumer:
+
+- **Some switch names differ from the field names.** The flag `RSSI` switches on `peakRssi`, `PHASE` switches on `phase`, `SEENCOUNT` switches on `seenCount`, and `CHANNEL` switches on `channel`.
+- **Some fields have no switch.** `RESERVED`, `firstSeenTime`, `lastSeenTime`, `accessResults`, `userDefined` and `format` have no flag.
+- **The `EPC` flag is ambiguous.** A record can carry both `EPC` and `EPCid`, and the contract does not say which of the two the `EPC` flag controls.
+
+When the operating mode arms access operations, `accessResults` carries one entry per configured operation, in the order the operations were configured. Each entry is a string: `SUCCESS` or an error message, following the `<OPERATION>-<MEMORY_BANK>-<RESULT>` grammar. The contract declares no fixed list of result values, so treat an entry you do not recognize as a failure.
+
+## A Statistical View, Not a Log {#statistical-view}
+
+`dataEVT` is published at the QoS you set on its topic when you configure the data endpoint: 0 or 1, the two levels the reader supports. The reader's default endpoint configurations use 0. It is never retained: a retained tag read would reach every new subscriber as if that tag had just been seen. The contract describes the stream as a statistical view of the tag population, not a guaranteed log of every read, because inventory produces reads faster than an acknowledged flow can confirm them.
+
+The contract says an application that needs guaranteed capture must reconcile against `inventoryStatus`, which [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) carries when its `inventoryStatus` block is enabled. Reconciliation can reveal a discrepancy; it cannot prove that capture is complete. What the counters count is not yet specified, and post-filters and read aggregation (`seenCount`) can make the counts differ legitimately, so treat a mismatch as a signal to investigate.
+
+## Barcode Reads {#barcode-reads}
+
+The same message carries barcode reads in `data.barcodeData` when a `SCANNER` operation runs on a reader with a barcode imager. On a reader without one, `SCANNER` operations and barcode data cannot occur. Either array can be absent, so a consumer that expects only tags must not assume `tagData` is present.
+
+```json title="dataEVT — event (contract example: Barcode data event)"
+{
+  "timestamp": "2026-08-18T09:59:50.821Z",
+  "data": {
+    "barcodeData": [
+      {
+        "symbology": "0x03",
+        "decodedBarcode": "PWR-BGA24V78W1WW 183213949"
+      }
+    ]
+  }
+}
+```
+
+`decodedBarcode` is the only required member of a barcode record. `symbology` is the barcode type, as a hexadecimal string such as `0x03`; accept values you do not recognize.
+
+## When No Tag Data Arrives {#when-no-data}
+
+- **No active data endpoint.** Check with [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) that a `DATA1` endpoint exists with `activate: true`.
+- **One publish topic on a data endpoint.** Tag data goes to `publishTopics[1]`. With a single entry, the configuration is accepted and nothing is streamed.
+- **A post-filter excludes every tag.** A [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter) rule with `reportOperation: EXCLUDE` suppresses the tags it matches. Inspect the rules with [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter).
+- **The message is over 6144 bytes.** The reader drops it and reports no error. Enable fewer metadata fields, or reduce `maxPayloadSizePerReport`.
+- **The subscription started late.** Tag data is not retained, so anything published before your subscription was active is not delivered.
+- **The profile is `FAST_READ`.** Do not rely on it for tag data. Choose another profile; see [Choose a Performance Profile](/guides/read-tags-and-barcodes/choose-a-performance-profile).
+
+**Related:** 📕 [`dataEVT`](/api-reference/mqtt/data/tag-data-event) · 📙 [Consume Tag Data](/guides/build-your-integration/consume-tag-data) · 📘 [Choose Shared or Dedicated Data Endpoints](/guides/build-your-integration/choose-shared-or-dedicated-data-endpoints) · 📘 [How the Radio Reads Tags](/guides/core-concepts/how-the-radio-reads-tags) · 📕 [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode)

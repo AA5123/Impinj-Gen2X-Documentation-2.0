@@ -1,0 +1,24 @@
+---
+id: index
+title: "Operating Mode"
+sidebar_label: "Operating Mode"
+sidebar_position: 1
+draft: false
+description: "Read back and configure the RFID operating mode — profile, Gen2 query, pre-filters, and triggers — over the control (CTRL) endpoint."
+sidebar_custom_props: { emoji: "⚙️", card: "Read back and configure the RFID operating mode — profile, Gen2 query." }
+---
+
+
+The [operating mode](/api-reference/mqtt/ctrl/set-operating-mode) is the single object that configures the RFID radio: the profile, advanced radio settings, access operations, start and stop conditions, the Gen2 query, select pre-filters and tag metadata flags. [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) accepts a partial update and is refused with [code `11`](/api-reference/mqtt/response-codes#code-11) during an inventory; [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode) returns the running mode and is safe to send again. The mode is lost on reboot, and the reader returns to its default.
+
+See [Choose a Performance Profile](/guides/read-tags-and-barcodes/choose-a-performance-profile) and the [RFID and Barcode Reading](/api-reference/mqtt/schemas/rfid-and-barcode-reading) schemas.
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

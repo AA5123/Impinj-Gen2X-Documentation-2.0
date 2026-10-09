@@ -1,0 +1,88 @@
+---
+id: configure-trigger-and-stop-conditions
+title: "Configure Trigger and Stop Conditions"
+sidebar_label: "Configure Trigger and Stop Conditions"
+sidebar_position: 2
+description: "Set when an inventory starts and stops with radioStartConditions and radioStopConditions: the handheld trigger values, the start delay and repeat settings, the stop thresholds, and what the contract leaves unresolved."
+sidebar_custom_props: { emoji: "🔘", card: "Set when an inventory starts and stops: triggers, delays and stop thresholds." }
+doc_type: how-to
+page_meta:
+  - "Audience: Solution builders"
+  - "Read time: 5 min"
+  - "Ties to: [Operating Mode](/api-reference/mqtt/control/operating-mode/)"
+---
+
+A handheld reader has a physical trigger. Two members of the operating mode decide how the trigger and time affect an inventory: `radioStartConditions` and `radioStopConditions`, sent with [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode). Set them while no inventory is running; the reader refuses `set_operating_mode` with code `11` during an inventory.
+
+## The Trigger Values {#trigger-values}
+
+Both `radioStartConditions.trigger` and `radioStopConditions.trigger` take one of three values:
+
+| Value | In `radioStartConditions` | In `radioStopConditions` |
+|---|---|---|
+| `PRESSED` | The inventory starts when the trigger is pressed | The inventory stops when the trigger is pressed |
+| `RELEASED` | The inventory starts when the trigger is released | The inventory stops when the trigger is released |
+| `IMMEDIATE` | The inventory starts immediately, without a trigger action | The inventory stops immediately, without a trigger action |
+
+When `radioStartConditions` is absent, the radio starts inventorying as soon as it receives a `control_operation` `START`. When `radioStopConditions` is absent, the inventory continues until it receives a `STOP`.
+
+## Start Settings {#start-settings}
+
+| Member | Meaning |
+|---|---|
+| `trigger` | When the inventory starts, from the table above |
+| `startDelay` | A delay, in milliseconds, before the inventory starts, for any trigger. The schema describes `3000` as a three-second delay |
+| `repeat` | `true`: pressing the trigger starts reading, releasing it stops, and pressing it again restarts. `false`: pressing the trigger after the inventory stops does not restart it |
+
+## Stop Settings {#stop-settings}
+
+| Member | Meaning |
+|---|---|
+| `trigger` | A trigger action that stops the inventory, from the table above |
+| `tagCount` | The number of unique tags to read before stopping |
+| `stopTimeout` | The time, in milliseconds, after which the inventory stops |
+| `inventoryCount` | The number of inventory cycles to complete before stopping |
+
+The contract leaves three things open:
+
+- **Which stop condition wins** when several are set, and whether the first to occur ends the inventory.
+- **What `0` means** for `tagCount`, `stopTimeout` and `inventoryCount`: no limit, or stop at once. Every contract example sends `inventoryCount: 0` beside non-zero `tagCount` and `stopTimeout`.
+- **`IMMEDIATE` as both start and stop trigger.** The contract's full example sets both, which reads as self-cancelling, and no rule forbids it.
+
+Test the combination you use on a reader before you depend on it.
+
+## Set the Conditions {#set}
+
+1. Stop any running inventory and confirm that [`get_status`](/api-reference/mqtt/mgmt/get-status) reports `radioActivity: "INACTIVE"`.
+2. Send `set_operating_mode` with the conditions. `set_operating_mode` accepts a partial update, so this example changes only the start and stop conditions:
+
+   ```json title="set_operating_mode — request (contract example: Radio start/stop conditions)"
+   {
+     "command": "set_operating_mode",
+     "requestId": "1286",
+     "operatingMode": {
+       "operatingModes": {
+         "radioStartConditions": {
+           "trigger": "PRESSED",
+           "startDelay": 5000,
+           "repeat": false
+         },
+         "radioStopConditions": {
+           "trigger": "RELEASED",
+           "tagCount": 10,
+           "stopTimeout": 10000,
+           "inventoryCount": 0
+         }
+       }
+     }
+   }
+   ```
+
+   This combination starts reading when the operator presses the trigger and stops when they release it, with a tag count and a timeout also set.
+
+3. Check that the reply is a success, then read the conditions back with [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode).
+4. Re-apply the conditions after every restart: the operating mode set with `set_operating_mode` is lost on reboot.
+
+How `control_operation` `START` combines with a `PRESSED` or `RELEASED` start trigger is not specified in the available sources. Try the sequence your operators will use: send `START`, then use the trigger, and watch the tag-data topic.
+
+**Related:** 📙 [Start and Stop Inventory](/guides/read-tags-and-barcodes/start-and-stop-inventory) · 📙 [Choose a Performance Profile](/guides/read-tags-and-barcodes/choose-a-performance-profile) · 📕 [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) · 📕 [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode)

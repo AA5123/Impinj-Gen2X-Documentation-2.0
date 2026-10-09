@@ -1,0 +1,150 @@
+---
+id: update-firmware-and-restart
+title: "Update Firmware and Restart the Reader"
+sidebar_label: "Update Firmware and Restart the Reader"
+sidebar_position: 3
+description: "Update a reader's firmware over MQTT with set_os and follow it through its FIRMWARE_UPDATE alerts, restart the reader with reboot, and confirm both from the reader itself."
+sidebar_custom_props: { emoji: "⬆️", card: "Update firmware with set_os and restart the reader with reboot." }
+doc_type: how-to
+page_meta:
+  - "Audience: Integrators, fleet operators, solution builders"
+  - "Read time: 8 min"
+  - "Ties to: [Device Lifecycle](/api-reference/mqtt/management/system-operations/)"
+---
+
+Two commands change what a reader is running: [`set_os`](/api-reference/mqtt/mgmt/set-os) downloads and installs firmware, and [`reboot`](/api-reference/mqtt/mgmt/reboot) restarts the reader. Both reply with code `1` before the work is done, so you confirm each one from what happens next rather than from the reply.
+
+## Update the Firmware {#update-firmware}
+
+### Before You Begin {#before-update}
+
+- Put the firmware image on an HTTP or HTTPS server the reader can reach. The URL must be complete, with an `http` or `https` scheme; the reader never adds a base URL to it.
+- To authenticate the download server, install its CA as a `filestore` certificate, or plan to send the CA inline. See [Install and Manage Certificates](/guides/manage-your-reader/install-and-manage-certificates).
+- Subscribe to the management endpoint's event topic, and enable `firmwareUpdate` event reporting with [`config_events`](/api-reference/mqtt/mgmt/config-events). A `config_events` change takes effect only after a reboot.
+- Charge the reader, or connect it to external power. A low battery refuses the update with code `14`.
+
+### Send `set_os` {#send-set-os}
+
+The payload property is `OSUpdateDetails`, the only PascalCase property name in the API. `url` and `authenticationType` are required. With `authenticationType: "CERTIFICATE"`, send exactly one of `caCertificateFile`, naming an installed `filestore` certificate, or `caCertificateFileContent`, carrying the CA inline.
+
+```json title="set_os — request (adapted from contract example: Pre-installed CA certificate HTTPS; addresses replaced with fictional ones, verificationType set to VERIFY_HOST_AND_PEER)"
+{
+  "command": "set_os",
+  "requestId": "abc124",
+  "OSUpdateDetails": {
+    "url": "https://192.0.2.39:8000/Build-3.10.27/Firmware/PAAFKS00-013-R01E0.DAT",
+    "authenticationType": "CERTIFICATE",
+    "verificationType": "VERIFY_HOST_AND_PEER",
+    "caCertificateFile": "filestore_ca_cert"
+  }
+}
+```
+
+`authenticationType: "NONE"` with `verificationType: "VERIFY_NONE"` downloads without checking the server; do not use it outside an isolated test network. See the other examples on [`set_os`](/api-reference/mqtt/mgmt/set-os).
+
+### Read the Reply {#set-os-reply}
+
+A reply of code `1` means the reader accepted the request and the update has started. It is not a success:
+
+```json title="set_os — response (contract example: Firmware update start)"
+{
+  "command": "set_os",
+  "requestId": "abc1234",
+  "apiVersion": "V1.1",
+  "response": {
+    "code": 1,
+    "description": "Command payload is accepted"
+  }
+}
+```
+
+| Code | Meaning | What to do |
+|---|---|---|
+| `4` | Firmware update in progress | Wait for the running update to finish |
+| `8` | Insufficient flash size | Use a smaller package or free flash space |
+| `9` | File not found | Check the URL and that the file exists |
+| `13` | Firmware update Failed | Check the URL and the network, then retry |
+| `14` | Battery is low, Cannot update firmware | Charge the reader or connect external power, then retry |
+
+While an update runs, the reader refuses other commands with code `4`, including read commands such as `get_endpoint_config`. Do not treat that as a fault.
+
+### Follow the Update {#follow-update}
+
+The outcome arrives on the event topic as `alerts` events with `id: "FIRMWARE_UPDATE"`. Each carries `alertDetails.fwUpdateStatus`:
+
+- `overallProgress`, a percentage, for showing progress.
+- `stage`, free text describing the step.
+- `updateStatus`, free text. The reader emits display sentences such as `Updating file 2 of 7` as well as the values `Starting FW update`, `updating`, `skipping`, `failed` and `FW update success`.
+
+Compare `updateStatus` only against `FW update success`, and never parse the other values. The contract records that every notification in an observed update carried `state: "ONESHOT"`, so do not wait for a `CLEAR`. It specifies no timeout for the update; choose your own. See [Respond to Alerts](/guides/operate-and-monitor/respond-to-alerts).
+
+### Confirm the New Firmware {#confirm-firmware}
+
+Send [`get_version`](/api-reference/mqtt/mgmt/get-version) and check `readerVersion.firmwareVersion` and `detailedVersions`. This is the confirmation to rely on, rather than matching an alert's text.
+
+### Update a Fleet {#update-fleet}
+
+Update a few readers first, confirm them with `get_version`, then continue in stages. Every reader downloads the image from your server, so the server and the network carry the load of each stage. See [Roll Out Changes in Stages](/guides/scale-to-a-fleet/roll-out-changes-in-stages). If an update fails, see [Recover from Firmware Problems](/guides/diagnose-and-recover/recovery-playbooks/recover-from-firmware-problems).
+
+## Restart the Reader {#restart}
+
+Restart a reader to apply a `config_events` change, or to recover it from a state that other commands do not clear.
+
+### Before You Begin {#before-reboot}
+
+The reader refuses to restart during an inventory. Send [`get_status`](/api-reference/mqtt/mgmt/get-status) and check that `deviceStatus.radioActivity` is `INACTIVE`. If it is `ACTIVE`, stop the inventory with [`control_operation`](/api-reference/mqtt/ctrl/control-operation); see [Start and Stop Inventory](/guides/read-tags-and-barcodes/start-and-stop-inventory).
+
+The operating mode set with `set_operating_mode` does not survive a restart: the reader returns to its default operating mode. Plan to re-apply yours. See [The Configuration Model](/guides/core-concepts/the-configuration-model#reboots).
+
+### Send `reboot` {#send-reboot}
+
+```json title="reboot — request (contract example: Reboot device)"
+{
+  "command": "reboot",
+  "requestId": "123abcd"
+}
+```
+
+The reader replies before it restarts. Code `1` means it accepted the request:
+
+```json title="reboot — response (contract example: Device rebooted)"
+{
+  "command": "reboot",
+  "requestId": "123abcd",
+  "apiVersion": "V1.1",
+  "response": {
+    "code": 1,
+    "description": "Command payload is accepted"
+  }
+}
+```
+
+Code `5`, `Can't reboot device, inventory in progress`, means nothing happened. Stop the inventory and send `reboot` again.
+
+### Confirm the Restart {#confirm-restart}
+
+No event reports the outcome of `reboot`, and the contract specifies no time for the restart. After `reboot` is accepted, the next `CONNECTED` `mqttConnEVT` shows that a new session was established. On its own it does not show that a restart occurred, because a network reconnect produces the same message; the `upTime` in `heartBeatEVT` shows a restart to a person reading it, but it is free text, not machine-readable.
+
+1. Watch the endpoint's connection-state topic, its `publishTopics[2]`, for `mqttConnEVT`. The broker publishes the reader's Last Will, a `DISCONNECTED` event with no `timestamp`, only when the connection ends without a clean disconnect, so you may not see one.
+2. Wait for `connectionState: "CONNECTED"`:
+
+   ```json title="mqttConnEVT — event (contract example: Connected event)"
+   {
+     "connectionState": "CONNECTED",
+     "timestamp": "2026-06-15T13:09:33.810Z",
+     "deviceModel": "RFD40",
+     "deviceSerialNo": "RFD40-211545201D0034",
+     "apiVersion": 1.21,
+     "mqttVersion": 3.0999999
+   }
+   ```
+
+3. Re-apply the operating mode, and check with [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) that the endpoints you expect are active. Saved and active endpoints survive a restart. Whether Wi-Fi profiles and certificates survive one is not specified in the available sources.
+
+`mqttConnEVT` carries `apiVersion` as a number, while command replies carry it as a string such as `V1.1`. See [Monitor Reader Connectivity](/guides/operate-and-monitor/monitor-reader-connectivity).
+
+## Decommission a Reader {#decommission}
+
+The MQTT API has no factory-reset command. To retire or fully re-provision a reader, reset it outside the MQTT API and bootstrap it again as in [Bootstrap a Reader with 123RFID Desktop](/guides/manage-your-reader/bootstrap-reader). Then remove its broker credentials and access rules, so that a retired serial number cannot reconnect.
+
+**Related:** 📘 [The Configuration Model](/guides/core-concepts/the-configuration-model) · 📘 [Respond to Alerts](/guides/operate-and-monitor/respond-to-alerts) · 📙 [Track Asynchronous Commands](/guides/build-your-integration/track-asynchronous-commands) · 📕 [`set_os`](/api-reference/mqtt/mgmt/set-os) · 📕 [`reboot`](/api-reference/mqtt/mgmt/reboot) · 📕 [`get_version`](/api-reference/mqtt/mgmt/get-version)

@@ -1,0 +1,152 @@
+---
+id: post-filter-reported-tags
+title: "Post-Filter Reported Tags"
+sidebar_label: "Post-Filter Reported Tags"
+sidebar_position: 2
+description: "Choose which read tags a data endpoint reports: add, modify and delete PREFIX, SUFFIX and REGEX rules on DATA_EP1 with set_post_filter, and read the installed rules with get_post_filter."
+sidebar_custom_props: { emoji: "🧹", card: "Add, change and remove the post-filter rules that decide what an endpoint reports." }
+doc_type: how-to
+page_meta:
+  - "Audience: Solution builders"
+  - "Time: 8 min"
+  - "Ties to: [Tag Filtering](/api-reference/mqtt/control/tag-filtering/)"
+---
+
+A post-filter decides which read tags a data endpoint reports. It acts after the radio has read a tag, so it does not change what the radio does on the air; it reduces what reaches the broker and your application. To filter on the air instead, see [Pre-Filter Tags with Select](/guides/read-tags-and-barcodes/pre-filter-tags-with-select).
+
+You manage post-filters with [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter), one rule per request, and read them with [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter).
+
+## Before You Begin {#before-you-begin}
+
+A rule has five members:
+
+| Member | Values |
+|---|---|
+| `operation` | `ADD`, `MODIFY` or `DELETE`. The contract marks no member of the rule as required, but every request needs an `operation` |
+| `dataEpType` | `DATA_EP1`: the `DATA1` endpoint the rule applies to. `DATA_EP2` targets `DATA2`, which is currently not supported |
+| `matchPattern` | The value compared with the tag ID |
+| `matchPatternMethod` | `PREFIX`, the start of the tag ID; `SUFFIX`, the end; or `REGEX`, a regular expression |
+| `reportOperation` | `INCLUDE`, only matching tags are reported; or `EXCLUDE`, matching tags are not reported |
+
+For `PREFIX` and `SUFFIX`, `matchPattern` must be hexadecimal digits only, with an even number of characters. For `REGEX` it is a free-form regular expression; the contract does not name the regular-expression dialect.
+
+While a `PREFIX` post-filter is in use, `select` pre-filters cannot be applied.
+
+## Read the Installed Rules {#view-current-post-filters}
+
+```json title="get_post_filter — request (contract example: Get post filter)"
+{
+  "command": "get_post_filter",
+  "requestId": "abc123"
+}
+```
+
+The reply lists every rule in `postFilterPayload.postFilter`:
+
+```json title="get_post_filter — response (contract example: Post filter info)"
+{
+  "command": "get_post_filter",
+  "requestId": "abc123",
+  "apiVersion": "V1.1",
+  "postFilterPayload": {
+    "postFilter": [
+      {
+        "dataEpType": "DATA_EP1",
+        "matchPattern": "FFFF",
+        "matchPatternMethod": "REGEX",
+        "reportOperation": "INCLUDE"
+      }
+    ]
+  },
+  "response": {
+    "code": 0,
+    "description": "Success"
+  }
+}
+```
+
+With no rules installed, the reply carries an empty `postFilter` array or no `postFilterPayload` at all. The rules read back have no `operation`, so add one before you send a rule back to `set_post_filter`. Code `3` means the reader could not gather the information at that moment; retry after a short delay.
+
+## Add a Rule {#add}
+
+This contract example reports only tags whose ID starts with `FFFFBBBBA500` on `DATA_EP1`:
+
+```json title="set_post_filter — request (contract example: Filter tags using prefix)"
+{
+  "command": "set_post_filter",
+  "requestId": "abc123",
+  "postFilterPayload": {
+    "operation": "ADD",
+    "dataEpType": "DATA_EP1",
+    "matchPattern": "FFFFBBBBA500",
+    "matchPatternMethod": "PREFIX",
+    "reportOperation": "INCLUDE"
+  }
+}
+```
+
+This one stops tags that match the regular expression `E280` from being reported on `DATA_EP1`:
+
+```json title="set_post_filter — request (contract example: Filter tags using regex)"
+{
+  "command": "set_post_filter",
+  "requestId": "abc123",
+  "postFilterPayload": {
+    "operation": "ADD",
+    "dataEpType": "DATA_EP1",
+    "matchPattern": "E280",
+    "matchPatternMethod": "REGEX",
+    "reportOperation": "EXCLUDE"
+  }
+}
+```
+
+A successful reply is code `0`, or no code with the description `Success`:
+
+```json title="set_post_filter — response (contract example: Post filter set)"
+{
+  "command": "set_post_filter",
+  "requestId": "abc123",
+  "apiVersion": "V1.1",
+  "response": {
+    "code": 0,
+    "description": "Success"
+  }
+}
+```
+
+Code `23` means a value outside its enum. The contract scopes no other code to `set_post_filter`, and does not say how the reader treats a `PREFIX` or `SUFFIX` pattern that is not even-length hex.
+
+## Modify or Delete a Rule {#modify-or-delete}
+
+`MODIFY` changes a rule and `DELETE` removes one. A rule has no identifier of its own. The contract does not say which members the reader uses to find the rule that `MODIFY` changes, so read the rules first with `get_post_filter` and send the members exactly as they are installed.
+
+To delete the post filter on a data endpoint, send `operation: "DELETE"` with `dataEpType` alone. `matchPattern`, `matchPatternMethod` and `reportOperation` are not needed:
+
+```json title="set_post_filter — request (contract example: Delete post filter)"
+{
+  "command": "set_post_filter",
+  "requestId": "abc123",
+  "postFilterPayload": {
+    "operation": "DELETE",
+    "dataEpType": "DATA_EP1"
+  }
+}
+```
+
+Read the rules again with `get_post_filter` afterwards to confirm the change.
+
+## Confirm the Filter Works {#verify}
+
+A code `0` reply means the rule was accepted, not that it matches the tags you intend:
+
+1. Read the rules with `get_post_filter` and check that yours is listed under the intended `dataEpType`.
+2. Present a tag that should be reported and one that should not, and watch the endpoint's tag-data topic. See [The Tag Data Stream](/guides/core-concepts/the-tag-data-stream).
+
+A rule that excludes every tag, or includes none, leaves the inventory running with nothing reported on that endpoint.
+
+## Retries {#retries}
+
+The reader executes every copy of `set_post_filter` it receives, whatever its `requestId`, and the contract does not say whether a repeated `ADD` installs a second copy of the rule. After a lost reply, read the rules with `get_post_filter` before you send the request again. See [Retry Commands Safely](/guides/build-your-integration/retry-commands-safely).
+
+**Related:** 📙 [Pre-Filter Tags with Select](/guides/read-tags-and-barcodes/pre-filter-tags-with-select) · 📙 [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints#filter-data-endpoint) · 📘 [The Tag Data Stream](/guides/core-concepts/the-tag-data-stream) · 📕 [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter) · 📕 [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter)

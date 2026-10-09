@@ -1,0 +1,39 @@
+---
+id: report-a-bug-or-request-a-feature
+title: "Report a Bug or Request a Feature"
+sidebar_label: "Report a Bug or Feature Request"
+sidebar_position: 2
+draft: false
+description: "How to report a reader or MQTT API bug, a documentation error, or a feature request, and what to include so that it can be acted on."
+sidebar_custom_props: { emoji: "📜", card: "Report a product bug, a documentation error, or a feature request." }
+doc_type: how-to
+page_meta:
+  - "Audience: All personas"
+  - "Read time: 3 min"
+---
+
+Where a report goes depends on what it is about.
+
+| About | Send it to |
+|---|---|
+| The reader, its firmware or the MQTT API | Zebra support: [Zebra Support and Downloads](https://www.zebra.com/us/en/support-downloads.html) |
+| This documentation: an error, a gap, a broken link | The documentation team, through the channel your organization uses for it |
+| A security vulnerability | See [Report a Security Issue](/resources/support/report-a-security-issue); do not report it publicly |
+
+## Report a Bug {#bug}
+
+1. Check [Known Issues and Open Questions](/resources/known-issues-and-open-questions): the behavior may be recorded already.
+2. Reproduce it, and note the steps.
+3. Collect the evidence in [Escalate to Support](/guides/diagnose-and-recover/escalate-to-support): the reader's `get_version` and `get_status` replies, the exact command and its reply, the topics, and the connection events around the failure.
+4. Remove anything you would not publish: credentials, Wi-Fi names, internal addresses, tenant identifiers.
+5. Send it, stating what you expected and what happened instead.
+
+## Request a Feature {#feature}
+
+Describe the job you are trying to do, what you do today instead, and what the missing capability would change. A request framed around the task is easier to evaluate than one framed around a specific field or command.
+
+## Report a Documentation Error {#documentation}
+
+Give the page's address, the sentence or example that is wrong, and what the correct behavior is, with your evidence: a reply from a reader, or the reference page that disagrees.
+
+**Related:** 🛟 [Get Help](/resources/support/get-help) · 📙 [Escalate to Support](/guides/diagnose-and-recover/escalate-to-support) · 📕 [Known Issues and Open Questions](/resources/known-issues-and-open-questions)

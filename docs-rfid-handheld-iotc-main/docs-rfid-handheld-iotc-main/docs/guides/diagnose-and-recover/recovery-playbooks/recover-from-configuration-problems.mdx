@@ -1,0 +1,51 @@
+---
+id: recover-from-configuration-problems
+title: "Recover from Configuration Problems"
+sidebar_label: "Recover from Configuration Problems"
+sidebar_position: 3
+description: "Recovery playbooks RP-04, RP-05 and RP-08: stop a running inventory cleanly, find out why dataEVT is not flowing, and reconcile a reader whose configuration has drifted from canonical."
+sidebar_custom_props: { emoji: "🎛️", card: "Recovery playbooks RP-04, RP-05 and RP-08: stop a running inventory cleanly." }
+doc_type: how-to
+page_meta:
+  - "Audience: All personas in incident response"
+  - "Time: 10 min per playbook"
+---
+
+
+Three playbooks for the case where the reader is reachable and answering, but its configured state is wrong for what you are asking of it. A running inventory blocks the operation you sent (RP-04); an operating-mode profile, post-filter, or endpoint setting silences the data channel (RP-05); or the reader has drifted away from the canonical configuration for its class (RP-08).
+
+Run each step; verify the success check; move on.
+
+### RP-04: Stop Inventory Cleanly {#rp-04}
+
+**When:** Any operation returning code 5 or 11 ("Can't reboot device, inventory in progress" or "Inventory in progress").
+
+1. Publish [`control_operation`](/api-reference/mqtt/ctrl/control-operation) with `ctrlOprPayload: { controlType: "RFID", operation: "STOP" }`.
+2. Wait for the response. Code 0 = stopped; code 12 = already stopped (also fine).
+3. Confirm with [`get_status`](/api-reference/mqtt/mgmt/get-status) — `deviceStatus.radioActivity` should be `INACTIVE`.
+4. Retry the original operation.
+5. **Success check:** the original operation returns code 0.
+
+### RP-05: Tag Data Not Flowing {#rp-05}
+
+**When:** `control_operation START` returned code 0, but no `dataEVT` arrives.
+
+1. Run [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode). If `profiles` is `FAST_READ`, switch to another profile: the contract has not settled whether `FAST_READ` works with tag-data events.
+2. Run [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter). Look for `reportOperation: EXCLUDE` rules that may be filtering all tags.
+3. Run [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config). Confirm that the `DATA1` endpoint has `activate: true` and **two** publish topics; tag data goes to the second. With one publish topic the endpoint streams nothing.
+4. Subscribe to the endpoint's tag-data topic, for example `<tenantId>/DATA/clients/data1event/+`. Move tags into the read zone.
+5. **Success check:** `dataEVT` events stream past with `data.tagData[].EPCid` matching your tags.
+
+### RP-08: Reconcile Drift {#rp-08}
+
+**When:** A reader's configuration differs from your baseline.
+
+1. Run [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi), capture the Wi-Fi profiles.
+2. Run [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config), capture the endpoint list.
+3. Run [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode). Expect it to differ after every restart: the operating mode is lost on reboot.
+4. Compare each with the baseline, and correct each difference with that domain's command. An active endpoint must be deactivated before it can be changed (code `35`). See [Keep Configuration Consistent](/guides/scale-to-a-fleet/keep-configuration-consistent).
+5. Read each domain again and compare again.
+6. If the diff persists after reconcile, escalate, this implies the local change is overriding the push, possibly via 123RFID Desktop access.
+7. **Success check:** every domain matches the baseline.
+
+**Related:** 🛟 [Recovery Playbooks](/guides/diagnose-and-recover/recovery-playbooks) · 📙 [Recover from Firmware Problems](/guides/diagnose-and-recover/recovery-playbooks/recover-from-firmware-problems) · 📘 [Start and Stop Inventory](/guides/read-tags-and-barcodes/start-and-stop-inventory) · 📘 [Endpoints, Topics, and Channels](/guides/core-concepts/endpoints-topics-and-channels) · 🩺 [Diagnose and Recover](/guides/diagnose-and-recover)

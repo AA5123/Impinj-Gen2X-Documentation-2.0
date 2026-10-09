@@ -1,0 +1,84 @@
+---
+id: 123rfid-desktop-settings-and-mqtt-equivalents
+title: "123RFID Desktop Settings and MQTT Equivalents"
+sidebar_label: "123RFID Desktop Settings and MQTT Equivalents"
+sidebar_position: 3
+description: "Map every 123RFID Desktop setting — antenna power, RF mode, triggers, singulation, network — to the matching IOTC MQTT command for an RFD40 or RFD90."
+sidebar_custom_props: { emoji: "🔀", card: "Map every 123RFID Desktop setting — antenna power, RF mode, triggers." }
+doc_type: reference
+page_meta:
+  - "Audience: Solution Builder migrating from a 123RFID-Desktop-tuned reader"
+  - "Goal: reproduce a known-good Desktop configuration through the IOTC MQTT API"
+---
+
+
+This guide is for the integrator who already has a reader **tuned in 123RFID Desktop** and now needs the same behavior driven over MQTT through the IoT Connector. It maps each Desktop settings group to the IOTC command and field that produces the equivalent result.
+
+:::note[Two different meanings of "migration"]
+This page is about migrating **settings** — porting your Desktop tuning into IOTC payloads. It is **not** the firmware-version migration covered by [Plan a migration](/guides/scale-to-a-fleet/roll-out-changes-in-stages) / [Execute](/guides/scale-to-a-fleet/roll-out-changes-in-stages#execute-a-phased-migration) / [Verify](/guides/scale-to-a-fleet/roll-out-changes-in-stages#verify-a-migration), which rolls a firmware build across a fleet. You will often do both: bootstrap with 123RFID Desktop, then reproduce its tuning over MQTT.
+:::
+
+Before you work through the mapping, check which firmware your reader runs. The Desktop knobs themselves are stable, but the IOTC fields and enums that carry them have moved between firmware versions.
+
+:::important[Source and firmware scope]
+The original Zebra "123RFID Desktop → IoT Connector" mapping guidance targets reader firmware **2.0.1.37 and below**. The field names below follow the MQTT API contract this site documents. Treat the mapping as the *concept* (which Desktop knob becomes which IOTC field), and confirm exact enums against the live [Operating mode (CTRL)](/api-reference/mqtt/ctrl/set-operating-mode) reference for your firmware.
+:::
+
+## First, Understand What Changes
+
+123RFID Desktop is a **bootstrap and bench-tuning** tool: it talks to the reader locally (USB/Bluetooth) and writes settings directly. IOTC is a **remote control plane**: the same settings become JSON payloads published to the reader's `CTRL` and `MGMT` endpoints over MQTT. The reader's radio is identical — what changes is *who sends the configuration and how*.
+
+One consequence drives half this table: the MQTT API has **no antenna selection at all** — no port, per-port power or dwell setting. Desktop exposes per-port antenna controls because the same UI also drives fixed readers. On a handheld those knobs have no MQTT counterpart, and a few Desktop features have **no handheld equivalent at all** (see [Settings with No Handheld Equivalent](#settings-with-no-handheld-equivalent)).
+
+## The Mapping
+
+### Antenna Port Settings
+
+| 123RFID Desktop setting | IOTC equivalent | Notes |
+|---|---|---|
+| Antenna **enable / disable** | n/a | The MQTT API has no antenna selection. |
+| **Power** | `set_operating_mode` → `operatingModes.advancedConfigurations.transmitPower` | The single most impactful read-tuning lever. **Do not carry a Desktop power figure across unchanged:** the MQTT field is declared in **centi-dBm** over `0`–`300`, while the regulatory ceiling `get_current_region` reports as `maxTxPowerSupported` is declared in dBm — the raw numbers are not directly comparable and neither can be converted into the other, so establish the scale on the reader itself, starting low. Measuring read range tells you nothing about emitted power: where regulatory margin matters, confirm the power actually applied against Zebra's firmware documentation or an instrument. See [Improve Read Performance](/guides/read-tags-and-barcodes/improve-read-performance) for the read-rate ↔ battery ↔ density trade-off and the full regulatory-ceiling procedure. |
+| **RF Mode** | `set_operating_mode` → `operatingModes.advancedConfigurations.linkProfile` | The Gen2 air-protocol profile (modulation, data rate, Tari). `linkProfile` sits in `advancedConfigurations` alongside `transmitPower`, **not** in `query`, so it needs `profiles: ADVANCED`. Choose via the operating-mode profile rather than a raw mode number where possible — see [Choose an Operating Mode](/guides/read-tags-and-barcodes/choose-a-performance-profile#choose-an-operating-mode). |
+| **Dwell time** | n/a | Dwell time governs how long a multi-antenna reader stays on each port. The MQTT API has no antenna selection, so there is no dwell setting. |
+
+### Trigger Settings
+
+| 123RFID Desktop setting | IOTC equivalent | Notes |
+|---|---|---|
+| What starts/stops a read; physical-trigger behavior | `set_operating_mode` → `radioStartConditions` / `radioStopConditions` | This is where the handheld's physical trigger button is wired in as a start source. See [Trigger composition](/guides/read-tags-and-barcodes/configure-trigger-and-stop-conditions) for the start/stop enums and [Start, stop, and the trigger button](/guides/read-tags-and-barcodes/start-and-stop-inventory) for the how-to. |
+
+### Advanced Settings
+
+| 123RFID Desktop setting | IOTC equivalent | Notes |
+|---|---|---|
+| **Antenna singulation** (session, target) | `set_operating_mode` → `query.session` / `query.inventoryState` | EPC Gen2 session and inventoried-flag target. **There is no `query.target`:** Desktop's *target* is the Gen2 inventoried-flag state, which IOTC names `inventoryState`, taking `STATE_A`, `STATE_B`, or `STATE_AB`. `session` takes `SESSION_0`–`SESSION_3` and is also settable as `advancedConfigurations.session`. Profiles set sensible defaults; override only in `ADVANCED`. |
+| **State Aware** | `set_operating_mode` → `query.slFlag`, with `query.inventoryState` | The Gen2 SL (Select) flag — `ALL`, `ASSERTED`, or `DEASSERTED` — paired with the `inventoryState` above. There is no separate state-aware sub-object: `query` has exactly four fields, `session`, `inventoryState`, `slFlag`, and `tagPopulation`. |
+| **Tag Population Estimate** | `set_operating_mode` → `query.tagPopulation` | The estimated number of tags in the field, which helps the reader tune its inventory. |
+| **RSSI Filter** | n/a on handheld — do it application-side | **Not available on the sled.** `rssiFilter` is not part of the MQTT contract at all: it was an orphan payload, wired to no command, that documented itself as *"Currently ONLY supported by the FX9600"* — a fixed-reader feature. Do RSSI thresholding **application-side** on the `peakRssi` each `dataEVT` carries (enabled via `tagMetaDataToEnable.RSSI`, see [`dataEVT`](/api-reference/mqtt/data/tag-data-event)). |
+
+Configure all of the above through the single [Configure the Operating Mode](/guides/read-tags-and-barcodes/configure-advanced-radio-settings#configure-the-operating-mode) how-to — it is the IOTC analog of Desktop's whole "Advanced" tab.
+
+### Communication / Network Settings
+
+| 123RFID Desktop setting | IOTC equivalent | Notes |
+|---|---|---|
+| Wi-Fi profile | `set_wifi` | See [Configure Wi-Fi](/guides/manage-your-reader/configure-wi-fi). |
+| Server / endpoint connection | `config_endpoint` | Where the reader publishes. See [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints). |
+
+### Save / Restore Configuration
+
+123RFID Desktop's **Save Config** exports a reader's full state to a file. To reproduce that state on another reader through IOTC, reapply each surface with its own command — Wi-Fi with [`set_wifi`](/guides/manage-your-reader/configure-wi-fi), endpoints with [`config_endpoint`](/guides/manage-your-reader/configure-mqtt-endpoints), and the radio tuning with [`set_operating_mode`](/guides/read-tags-and-barcodes/configure-advanced-radio-settings#configure-the-operating-mode). Apply the same sequence on every reader to bring a fleet to a known-good baseline — see [Detect and Remediate Drift](/guides/scale-to-a-fleet/keep-configuration-consistent#detect-and-remediate-drift).
+
+## Settings with No Handheld Equivalent
+
+These Desktop groups exist for **fixed readers** and have no handheld counterpart — do not look for an IOTC payload for them:
+
+- **GPO (General Purpose Output) programming** — the MQTT API has no GPO command, and its `gpi` event flag is reserved, with no effect; see [What the Event Flags Do Not Produce](/guides/operate-and-monitor/what-to-monitor-and-why#what-is-not-currently-emitted).
+- **User Applications** — the MQTT API has no application install or management, and its `userApp` event flag is reserved.
+
+## Verify the Migration
+
+1. Apply your mapped `set_operating_mode` payload, then read it back with `get_operating_mode` and diff against intent.
+2. Run a short inventory and confirm read rate / RSSI distribution match what you saw in Desktop. If they differ, the usual culprits are `transmitPower`, `linkProfile`, and `tagPopulation`.
+
+**Related:** 📘 [Setup Tools](/resources/setup-tools) · 📙 [Configure the Operating Mode](/guides/read-tags-and-barcodes/configure-advanced-radio-settings#configure-the-operating-mode) · 📘 [Choose a Performance Profile](/guides/read-tags-and-barcodes/choose-a-performance-profile) · 📙 [Improve Read Performance](/guides/read-tags-and-barcodes/improve-read-performance) · 📕 [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) · 📙 [Detect and Remediate Drift](/guides/scale-to-a-fleet/keep-configuration-consistent#detect-and-remediate-drift)

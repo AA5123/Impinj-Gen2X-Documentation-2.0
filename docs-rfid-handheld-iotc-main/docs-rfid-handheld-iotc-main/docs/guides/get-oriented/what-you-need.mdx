@@ -1,0 +1,62 @@
+---
+id: what-you-need
+title: "What You Need"
+sidebar_label: "What You Need"
+sidebar_position: 2
+description: "What you need before you set up a reader: a supported RFD40 or RFD90 reader, an MQTT 3.1.1 broker you provide, a network path, 123RFID Desktop for the first connection, and an MQTT client for testing."
+sidebar_custom_props: { emoji: "🧰", card: "The reader, broker, network and tools you need before you start." }
+doc_type: reference
+page_meta:
+  - "Audience: New integrators, solution builders"
+  - "Read time: 4 min"
+---
+
+## Readers {#readers}
+
+| Model | Model value the reader reports |
+|---|---|
+| RFD40 Standard | Not specified in the available sources |
+| RFD40 Premium | `RFD40` |
+| RFD40 Premium Plus | `RFD40` |
+| RFD40-M Premium Plus | Not specified in the available sources |
+| RFD90, as RFD9030 or RFD9090 | `RFD90` |
+
+The RFD40 Standard has no Wi-Fi radio, so it reaches the broker only through a communication cradle. See the [Reader Capability Matrix](/resources/supported-readers-and-features#capability-matrix).
+
+[`get_version`](/api-reference/mqtt/mgmt/get-version) reports `model`, `sku`, `firmwareVersion` and the IoT Connector version in `detailedVersions.iotcVersion`. The setup in these guides uses an `MDM` endpoint, which needs firmware `SAAFKS00-008-R00` or later; the minimum for each model is in [Supported Readers and Features](/resources/supported-readers-and-features#minimum-firmware), its canonical home. Barcode scanning needs a reader with a barcode imager: the RFD40 Premium Plus, the RFD40-M Premium Plus or the RFD90.
+
+## Broker {#broker}
+
+You provide the MQTT broker; the contract names none and has no default. It must:
+
+- Speak MQTT 3.1.1, with QoS 0 and 1.
+- Accept connections on the port you choose, conventionally `1883` for plain MQTT and `8883` for TLS.
+- Accept the reader's topics, which have three segments: `<tenantId>/<middle segment>/<deviceSerialNumber>`.
+- Authenticate the reader with a username and password in the CONNECT packet, or a client certificate over TLS, as you choose.
+
+Plan access rules so that each tenant's credentials reach only that tenant's topics. See [Plan Your Integration](/guides/build-your-integration/plan-your-integration#cloud-integrations).
+
+## Network {#network}
+
+- A Wi-Fi network the reader can join, with a path from it to the broker's port. An RFD40 Standard needs a communication cradle on a wired network with that path instead. See [Configure Wi-Fi](/guides/manage-your-reader/configure-wi-fi) for the security types the reader supports.
+- For Enterprise Wi-Fi or TLS, the certificates in PEM form, with PKCS1 private keys.
+
+## Tools {#tools}
+
+- **123RFID Desktop**, on Windows, with a USB-C cable. It gives the reader its region, its first Wi-Fi profile if it has Wi-Fi, and its first MQTT endpoint, which cannot arrive over MQTT. Download it from `support.zebra.com`. See [Setup Tools](/resources/setup-tools) and [Bootstrap a Reader with 123RFID Desktop](/guides/manage-your-reader/bootstrap-reader).
+- **An MQTT client for testing**, such as `mosquitto_pub` and `mosquitto_sub`, MQTTX, or an MQTT 3.1.1 client library.
+
+## Before You Begin {#before-you-begin}
+
+Have these ready before the [Quick Start: Read Your First Tag](/guides/quick-start#prepare):
+
+- [ ] A charged RFD40 or RFD90 reader, and a USB-C cable.
+- [ ] A Windows computer with 123RFID Desktop.
+- [ ] A broker, its address as the reader will reach it, and its port.
+- [ ] The broker credentials for the reader, if the broker requires them.
+- [ ] A tenant ID for the reader's topics, at most 48 characters. The tenant is your choice; the reader does not change its case.
+- [ ] The Wi-Fi network name, security type and credentials, unless the reader is an RFD40 Standard.
+- [ ] An MQTT client for testing, on a computer that can reach the broker.
+- [ ] A few EPC Gen2 UHF tags.
+
+**Related:** 📘 [What the IoT Connector Is](/guides/get-oriented/what-the-iot-connector-is) · 📗 [Quick Start: Read Your First Tag](/guides/quick-start) · 📙 [Bootstrap a Reader with 123RFID Desktop](/guides/manage-your-reader/bootstrap-reader) · 📕 [TLS and Authentication](/api-reference/mqtt/protocol-reference/tls-and-authentication) · 📕 [Supported Readers and Features](/resources/supported-readers-and-features)

@@ -1,0 +1,89 @@
+---
+id: consume-tag-data
+title: "Consume Tag Data"
+sidebar_label: "Consume Tag Data"
+sidebar_position: 5
+description: "Process dataEVT in an application: parse batches, treat fields as optional, handle EPC and EPCid, deduplicate, normalize hex, read barcode records, tolerate loss at QoS 0, and reconcile against inventoryStatus."
+sidebar_custom_props: { emoji: "⚙️", card: "Parse, deduplicate and store dataEVT tag records safely." }
+doc_type: how-to
+page_meta:
+  - "Audience: Solution builders"
+  - "Time: 12 min"
+---
+
+This page shows how to turn [`dataEVT`](/api-reference/mqtt/data/tag-data-event) messages into records your application can use. The patterns apply in any language; the Python sketches are illustrative and have not been run against a reader.
+
+## Subscribe to the Right Topic {#subscribe}
+
+Subscribe to each data endpoint's tag-data topic, for example `acme/DATA/clients/data1event/+` for every reader in tenant `acme`. Subscribe before the inventory starts: tag data is not retained. See [Where Tag Data Is Published](/guides/core-concepts/the-tag-data-stream#topic-routing).
+
+## Parse a Batch {#parse}
+
+One message carries a batch. Walk both arrays, and expect either to be absent:
+
+```python
+import json
+
+def on_data_message(payload: bytes) -> None:
+    event = json.loads(payload)
+    profile = event.get("type")            # the operating-mode profile
+    for tag in event.get("data", {}).get("tagData", []):
+        handle_tag(tag, profile)
+    for barcode in event.get("data", {}).get("barcodeData", []):
+        handle_barcode(barcode["decodedBarcode"], barcode.get("symbology"))
+```
+
+- **Every tag field except `EPCid` and `eventNum` is optional.** Which fields appear depends on the operating mode's metadata flags, and `channel` and `phase` are left out when reads are aggregated.
+- **`EPCid` identifies the tag.** Every record carries it. A record can also carry `EPC`, and the contract does not say which of the two the `EPC` metadata flag controls.
+- **`eventNum` is the only ordering signal** within the stream. The contract documents no wrap-around or reset rule for it.
+- **`timestamp`** is when the reader generated the message, not when each tag was read. `firstSeenTime` and `lastSeenTime`, when present, are in milliseconds since the epoch.
+
+## Normalize Before You Compare {#normalize}
+
+The reader emits hex values in both upper case and lower case. Normalize `EPCid`, `EPC`, `TID` and the other hex fields to one case before you use them as keys or compare them with a list. Treat `channel` as an opaque index, not a frequency.
+
+## Deduplicate {#deduplicate}
+
+The same tag appears many times: in successive messages, and sometimes more than once in the same message. Decide what counts as a new sighting for your use case, and deduplicate in your application:
+
+```python
+import time
+
+WINDOW_S = 1.0          # your choice: how long a repeat counts as the same sighting
+last_seen = {}
+
+def handle_tag(tag: dict, profile: str) -> None:
+    epc = tag.get("EPCid")
+    if not epc:
+        return
+    epc = epc.upper()
+    now = time.monotonic()              # receive time; the message timestamp is per batch
+    if now - last_seen.get(epc, float("-inf")) < WINDOW_S:
+        return
+    last_seen[epc] = now
+    record_sighting(epc, tag.get("peakRssi"), tag.get("seenCount", 1))
+```
+
+A counting application usually wants the set of unique `EPCid` values over a whole inventory rather than a short window. `seenCount`, when enabled, tells you how many reads a record stands for.
+
+## Store in Batches {#store}
+
+Writing each record to a database as it arrives rarely scales. Buffer records and flush them together when a count or a time limit is reached, whichever comes first. The right limits depend on your database and your volumes; the contract states no tag rates.
+
+## Tolerate Loss {#loss}
+
+`dataEVT` is published at the QoS set on its topic, 0 or 1, and is not retained. At QoS 0, a message lost between the reader and the broker is not delivered again, and neither is one published while your consumer was disconnected. A message larger than 6144 bytes is dropped by the reader without an error. Design for gaps:
+
+- Do not treat a missing record as proof that a tag was absent.
+- Keep your consumer fast, and hand slow work, such as database writes, to another thread or process.
+- If you raise the tag-data topic to QoS 1, expect duplicate messages and deduplicate them.
+
+## Reconcile When You Need To {#reconcile}
+
+The contract says an application that needs guaranteed capture must reconcile against `inventoryStatus`, which [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) carries when its `inventoryStatus` block is enabled. Reconciliation can reveal a discrepancy; it cannot prove that capture is complete. What the counters count is not yet specified, and post-filters and read aggregation (`seenCount`) can make the counts differ legitimately, so treat a mismatch as a signal to investigate.
+
+## Handle Barcode Records {#barcodes}
+
+A barcode record carries `decodedBarcode`, which the contract requires, and `symbology`, the barcode type as a hexadecimal string such as `0x03`. Accept symbology values you do not recognize. See [Scan Barcodes](/guides/read-tags-and-barcodes/scan-barcodes).
+
+**Related:** 📘 [The Tag Data Stream](/guides/core-concepts/the-tag-data-stream) · 📕 [`dataEVT`](/api-reference/mqtt/data/tag-data-event) · 📙 [Manage Tag Data Throughput](/guides/build-your-integration/manage-tag-data-throughput) · 📙 [Choose Which Tag Fields Are Reported](/guides/read-tags-and-barcodes/choose-tag-data-fields) · 📘 [Choose Shared or Dedicated Data Endpoints](/guides/build-your-integration/choose-shared-or-dedicated-data-endpoints)

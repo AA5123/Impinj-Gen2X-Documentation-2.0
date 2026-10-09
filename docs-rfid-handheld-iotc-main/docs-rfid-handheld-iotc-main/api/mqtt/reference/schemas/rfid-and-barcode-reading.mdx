@@ -1,0 +1,214 @@
+---
+id: rfid-and-barcode-reading
+title: "RFID and Barcode Reading"
+sidebar_label: "RFID and Barcode Reading"
+sidebar_position: 5
+draft: false
+description: "The reading objects: the operating mode with its advanced settings, start and stop conditions, query, select, access operations and metadata flags; the control payload; the post-filter rule; and the tag and barcode records of dataEVT."
+sidebar_custom_props: { emoji: "📡", card: "Operating mode, control, post-filter and tag-data record schemas." }
+doc_type: reference
+page_meta:
+  - "Audience: API consumer"
+  - "Use: look up the members, types and limits of a reading object"
+---
+
+These objects are sent with [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode), [`control_operation`](/api-reference/mqtt/ctrl/control-operation) and [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter), returned by [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode) and [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter), and published in [`dataEVT`](/api-reference/mqtt/data/tag-data-event).
+
+In the [operating-mode](/api-reference/mqtt/ctrl/set-operating-mode) tables, **Default** is the value in the reader's default operating mode: the mode it returns to after a reboot, as `get_operating_mode` reports it. Because `set_operating_mode` merges a partial update into the current mode, omitting a member keeps its current value, which is not necessarily the default. In the other tables, **Default** is the value the contract declares.
+
+## Operating Mode {#operating-mode}
+
+### `operatingModes` {#operatingModes}
+
+The `operatingMode.operatingModes` object of [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode). Every member is optional: the command accepts a partial update. On reboot the reader discards the mode and returns to the default operating mode shown in the **Default** column.
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `profiles` | [`operatingModeProfile`](/api-reference/mqtt/schemas/enumerations#operatingModeProfile) | No | `"BALANCED_PERFORMANCE"` |  | The named radio configuration |
+| `advancedConfigurations` | object ([`advancedConfigurations`](#advancedConfigurations)) | No |  |  | The radio settings used when profiles is ADVANCED; required then |
+| `inventoryProtocol` | [`inventoryProtocol`](/api-reference/mqtt/schemas/enumerations#inventoryProtocol) | No | `"GEN2"` |  | The inventory protocol: `GEN2`, `GEN2X` or `HYBRID` |
+| `accessOperations` | array of [`accessOperation`](#accessOperation) | No |  |  | Operations run against every tag read |
+| `radioStartConditions` | object ([`radioStartConditions`](#radioStartConditions)) | No |  |  | When an inventory starts. When absent, it starts on control_operation START |
+| `radioStopConditions` | object ([`radioStopConditions`](#radioStopConditions)) | No |  |  | When an inventory stops. When absent, it runs until STOP |
+| `query` | object ([`queryPayload`](#queryPayload)) | No |  |  | The EPC Gen2 Query parameters |
+| `select` | array of [`selectPayload`](#selectPayload) | No |  |  | Gen2 Select pre-filters |
+| `tagMetaDataToEnable` | object ([`tagMetadataFlags`](#tagMetadataFlags)) | No |  |  | Which optional fields each tag record carries |
+
+- `profiles: "ADVANCED"` requires `advancedConfigurations`; without it the reply is [code `22`](/api-reference/mqtt/response-codes#code-22).
+- More than 32 `select` entries returns [code `24`](/api-reference/mqtt/response-codes#code-24).
+- The default operating mode carries no `advancedConfigurations`, `accessOperations` or `select`.
+
+### `advancedConfigurations` {#advancedConfigurations}
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `transmitPower` | number | No |  | 0–300 | Transmit power. The contract states centi-dBm; its example value, 270, reads more naturally as tenths of a dBm, so confirm the unit on your firmware |
+| `linkProfile` | [`linkProfile`](/api-reference/mqtt/schemas/enumerations#linkProfile) | No |  |  | The air-interface link profile: encoding and backscatter link frequency |
+| `session` | [`gen2Session`](/api-reference/mqtt/schemas/enumerations#gen2Session) | No |  |  | The EPC Gen2 session. query.session sets the same thing; which wins is not documented |
+| `dynamicPower` | boolean | No |  |  | Whether the radio adjusts transmit power during an inventory |
+
+### `radioStartConditions` {#radioStartConditions}
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `trigger` | [`radioTrigger`](/api-reference/mqtt/schemas/enumerations#radioTrigger) | No | `"IMMEDIATE"` |  | PRESSED, RELEASED, or IMMEDIATE without a trigger action |
+| `startDelay` | integer | No | `0` |  | Delay before the inventory starts, in milliseconds |
+| `repeat` | boolean | No | `false` |  | Whether the trigger can restart the inventory after it stops |
+
+### `radioStopConditions` {#radioStopConditions}
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `trigger` | [`radioTrigger`](/api-reference/mqtt/schemas/enumerations#radioTrigger) | No | `"IMMEDIATE"` |  | PRESSED, RELEASED, or IMMEDIATE without a trigger action |
+| `tagCount` | integer | No |  |  | Unique tags to read before stopping. The meaning of 0 is not documented |
+| `stopTimeout` | integer | No |  |  | Time, in milliseconds, after which the inventory stops. The meaning of 0 is not documented |
+| `inventoryCount` | integer | No |  |  | Inventory cycles to complete before stopping. The meaning of 0 is not documented |
+
+Which stop condition wins when several are set is not documented.
+
+### `queryPayload` {#queryPayload}
+
+The `query` object.
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `session` | [`gen2Session`](/api-reference/mqtt/schemas/enumerations#gen2Session) | No | `"SESSION_1"` |  | The EPC Gen2 session |
+| `inventoryState` | [`inventoryState`](/api-reference/mqtt/schemas/enumerations#inventoryState) | No | `"STATE_A"` |  | The inventoried-flag state to select: STATE_A, STATE_B, or STATE_AB to alternate |
+| `slFlag` | [`slFlag`](/api-reference/mqtt/schemas/enumerations#slFlag) | No | `"ALL"` |  | The SL flag state to select: ALL, ASSERTED or DEASSERTED |
+| `tagPopulation` | integer | No | `30` | min 0 | The estimated number of tags in the field |
+
+### `selectPayload` {#selectPayload}
+
+One entry of `select`. All seven members are required.
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `enable` | boolean | Yes |  |  | Whether the filter is applied |
+| `tagPattern` | string | Yes |  |  | The pattern to match, as even-length hex |
+| `memoryBank` | [`selectMemoryBank`](/api-reference/mqtt/schemas/enumerations#selectMemoryBank) | Yes |  |  | The memory bank to match against |
+| `offset` | integer | Yes |  |  | Where the match starts, in bits |
+| `action` | [`selectAction`](/api-reference/mqtt/schemas/enumerations#selectAction) | Yes |  |  | What the Select does to matching and non-matching tags |
+| `target` | [`selectTarget`](/api-reference/mqtt/schemas/enumerations#selectTarget) | Yes |  |  | The flag the action changes: the SL flag or a session's inventoried flag |
+| `length` | integer | Yes |  |  | How many bits to match |
+
+`offset` and `length` count bits here, and 16-bit words in [`accessOperationConfig`](#accessOperationConfig).
+
+### `accessOperation` {#accessOperation}
+
+One entry of `accessOperations`.
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `operationType` | [`accessOperationType`](/api-reference/mqtt/schemas/enumerations#accessOperationType) | No |  |  | READ, WRITE, ACCESS, LOCK or KILL; decides which config members apply |
+| `config` | object ([`accessOperationConfig`](#accessOperationConfig)) | No |  |  | The operation's parameters |
+
+### `accessOperationConfig` {#accessOperationConfig}
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `memoryBank` | [`accessMemoryBank`](/api-reference/mqtt/schemas/enumerations#accessMemoryBank) | No |  |  | The memory bank, for READ and WRITE |
+| `offset` | integer | No |  |  | Where the operation starts, in 16-bit words |
+| `length` | integer | No |  |  | How many 16-bit words to read or write |
+| `data` | string | No |  |  | The data to write, as hex in whole 16-bit words |
+| `password` | string | No |  |  | The access or kill password, exactly 8 hex characters |
+| `lockMemBank` | [`lockMemoryBank`](/api-reference/mqtt/schemas/enumerations#lockMemoryBank) | No |  |  | The resource to lock or unlock |
+| `lockAction` | [`lockAction`](/api-reference/mqtt/schemas/enumerations#lockAction) | No |  |  | The lock action; PERMANENT_LOCK and PERMANENT_UNLOCK cannot be undone |
+
+Which members each `operationType` uses: `READ` uses `memoryBank`, `offset` and `length`; `WRITE` also uses `data`; `ACCESS` and `KILL` use `password`; `LOCK` uses `lockMemBank` and `lockAction`. The contract states no conditional requirement, so a validator does not enforce this.
+
+### `tagMetadataFlags` {#tagMetadataFlags}
+
+The `tagMetaDataToEnable` object. In the default operating mode, `RSSI` and `SEENCOUNT` are on and every other flag is off.
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `RSSI` | boolean | No | `true` |  | Report peakRssi |
+| `PHASE` | boolean | No | `false` |  | Report phase |
+| `SEENCOUNT` | boolean | No | `true` |  | Report seenCount |
+| `CHANNEL` | boolean | No | `false` |  | Report channel |
+| `PC` | boolean | No | `false` |  | Report the Protocol Control word |
+| `XPC` | boolean | No | `false` |  | Report the Extended Protocol Control word |
+| `CRC` | boolean | No | `false` |  | Report the CRC |
+| `EPC` | boolean | No | `false` |  | Report the EPC; whether it controls EPC or EPCid is not documented |
+| `TID` | boolean | No | `false` |  | Report the TID |
+| `USER` | boolean | No | `false` |  | Report USER memory |
+| `MAC` | boolean | No | `false` |  | Report the reader's MAC address |
+| `HOSTNAME` | boolean | No | `false` |  | Report the reader's host name |
+
+## Control {#control}
+
+### `ctrlOprPayload` {#ctrlOprPayload}
+
+The payload of [`control_operation`](/api-reference/mqtt/ctrl/control-operation).
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `controlType` | enum: `RFID`, `SCANNER` | Yes |  |  | RFID for an inventory, or SCANNER for a barcode scan |
+| `operation` | enum: `START`, `STOP` | Yes |  |  | START or STOP |
+
+## Post-Filter {#post-filter}
+
+### `postFilterPayload` {#postFilterPayload}
+
+The `postFilterPayload` object of [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter): one rule and its operation. [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter) returns the installed rules in `postFilterPayload.postFilter`, without `operation`.
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `dataEpType` | [`dataEndpointType`](/api-reference/mqtt/schemas/enumerations#dataEndpointType) | No |  |  | The data endpoint the rule applies to. `DATA_EP2` targets [`DATA2`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types), which is currently not supported |
+| `matchPattern` | string | No |  |  | The value compared with the tag ID. Even-length hex for PREFIX and SUFFIX; a regular expression for REGEX |
+| `matchPatternMethod` | [`matchPatternMethod`](/api-reference/mqtt/schemas/enumerations#matchPatternMethod) | No |  |  | PREFIX, SUFFIX or REGEX |
+| `reportOperation` | [`reportOperation`](/api-reference/mqtt/schemas/enumerations#reportOperation) | No |  |  | INCLUDE reports only matching tags; EXCLUDE drops them |
+| `operation` | enum: `ADD`, `DELETE`, `MODIFY` | No |  |  | ADD, DELETE or MODIFY |
+
+To delete the post filter on a data endpoint, send `operation: "DELETE"` with `dataEpType` alone. A rule has no identifier of its own, and the contract does not say which members `MODIFY` uses to find it. While a `PREFIX` rule is in use, `select` pre-filters cannot be applied.
+
+## Tag and Barcode Data {#tag-data}
+
+### `dataEventPayload` {#dataEventPayload}
+
+The `data` object of [`dataEVT`](/api-reference/mqtt/data/tag-data-event). Either array can be absent.
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `tagData` | array of [`tagDataRecord`](#tagDataRecord) | No |  |  | Tag records. No record limit; firmware caps the whole message at 6144 bytes |
+| `barcodeData` | array of [`barcodeDataRecord`](#barcodeDataRecord) | No |  |  | Barcode records |
+
+### `tagDataRecord` {#tagDataRecord}
+
+One tag record.
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `EPCid` | string | Yes |  |  | The tag's EPC identifier, as hex |
+| `EPC` | string | No |  |  | The EPC memory bank, as hex |
+| `TID` | string | No |  |  | The TID memory bank, as hex |
+| `USER` | string | No |  |  | The USER memory bank, as hex |
+| `RESERVED` | string | No |  |  | The RESERVED memory bank, as hex |
+| `PC` | string | No |  |  | The Protocol Control word, as hex |
+| `CRC` | string | No |  |  | The CRC, as hex |
+| `XPC` | string | No |  |  | The Extended Protocol Control word, as hex, if the tag has one |
+| `channel` | number | No |  |  | An opaque radio channel index, not a frequency. Present only when every read is reported on its own |
+| `eventNum` | number | Yes |  |  | The per-report sequence counter; the only ordering signal |
+| `format` | string | No |  |  | The format of the tag data; the contract describes it as EPCid |
+| `peakRssi` | number | No |  |  | Peak signal strength, in dBm, since the tag's last report |
+| `phase` | number | No |  |  | Phase of the tag's reply, in degrees. Present only when every read is reported on its own |
+| `seenCount` | number | No |  |  | Times the tag was read since its last report; 1 when every read is reported on its own |
+| `accessResults` | array of string | No |  |  | One result per configured access operation, in order |
+| `userDefined` | string | No |  |  | A user-defined string included on every event |
+| `firstSeenTime` | number | No |  |  | When the tag was first seen, in milliseconds since the epoch |
+| `lastSeenTime` | number | No |  |  | When the tag was last seen, in milliseconds since the epoch |
+| `MAC` | string | No |  |  | The MAC address of the reader that read the tag |
+| `HOSTNAME` | string | No |  |  | The host name of the reader that read the tag |
+
+Hex values arrive in either letter case. The metadata flag `RSSI` switches on `peakRssi`, `PHASE` switches on `phase`, `SEENCOUNT` switches on `seenCount`, and `CHANNEL` switches on `channel`; `RESERVED`, `firstSeenTime`, `lastSeenTime`, `accessResults`, `userDefined` and `format` have no flag.
+
+### `barcodeDataRecord` {#barcodeDataRecord}
+
+One barcode record.
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `symbology` | string | No |  |  | The barcode type, as a hexadecimal string such as `0x03` |
+| `decodedBarcode` | string | Yes |  |  | The decoded value |
+
+**Related:** 📕 [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) · 📕 [`control_operation`](/api-reference/mqtt/ctrl/control-operation) · 📕 [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter) · 📕 [`dataEVT`](/api-reference/mqtt/data/tag-data-event) · 📕 [Enumerations](/api-reference/mqtt/schemas/enumerations) · 📘 [The Tag Data Stream](/guides/core-concepts/the-tag-data-stream)

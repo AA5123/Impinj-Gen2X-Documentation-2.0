@@ -1,0 +1,67 @@
+---
+id: connect-your-application
+title: "Connect Your Application to the Broker"
+sidebar_label: "Connect Your Application to the Broker"
+sidebar_position: 1
+draft: false
+description: "Connect your application to the same broker as the reader: its own client ID and credentials, subscriptions made before it publishes, subscription QoS at least that of each message, and topic wildcards for one reader or many."
+sidebar_custom_props: { emoji: "🔑", card: "Connect your application to the broker and subscribe to the reader's topics." }
+doc_type: how-to
+page_meta:
+  - "Audience: Solution builders"
+  - "Read time: 6 min"
+---
+
+Your application never talks to a reader directly. It connects to the same MQTT 3.1.1 broker as the reader, publishes commands to the reader's command topic, and subscribes to the topics the reader publishes on. This page covers the application's side of that connection.
+
+## Before You Begin {#before-you-begin}
+
+- You know the reader's tenant ID and serial number, and the middle segments of its endpoints' topics. [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) reports them.
+- You have credentials for your application from your broker's administrator, separate from the reader's credentials.
+
+## Step 1: Connect with Your Own Identity {#connect}
+
+1. Use a client ID that no reader and no other application uses. The broker disconnects one of two clients that share a client ID.
+2. Authenticate the way your broker requires: a username and password in the MQTT CONNECT packet, or a client certificate over TLS. Credentials in the CONNECT packet travel in clear text unless the connection uses TLS, so use TLS on any network you do not trust.
+3. Choose a session type. A clean session is simpler. A persistent session (`cleanSession: false` with a fixed client ID) lets the broker keep QoS 1 messages while your application is down; how long it keeps them depends on the broker.
+
+## Step 2: Subscribe Before You Publish {#subscribe}
+
+Replies, events and tag data are not retained: the broker delivers each one only to clients subscribed when it is published. Subscribe first, and subscribe again after every reconnect; putting the subscriptions in your connect callback does both.
+
+Every topic has three segments, `<tenantId>/<middle segment>/<deviceSerialNumber>`. For a reader in tenant `acme` with the conventional middle segments:
+
+| To receive | Subscribe to | QoS |
+|---|---|---|
+| Replies on the management endpoint | `acme/MGMT/clients/resp/<serial>` | 1 |
+| `alerts` and `heartBeatEVT` | `acme/MGMT/clients/event/<serial>` | 1 |
+| `mqttConnEVT` and the Last Will | `acme/MGMT/clients/rfid/<serial>` | 0 or 1 |
+| Tag data from a `DATA1` endpoint | `acme/DATA/clients/data1event/<serial>` | 0, or the QoS the endpoint publishes at |
+
+Use the middle segments your endpoints are actually configured with; those in the table are conventions, not rules. Topics are case-sensitive.
+
+## Step 3: Match the Subscription QoS {#qos}
+
+In MQTT 3.1.1, the broker delivers a message at the lower of the publish QoS and the subscription QoS. Subscribe at least at the QoS the reader publishes with: QoS 1 for replies and `alerts`, so that the broker does not downgrade them. Tag data travels at the QoS set on its topic, 0 or 1, so subscribe at QoS 1 if you set it to 1.
+
+## Step 4: Use Wildcards for Many Readers {#wildcards}
+
+The serial number is always the last segment, so the single-level wildcard `+` in that position matches every reader in a tenant:
+
+```text
+acme/MGMT/clients/event/+
+```
+
+The contract records three serial forms in its sources but directs clients to use the model-prefixed form. `+` matches every reader at this position. Take the serial from the topic of each message you receive.
+
+Avoid subscribing to `#` in production. It delivers every message in the tenant, including all tag data, to one client.
+
+## Step 5: Publish Commands {#publish}
+
+Publish each command to the reader's command topic, for example `acme/MGMT/clients/cmnd/<serial>`, at QoS 1 and without the retain flag. A retained command would be delivered and executed again every time the reader reconnects. How to pair replies with commands is in [Send Commands and Handle Responses](/guides/build-your-integration/send-commands-and-handle-responses).
+
+## Check the Connection {#check}
+
+Send [`get_version`](/api-reference/mqtt/mgmt/get-version) and confirm that the reply arrives on the response topic you subscribed to, echoing your `requestId`.
+
+**Related:** 📘 [MQTT in the IoT Connector](/guides/core-concepts/mqtt-in-the-iot-connector) · 📘 [Endpoints, Topics, and Channels](/guides/core-concepts/endpoints-topics-and-channels) · 📙 [Send Commands and Handle Responses](/guides/build-your-integration/send-commands-and-handle-responses) · 📕 [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure) · 📕 [TLS and Authentication](/api-reference/mqtt/protocol-reference/tls-and-authentication)

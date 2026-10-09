@@ -1,0 +1,72 @@
+---
+id: index
+title: "MQTT API"
+sidebar_label: "MQTT API"
+sidebar_position: 1
+draft: false
+description: "The MQTT API that the IoT Connector provides on RFD40 and RFD90 readers: who takes part in an exchange, how messages flow through your broker, and where to find each part of the reference."
+sidebar_custom_props: { emoji: "📖", card: "The IoT Connector's MQTT API for RFD40 and RFD90 readers." }
+# In no sidebar row since IA v3: the panel title links here, so this keeps the panel on the page.
+displayed_sidebar: api-mqtt
+---
+
+The MQTT API is the interface that the IoT Connector, the firmware on RFD40 and RFD90 readers, provides for managing a reader, controlling RFID inventory, and receiving events and tag data. Every exchange travels over MQTT 3.1.1 through a broker that you operate. This reference describes version 1.22.0 of the API contract.
+
+:::note[Check your reader first]
+This documentation covers the RFD40 Premium, RFD40 Premium Plus, RFD40-M Premium Plus and RFD90 (RFD9030 and RFD9090), which reach the broker over Wi-Fi 6 or a communication cradle, and the RFD40 Standard, which has no Wi-Fi and reaches it only through a communication cradle. The minimum firmware depends on the reader and the endpoint type. See the [Reader Capability Matrix](/resources/supported-readers-and-features#capability-matrix).
+:::
+
+## Who Takes Part {#roles}
+
+An exchange involves up to five parties. The reader and your applications never address each other directly: each is an MQTT client of the same broker.
+
+| Party | Role in the MQTT API |
+| --- | --- |
+| **Reader (RFD40 or RFD90)** | The hardware. It holds the endpoint configuration that tells the IoT Connector which broker to use, and it reaches the broker over its own Wi-Fi, or over Ethernet in a communication cradle. No host application or SDK is needed in the MQTT path. See [The Reader Is Its Own MQTT Client](/api-reference/mqtt/protocol-reference/connection-and-session#reader-as-client). |
+| **IoT Connector** | The firmware on the reader. For each active endpoint, it opens its own MQTT client session to the broker named in that endpoint. Depending on the endpoint type, it subscribes to the endpoint's command topic and publishes responses, events, connection state, or tag data. |
+| **Broker** | Your MQTT 3.1.1 broker. It relays messages between the reader and your applications. The broker address is part of the reader's endpoint configuration; the API has no default broker. If the reader's session ends without a clean disconnect, the broker publishes the [Last Will](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#retention-and-last-will) that the reader registered when it connected. |
+| **Host application** | The application that controls the reader. It publishes commands to the reader's command topic and subscribes to the response topic, pairing each reply with its request by [`requestId`](/api-reference/mqtt/protocol-reference/message-envelope#correlating-responses). |
+| **Consuming applications** | Applications that subscribe to events, connection state, and tag data. A consuming application can be the host application or a separate service. Tag data arrives on a [`DATA1`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) endpoint; [`DATA2`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) is currently not supported. |
+
+123RFID Desktop enters the reader's first endpoint configuration during bootstrap. Later endpoints can be added over MQTT with [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint).
+
+## How Messages Flow {#message-flow}
+
+```text
+Host application     -- commands ---->   Broker   -- commands ---->   Reader (IoT Connector)
+Host application     <-- responses ---   Broker   <-- responses ---   Reader (IoT Connector)
+Consuming app        <-- events ------   Broker   <-- events ------   Reader (IoT Connector)
+Consuming app        <-- tag data ----   Broker   <-- tag data ----   Reader (IoT Connector)
+Consuming app        <-- Last Will ---   Broker
+```
+
+The flow shows who publishes and who subscribes, not a network path. Events include the `CONNECTED` form of [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event); the broker publishes the `DISCONNECTED` form as the reader's Last Will. A host application can also subscribe to events and tag data. The contract describes the IoT Connector on readers connected over Wi-Fi and Ethernet; which interface carries a given session is not specified in the available sources.
+
+Three kinds of message cross the broker:
+
+| Kind | Direction | Correlation | Where it is specified |
+| --- | --- | --- | --- |
+| Commands and their responses | Your application publishes a command; the reader publishes one reply | `requestId`, echoed in the reply | [Message Envelopes and Correlation](/api-reference/mqtt/protocol-reference/message-envelope), [Correlation and Request/Response Pairing](/api-reference/mqtt/protocol-reference/message-envelope#correlation-and-request-response-pairing) |
+| Events: `mqttConnEVT`, [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event), [`alerts`](/api-reference/mqtt/events/alerts-event) | The reader publishes; your application subscribes | None: an event answers no request | [Events](/api-reference/mqtt/events) |
+| Tag data: [`dataEVT`](/api-reference/mqtt/data/tag-data-event) | The reader publishes during an inventory; your application subscribes | None | [`dataEVT`](/api-reference/mqtt/data/tag-data-event) |
+
+## Choose Where to Start {#choose-a-section}
+
+| If you want to… | Go to |
+| --- | --- |
+| Exchange one command with a reader that is already connected | [Send Your First Command](/guides/quick-start#first-command) |
+| See the whole setup, from a new reader to its first tag data | [The Connection Path](/api-reference/mqtt/protocol-reference/connection-and-session#connection-path) |
+| Understand how the reader reaches your broker, and how its session behaves | [Connection and Session](/api-reference/mqtt/protocol-reference/connection-and-session) |
+| Encrypt and authenticate the connection | [TLS and Authentication](/api-reference/mqtt/protocol-reference/tls-and-authentication) |
+| Build topics, messages, and correlation logic | [Protocol](/api-reference/mqtt/protocol-reference) |
+| Query or configure the reader | [Management](/api-reference/mqtt/management) |
+| Configure reading and start or stop an inventory | [Control](/api-reference/mqtt/control) |
+| Handle what the reader publishes without being asked | [Events](/api-reference/mqtt/events) and [`dataEVT`](/api-reference/mqtt/data/tag-data-event) |
+| Validate payloads or look up a type | [Schemas](/api-reference/mqtt/schemas) |
+| Interpret a `response.code` | [Response Codes](/api-reference/mqtt/response-codes) |
+| Look up the documented limits | [Limits](/api-reference/mqtt/limits) |
+| See what changed between API versions | [Changelog](/api-reference/mqtt/changelog) |
+
+## In This Reference {#in-this-reference}
+
+<HubCards scope="section" />

@@ -1,0 +1,30 @@
+---
+id: cannot-connect-to-the-broker
+title: "The Reader Cannot Connect to the Broker"
+sidebar_label: "Cannot Connect to the Broker"
+sidebar_position: 4
+draft: false
+description: "Ordered checks when a reader never reaches its broker: Wi-Fi and an address, the network path and port, protocol and certificates, credentials, and the endpoint's address."
+sidebar_custom_props: { emoji: "🔌", card: "Ordered checks when a reader never reaches its broker." }
+doc_type: how-to
+page_meta:
+  - "Audience: Fleet operators"
+  - "Read time: 4 min"
+---
+
+**Applies when:** the broker never sees a connection from the reader, and no `CONNECTED` `mqttConnEVT` arrives.
+
+Without an MQTT connection you cannot send commands to the reader. Use 123RFID Desktop over USB-C to read and correct its settings, as in [Bootstrap a Reader with 123RFID Desktop](/guides/manage-your-reader/bootstrap-reader).
+
+Work through the checks in order, and stop at the first one that fails.
+
+1. **Has the reader joined Wi-Fi, with an address?** Check its network status in 123RFID Desktop, or with [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi) if another endpoint still works. See [Network and Connectivity](/guides/diagnose-and-recover/diagnose-by-system-area/network-and-connectivity#wifi-association).
+2. **Is the broker's port reachable from the reader's network?** Run `nc -vz <broker-host> 1883` or `8883` from a computer on that network. See [FM-NET-01](/guides/diagnose-and-recover/diagnose-by-system-area#fm-net-01).
+3. **Do the protocol and port agree?** `MQTT` with `1883`, `MQTT_TLS` with `8883`. The reader does not cross-check them.
+4. **For TLS, is the CA certificate installed and named correctly, and is `verificationType` a value the reader accepts?** Send `VERIFY_HOST_AND_PEER`. An `MQTT_TLS` endpoint rejects `VERIFY_NONE` with code `37`. See [FM-SEC-01](/guides/diagnose-and-recover/diagnose-by-system-area#fm-sec-01) and [FM-SEC-03](/guides/diagnose-and-recover/diagnose-by-system-area#fm-sec-03).
+5. **Are the credentials right?** The username and password travel in the MQTT CONNECT packet. For mutual TLS, the client certificate and key must both be installed; `install_certificate` refuses an incomplete pair with code `36`. The broker's log usually names an authentication failure.
+6. **Is the endpoint's address right?** Check `url` and `port`: a bare host name or IP address, with the port separate. See [FM-NET-02](/guides/diagnose-and-recover/diagnose-by-system-area#fm-net-02).
+
+**If none apply:** collect the evidence in [Escalate to Support](/guides/diagnose-and-recover/escalate-to-support).
+
+**Related playbooks:** [RP-01](/guides/diagnose-and-recover/recovery-playbooks/reconnect-the-reader#rp-01) · [RP-02](/guides/diagnose-and-recover/recovery-playbooks/restore-mqtt-connectivity#rp-02) · [MQTT Connection](/guides/diagnose-and-recover/diagnose-by-system-area/mqtt-connection)

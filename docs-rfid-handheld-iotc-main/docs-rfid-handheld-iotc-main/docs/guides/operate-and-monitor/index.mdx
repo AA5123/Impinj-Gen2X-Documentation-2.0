@@ -1,0 +1,31 @@
+---
+id: index
+title: "Operate and Monitor"
+sidebar_label: "Operate and Monitor"
+sidebar_position: 7
+draft: false
+description: "Keep a deployed reader healthy: what to monitor and why, event reporting, reader connectivity, health and battery, alerts, and a fleet health view."
+sidebar_custom_props: { emoji: "🩺", card: "Keep deployed readers healthy: signals, events, alerts and health views." }
+---
+
+
+Once a reader is in service, your application learns about it from four sources:
+
+| Source | What it tells you | How it arrives |
+|---|---|---|
+| `heartBeatEVT`, the periodic heartbeat | That the reader is still publishing, with battery and inventory status | At the configured interval, at QoS 0 |
+| `mqttConnEVT` and the Last Will | That a session started, or ended without a clean disconnect | On the endpoint's connection-state topic, at QoS 0 |
+| `alerts` | That a condition changed: battery, power, network, firmware update or file download | On the event topic, at QoS 1 |
+| `get_status` | The reader's power, battery, radio and clock state, when you ask | As a reply to your command |
+
+`heartBeatEVT` and the `alerts` conditions are enabled with `config_events`, and a change takes effect after a reboot. None of these events is reliably retained, so subscribe before you rely on them. Start with [What to Monitor and Why](/guides/operate-and-monitor/what-to-monitor-and-why), then [Configure Event Reporting](/guides/operate-and-monitor/configure-event-reporting).
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

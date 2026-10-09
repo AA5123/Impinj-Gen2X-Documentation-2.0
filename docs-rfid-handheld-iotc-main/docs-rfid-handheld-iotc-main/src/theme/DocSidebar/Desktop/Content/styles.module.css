@@ -1,0 +1,395 @@
+/* The sidebar header. Two rows, stacked, on the same 0.5rem inset the menu below uses so
+   the title row's left edge sits on the same rail as the row plates. */
+.sidebarHeader {
+  display: flex;
+  flex-direction: column;
+  /* `gap: 0`, not a positive value — 2026-09-02, reduced from 0.125rem. The title's own line box
+     (16px/1.3) and the version's (13px/1.4, below) each carry half-leading above and below their
+     glyphs already, so an explicit gap on top of that read as looser than the two rows' own type
+     asked for: measured 5.6px between the title's line box and the version's with the old 2px
+     gap, only 2 of which was this property — the rest was half-leading neither rule controls.
+     Zero leaves that residual ~3.6px, close enough to read as one related pair (title, then its
+     version) rather than two separate lines. */
+  gap: 0;
+  --header-pad-inline: 1rem; /* read by `.collapseTrigger` to centre its glyph on the carets */
+  padding: 1rem var(--header-pad-inline) 0.75rem;
+  position: relative; /* the containing block for the separator below */
+  /* BACK IN NORMAL FLOW, 2026-09-02. This header was briefly `position: fixed` in its own right,
+     independent of `nav.menu` below it, to survive theme-classic's sticky sidebar wrapper
+     releasing near the bottom of a long article. That fixed the header alone and left the row
+     list riding the same sticky release — the wrong scope: the sidebar's own wrapper
+     (sidebar.scss's `.theme-doc-sidebar-container > div` rule) is what became `position: fixed`
+     instead, which carries the ENTIRE panel — this header and `nav.menu` together — immune to
+     page scroll by construction. With the wrapper doing that job, this header does not need a
+     positioning trick of its own any more: it is simply the flex column's first child again,
+     and its own height is what pushes `nav.menu` down, the way flow already does that for free.
+       `border-right` is new, not restored: `nav.menu` paints the panel's 1px edge itself (see
+     that rule's own note on why), and this header sits ABOVE `nav.menu`, so the edge those rows
+     draw never reached the header's own height — the vertical line stopped one row short of the
+     panel's top. Restating the identical declaration here, rather than drawing the line once on
+     the now-fixed wrapper instead, keeps the "each surface paints its own edge" rule this file
+     already follows for the container/nav pair; two colour-and-width literals kept in one place
+     each is less to drift than a single shared one two surfaces would have to agree stays put. */
+  border-right: 1px solid var(--ifm-toc-border-color);
+}
+
+/* THE TOP ROW: Trigger B, the title, Trigger A. RESTRUCTURED 2026-09-02 from a single title
+   line into this row when Trigger B (the persistent Equal toggle) moved in from the navbar,
+   ahead of the title, per the brief's own diagram: `[Equal] Guides ... [PanelLeft]`. Trigger A
+   was already the row's other end, previously `position: absolute` against `.sidebarHeader`
+   itself; now a normal flex item, which needs no absolute positioning of its own once the
+   title between the two takes `flex: 1 1 auto` and pushes it to the row's end by construction. */
+.sidebarTopRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* THE SEPARATOR, DRAWN ONLY WHEN THE TREE UNDER IT HAS SCROLLED.
+   The `Ruled` class is toggled from the component, off the nav's own scrollTop — see the
+   note there for why the line is conditional rather than permanent.
+
+   It is a pseudo-element rather than a border so that toggling it costs an opacity change
+   and not a 1px shift in the header's height, which would nudge the whole tree down the
+   moment you started scrolling it.
+
+   `right: 1px` stops the rule short of the panel's own right edge: `nav.menu` paints the
+   1px vertical border there, and a horizontal hairline should terminate against that edge
+   rather than cross it and double up the pixel. */
+.sidebarHeader::after {
+  content: '';
+  position: absolute;
+  right: 1px;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--ifm-toc-border-color);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.sidebarHeaderRuled::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebarHeader::after {
+    transition: none;
+  }
+}
+
+/* The product name. --lp-ui's 16px rung at 600, which is one step up from the 14px/400 the
+   rows carry: enough to read as the panel's title without competing with the page <h1>
+   beside it. Not an <h#> at all, deliberately — it labels a navigation panel, and inserting
+   a heading here would put a rogue level into every doc page's outline. */
+.sidebarTitle {
+  font-family: var(--zebra-font-family-ui);
+  font-size: 1rem;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ifm-heading-color);
+
+  /* It is an <a> now — the tree's home link, since the duplicate first row that used to do
+     that job was removed. These reset Infima's anchor defaults so it still reads as a title:
+     heading ink rather than link blue, no underline.
+       `flex: 1 1 auto; min-width: 0` REPLACES the old `align-self: start`, 2026-09-02: this is
+     a flex ROW item now (Trigger B before it, Trigger A after), not the sole child of a flex
+     COLUMN, so the axis `align-self: start` used to constrain no longer applies — the hit area
+     was never at risk of spanning the panel's height the way it could its width, because a row
+     item's cross-axis size already IS its own content. `flex: 1 1 auto` is what pushes Trigger
+     A to the row's far end, by absorbing the remaining space instead of leaving Trigger A to
+     find its own way there. The overflow/ellipsis pair is new defensive width-safety, not a
+     response to a measured overflow — the four real titles ("Guides", "MQTT API", "REST API",
+     "Resources") are all short, but a title this row cannot know the length of ahead of time
+     should not be able to push Trigger A out of the panel. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-decoration: none;
+  transition: color var(--ifm-transition-fast) var(--ifm-transition-timing-default);
+}
+
+/* The same accent the rows take on hover, so the header answers to the pointer in the panel's
+   own vocabulary. No underline and no plate: a plate here would make the title look like the
+   row that was just deleted. */
+.sidebarTitle:hover {
+  /* --ifm-link-color, not --ifm-color-primary. The two resolve to the same value in
+     light, but --ifm-color-primary is the FILL token and lint:fill-as-text gates it
+     out of `color:` for a reason that only shows in dark, where the fill and the
+     glyph are different rungs. The outline below is exempt: an outline is not text. */
+  color: var(--ifm-link-color);
+  text-decoration: none;
+}
+
+/* Keyboard parity. The rows get their focus ring from Infima; this anchor is ours, so the
+   ring is too. `outline-offset` keeps it clear of the descenders. */
+.sidebarTitle:focus-visible {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: 3px;
+  border-radius: var(--radius-container);  /* was 2px — square/pill, aw-style-guide.md 6.1 */
+}
+
+/* The version. The meta rung at 13px, in the muted ink, tabular so a two-digit minor does
+   not shift the line when it lands.
+     `margin-left` LINES IT UP UNDER THE TITLE, not under the row's own left edge. Added
+   2026-09-02: Trigger B used to be the row's only leading element and the version, one line
+   below, had nothing to indent past; now Trigger B plus the row's own 0.5rem gap sit before the
+   title, so an un-indented version reads as starting under Trigger B instead of under "REST API"
+   / "MQTT API" above it. The value restates those same two numbers rather than a third one
+   measured separately.
+     2.75rem, NOT the 2.25rem this shipped with, and the change is forced by Trigger B growing to
+   36px (see `.persistentToggle` below for why it had to). The sum is Trigger B's width plus
+   `.sidebarTopRow`'s `gap`: it was 1.75 + 0.5 = 2.25rem, it is now 2.25 + 0.5 = 2.75rem. Verified
+   by measurement, not arithmetic alone — title and version text both start at x=60.
+     DO NOT "TIDY" THIS INTO `calc(var(--sb-row-height) + 0.5rem)` even though that is now
+   numerically identical: it would be right by coincidence and wrong in meaning. This offset
+   tracks the width of the BUTTON beside the title; `--sb-row-height` is the height of a MENU ROW.
+   They are equal today because Trigger B's box was derived from the row's glyph column, but a
+   change to either would silently move the other. (The same trap is flagged from the other
+   direction in src/css/sidebar.scss's `--sb-row-height` note.) */
+.sidebarVersion {
+  font-family: var(--zebra-font-family-ui);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--ifm-color-emphasis-700);
+  margin-left: 2.75rem;   /* Trigger B (2.25rem) + .sidebarTopRow's gap (0.5rem) — see above */
+}
+
+/* ===========================================================================
+ * BOTH DUAL-TRIGGER BUTTONS SHARE ONE GHOST-BUTTON GEOMETRY, declared once here and applied
+ * to both `.persistentToggle` (Trigger B) and `.collapseTrigger` (Trigger A) below, so the two
+ * ends of the header's title row read as one control family rather than two different-sized
+ * buttons that happen to sit in the same row.
+ * =========================================================================== */
+.persistentToggle,
+.collapseTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto; /* neither button grows or shrinks — the title between them absorbs the row */
+
+  /* ONE 36px SQUARE FOR BOTH, so the two ends of the row draw the identical hover indicator.
+     Briefly (2026-09-03) this was per-button — Trigger B at 36px and Trigger A left at 1.75rem —
+     and the mismatch was reported the next day. It is shared again, and the size is not a
+     preference: `--sb-row-height` is what puts a CENTRED 20px glyph on the row-icon column, which
+     is where Trigger B's glyph has to sit. The header pads 16px and the rows put their glyph at
+     x=24 (sidebar.scss's `.menu__link` pads 0.5rem inside a row whose own left edge is that same
+     16), so the box must be 16 + 2*(24-16) = 36px wide for centring to land there. Which is the
+     row height, because both derive from that one 8px inset — so the token is read rather than a
+     third literal written.
+       Growing Trigger A to match moved ITS glyph, which is why `.collapseTrigger` below now
+     carries a compensating margin; see that rule for the arithmetic and what it costs.
+       `justify-content: center` above is what makes this work in the collapsed rail too, with
+     nothing to undo: the rail centres the whole box in nav.menu's 47px content edge and the glyph
+     lands at 13.5, again exactly where the row glyphs are. */
+  width: var(--sb-row-height);
+  height: var(--sb-row-height);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-container);
+  background: transparent;
+  /* `--sb-ink`'s OWN VALUES, restated rather than read by reference: sidebar.scss declares
+     `--sb-ink` on `.theme-doc-sidebar-menu`, which is a SIBLING of this header, not an ancestor —
+     a custom property does not reach sideways, so `var(--sb-ink)` here would resolve to nothing.
+     Copying its two rungs keeps these glyphs the same ink as every row icon below them (masks
+     painted with `background-color: currentColor` off the identical tokens) instead of the
+     slightly lighter emphasis-700 this rule shipped with, which read as a mismatched grey next
+     to the row icons' emphasis-800/500 once both were on screen together. */
+  color: var(--ifm-color-emphasis-800);
+  cursor: pointer;
+  position: relative; /* the containing block for each button's own tooltip, below */
+  transition:
+    background-color var(--ifm-transition-fast) var(--ifm-transition-timing-default),
+    color var(--ifm-transition-fast) var(--ifm-transition-timing-default);
+}
+
+[data-theme='dark'] .persistentToggle,
+[data-theme='dark'] .collapseTrigger {
+  /* The dark half of `--sb-ink` (sidebar.scss's `[data-theme='dark'] .theme-doc-sidebar-menu`
+     block) — emphasis-800 is near-white in dark mode, which is why the two themes need their own
+     rung rather than one value carried across, same as the row ink it is matching. */
+  color: var(--ifm-color-emphasis-500);
+}
+
+/* TRIGGER A'S GLYPH SITS ON THE CARETS' COLUMN, BY CONSTRUCTION — 2026-09-11.
+   Owner instruction: "The Close Sidebar icon ... should be horizontally centered relative to the
+   right-facing arrow icons ... This alignment should apply to all sidebars."
+
+   Both glyphs are flex-centred in their boxes, and both boxes are measured in from the same panel
+   edge, through different insets:
+
+       caret      1px menu border + --sb-menu-pad (0.5rem)       + half --sb-caret-size (28px)  = 23px
+       Trigger A  1px header border + --header-pad-inline (1rem) + half --sb-row-height (36px) = 35px
+
+   `margin-right` is the difference, negative so the box moves right: 23 - 35 = -12px. The two 1px
+   borders cancel, so they are not in the sum. On a 320px panel that puts the glyph's centre at 297,
+   the carets' own 297, in every sidebar, because every sidebar shares this header and that menu.
+
+   WRITTEN FROM THE TOKENS, NOT AS -12px. The nudge this replaces was a measured `calc(0.2rem - 4px)`
+   that held while the panel was 300px. The carets moved when it widened to 320 and nothing moved the
+   nudge, so the glyph ended 11.2px left of the column. Read from the same values that place the
+   carets, the two cannot drift apart again. The caret's two live on :root in sidebar.scss because
+   this header is a sibling of the menu, not its child.
+
+   `margin-right` on Trigger A ALONE, not on the row or the header: Trigger B's centring in the
+   collapsed rail must stay untouched, and a different header padding would move the title's right
+   edge as well.
+
+   WHAT IT COSTS: the 36px box overhangs the carets' 28px boxes by 4px on each side, so on hover its
+   plate ends 4px past the row plates' right edge. A 36px box around a glyph that must share a centre
+   with a 28px one cannot avoid that, and it shows only on hover. The box stays 36px so Trigger A and
+   Trigger B draw the same hover plate (the shared rule above). */
+.collapseTrigger {
+  margin-right: calc((var(--sb-menu-pad) + var(--sb-caret-size) / 2) - (var(--header-pad-inline) + var(--sb-row-height) / 2));
+}
+
+/* TRIGGER B HAS NO RULE OF ITS OWN ANY MORE, and the history is worth keeping because two reports
+   came out of it.
+     THE REQUIREMENT IT HAS ALWAYS BEEN SERVING is that this button's glyph sit on the ROW-ICON
+   COLUMN rather than wherever its own box happens to centre it — reported originally as "should
+   be aligned similarly as the rest of the icons for each of the items in the sidebar". The rows
+   put their glyph at x=24: sidebar.scss's `.menu__link` pads 0.5rem inside a row whose own left
+   edge is x=16, the same x=16 this button starts at off the header's 1rem padding. A 28px box
+   centring a 20px glyph lands it at x=20 — 4px short.
+     THE FIRST FIX MOVED THE GLYPH INSIDE THE BOX, and that is what broke. `justify-content:
+   flex-start; padding-left: 0.5rem` on a 28px box holding a 20px glyph spends the entire box:
+   8 + 20 = 28, leaving exactly ZERO on the right. Measured on the shipped build: box 28x28 at
+   16..44, glyph at 24..44 — gaps of 8px left and 0px right, so the hover plate ended flush
+   against the glyph and read as clipped. It went unnoticed for a day because the plate was
+   painting `--surface-subtle`, rgb(246,249,252), nearly invisible on white; giving it the rows'
+   own darker hover fill made the asymmetry plain, and it was reported the same day.
+     THE SECOND FIX MOVED THE BOX INSTEAD — 36px, centred — which is now in the shared rule above,
+   because the third report was that the two buttons' hover plates were different sizes. So there
+   is nothing left for this selector to say: box, centring and inset all come from the pair rule,
+   and the only per-button declaration left in the header is Trigger A's compensating margin.
+     `.sidebarVersion`'s `margin-left` MOVED WITH THAT 36px — see its own note; it is
+   1.75rem + 0.5rem no longer. */
+
+.persistentToggle:hover,
+.persistentToggle:focus-visible,
+.collapseTrigger:hover,
+.collapseTrigger:focus-visible {
+  /* `--ifm-menu-color-background-hover`, NOT `--surface-subtle` — 2026-09-03, the third half of
+     "the hover background indicator must match the other sidebar icons". This is the same
+     substitution the `color` line below already makes for the same reason, one property over:
+     sidebar.scss paints every row's hover plate with `--ifm-menu-color-background-hover`
+     (`.theme-doc-sidebar-menu li > a.menu__link:hover, ....menu__list-item-collapsible:hover`),
+     and these buttons were painting a DIFFERENT, lighter grey — measured on a pure-white ground,
+     rgb(246,249,252) here against rgb(237,241,244) two rows below. In the collapsed rail Trigger
+     B's plate sits directly above the row plates in one 48px column, so the two fills are seen
+     side by side and the lighter one reads as a different control rather than the same one.
+       BOTH TRIGGERS AND BOTH STATES, not a rail-scoped override: Trigger A shares this rule and
+     sits in the same header row as Trigger B, so splitting the token by state would put two
+     different greys in one row to fix a mismatch in the other. One token for every hoverable
+     surface in the panel is the whole point, and it is theme-derived, so dark mode follows
+     without a second declaration (`--surface-subtle` and `--accent`, which this token resolves
+     to, are separate rungs in both themes — this is not a no-op recolour). */
+  background-color: var(--ifm-menu-color-background-hover);
+  /* `--ifm-link-color`, NOT `--sidebar-primary` — the same substitution the header title's own
+     `:hover` rule above already makes, for the same reason. `--sidebar-primary` resolves to
+     `--action-primary`, a FILL rung (`--primary-9` light / `--primary-8` dark, #004CBA-ish) —
+     the button-background token, not a text/glyph one. Every row icon's hover AND active state
+     (sidebar.scss's `.menu__link:hover`/`.menu__link--active`) paints with `--ifm-link-color`
+     (`--primary-glyph` -> `--text-link` -> `--primary-11`) instead — a visibly lighter blue,
+     measured rgb(25,94,206) against this rule's previous rgb(0,76,186). Two icons sitting in the
+     same 20px family a few rows apart, one keying the fill rung and the other the glyph rung, is
+     exactly the mismatch this codebase's own fill-as-text rule exists to catch elsewhere; it had
+     just not been asked of this file yet. */
+  color: var(--ifm-link-color);
+}
+
+.persistentToggle:focus-visible,
+.collapseTrigger:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* TWO ICONS, ONE SHOWN AT A TIME, ON TRIGGER A ONLY — `display` toggled by the button's own
+   interaction state, not by React. `PanelLeft` (rest) and `PanelLeftClose` (hover/focus/active)
+   sit stacked in the same flex box; only one is ever laid out, so swapping them causes no size
+   change and nothing to animate against. Trigger B has no equivalent pair: `Equal` is a single,
+   unrotated mark in every state (see index.tsx's SidebarPersistentToggle for why). */
+.collapseTriggerIconActive {
+  display: none;
+}
+
+.collapseTrigger:hover .collapseTriggerIconRest,
+.collapseTrigger:focus-visible .collapseTriggerIconRest,
+.collapseTrigger:active .collapseTriggerIconRest {
+  display: none;
+}
+
+.collapseTrigger:hover .collapseTriggerIconActive,
+.collapseTrigger:focus-visible .collapseTriggerIconActive,
+.collapseTrigger:active .collapseTriggerIconActive {
+  display: block;
+}
+
+/* ===========================================================================
+ * TOOLTIP — the site's chip, not the browser's. Same construction as
+ * src/theme/ColorModeToggle/styles.module.css (that file's own header has the full argument
+ * for why `data-tooltip` + `::after` replaces `title`); with two consumers in this file alone
+ * this pattern is now past the "extract it" threshold ColorModeToggle's own comment sets, and
+ * left as scoped copies rather than a shared utility on purpose: this task is the dual-trigger
+ * pattern, not a tooltip-system refactor, and migrating every existing call site to chase a
+ * shared utility is its own separate risk.
+ *
+ * BOTH CHIPS OPEN TO THE RIGHT, 2026-09-02 — not opposite anchors any more. That used to mean
+ * Trigger B's chip grew rightward (`left: 0`, it being the row's first element, with the whole
+ * panel to grow into) and Trigger A's grew leftward (`right: 0`, hugging the panel's own right
+ * edge instead). Both now match the row icons' own tooltip convention one level down
+ * (sidebar.scss's `.menu__link:hover > span` in the collapsed rail): `left: calc(100% + 8px)`,
+ * vertically centred on the button via `top: 50%; transform: translateY(-50%)`, the same 8px
+ * gap Radix Tooltip's own `sideOffset` doubled that rule already cites. Trigger A's chip now
+ * grows out past the panel's own right edge over the article, exactly as the collapsed rail's
+ * row tooltips already do at every depth — an established pattern on this page, not a new one.
+ * =========================================================================== */
+.persistentToggle::after,
+.collapseTrigger::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 8px);
+  transform: translateY(-50%);
+  padding: var(--tip-pad-y) var(--tip-pad-x);
+  border-radius: var(--tip-radius);
+  background: var(--tip-bg);
+  color: var(--tip-fg);
+  font-size: var(--tip-font-size);
+  line-height: var(--tip-line-height);
+  font-weight: var(--tip-font-weight);
+  letter-spacing: var(--tip-tracking);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  z-index: var(--tip-z);
+  transition: opacity var(--tip-duration) var(--ifm-transition-timing-default, ease-out);
+}
+
+.persistentToggle:hover::after,
+.persistentToggle:focus-visible::after,
+.collapseTrigger:hover::after,
+.collapseTrigger:focus-visible::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .persistentToggle::after,
+  .collapseTrigger::after {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .persistentToggle::after,
+  .collapseTrigger::after {
+    background: Canvas;
+    color: CanvasText;
+    border: 1px solid CanvasText;
+  }
+}

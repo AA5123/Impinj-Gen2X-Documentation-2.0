@@ -1,0 +1,66 @@
+---
+id: limits
+title: "Limits"
+sidebar_label: "Limits"
+sidebar_position: 8
+description: "The limits that apply to the MQTT API today: message sizes, the command queue, endpoint names and topics, pre-filters, access passwords, Wi-Fi, certificates, batching and the heartbeat interval, with the response code each enforced limit returns."
+sidebar_custom_props: { emoji: "📐", card: "Every supported limit in one table, with the code each one returns." }
+doc_type: reference
+page_meta:
+  - "Audience: All personas"
+  - "Use: capacity planning and pre-flight checks"
+---
+
+The limits that apply to the MQTT API today, in one place. Where the **Enforced by** column names a response code, the reader rejects a value past the limit with that code; every code is listed in [Response Codes](/api-reference/mqtt/response-codes). The field-level definitions are in the [MQTT API](/api-reference/mqtt) reference.
+
+## Messages and Commands {#messages}
+
+| Limit | Supported limit | Enforced by |
+|---|---|---|
+| Command queue | 10 commands. Commands beyond that are lost, not delayed | Not reported with a code |
+| Command payload size | 16384 bytes | Not specified in the available sources |
+| [`dataEVT`](/api-reference/mqtt/data/tag-data-event) message size | 6144 bytes. A larger message is dropped without notice | Not reported with a code |
+| Records per `dataEVT` | Not specified in the available sources | — |
+| Command timeout | Not specified in the available sources | — |
+
+## Endpoints and Topics {#endpoints}
+
+| Limit | Supported limit | Enforced by |
+|---|---|---|
+| Saved endpoints per reader | 10 | Not specified in the available sources |
+| `endpointName` | 15 characters | Not specified in the available sources |
+| Endpoint `url` | 511 characters | Not specified in the available sources |
+| `tenantId` | 48 characters | [Code `27`](/api-reference/mqtt/response-codes#code-27) |
+| [`publishTopics`](/api-reference/mqtt/protocol-reference/endpoints-and-topic-slots) entries per endpoint | 3 | [Code `25`](/api-reference/mqtt/response-codes#code-25) |
+| `subscribeTopics` entries per endpoint | 1 | [Code `26`](/api-reference/mqtt/response-codes#code-26) |
+| `mqttParams.keepAlive` | 65,535 seconds | Not specified in the available sources |
+| `batching.reportingInterval` | 1000 to 60000 ms; `0` selects 1000 | Not specified in the available sources |
+| `batching.maxPayloadSizePerReport` | 1024 to 5120 bytes; `0` selects 1024 | Not specified in the available sources |
+
+## Reading and Filtering {#reading}
+
+| Limit | Supported limit | Enforced by |
+|---|---|---|
+| Pre-filters (`select`) | 32 | [Code `24`](/api-reference/mqtt/response-codes#code-24) |
+| `tagPattern` in a pre-filter | 64 hex characters, an even count | [Code `28`](/api-reference/mqtt/response-codes#code-28) |
+| Access-operation `password` | Exactly 8 hex characters (32 bits) | Not specified in the available sources |
+| Post-filter rules | Not specified in the available sources | — |
+
+## Network and Certificates {#network}
+
+| Limit | Supported limit | Enforced by |
+|---|---|---|
+| Saved Wi-Fi profiles | Not specified in the available sources | [Code `19`](/api-reference/mqtt/response-codes#code-19) when full |
+| ESSID | 1 to 32 octets | Not specified in the available sources |
+| WPA-Personal pre-shared key | 8 to 63 characters | Not specified in the available sources |
+| Certificate content | 4 KB (4096 bytes) per certificate file | Not specified in the available sources |
+| Certificates installed at once | 4 | Not specified in the available sources |
+| Certificate encoding | PEM, or base64-encoded PEM; private keys in PKCS1 | [Code `34`](/api-reference/mqtt/response-codes#code-34) when base64 decoding fails |
+
+## Events {#events}
+
+| Limit | Supported limit | Enforced by |
+|---|---|---|
+| Heartbeat `interval` | 65,535 seconds | Not specified in the available sources |
+
+**Related:** 📕 [Response Codes](/api-reference/mqtt/response-codes) · 📕 [Endpoints and Topic Slots](/api-reference/mqtt/protocol-reference/endpoints-and-topic-slots) · 📕 [Changing an Endpoint](/api-reference/mqtt/protocol-reference/connection-and-session#changing-an-endpoint) · 📙 [Manage Tag Data Throughput](/guides/build-your-integration/manage-tag-data-throughput) · 🔤 [Glossary](/resources/glossary)

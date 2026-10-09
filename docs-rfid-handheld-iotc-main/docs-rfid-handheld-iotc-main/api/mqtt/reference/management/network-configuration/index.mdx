@@ -1,0 +1,24 @@
+---
+id: index
+title: "Network Configuration"
+sidebar_label: "Network Configuration"
+sidebar_position: 2
+draft: false
+description: "Inspect Ethernet and Wi-Fi, configure Wi-Fi, and manage saved Wi-Fi profiles."
+sidebar_custom_props: { emoji: "🌐", card: "Inspect Ethernet and Wi-Fi, configure Wi-Fi, and manage saved Wi-Fi profiles." }
+---
+
+
+These commands manage the reader's Wi-Fi profiles and read its Ethernet interface. [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi) creates or modifies one profile per request; [`delete_wifi_profile`](/api-reference/mqtt/mgmt/delete-wifi-profile) removes one, but not the one the reader is connected to ([code `16`](/api-reference/mqtt/response-codes#code-16)). [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi) and [`get_eth`](/api-reference/mqtt/mgmt/get-eth) are safe to send again. The MQTT API has no command that changes Ethernet settings.
+
+The first Wi-Fi profile is set with 123RFID Desktop, because the reader needs a network before it can receive an MQTT command. See [Configure Wi-Fi](/guides/manage-your-reader/configure-wi-fi) and the [Network](/api-reference/mqtt/schemas/network) schemas.
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

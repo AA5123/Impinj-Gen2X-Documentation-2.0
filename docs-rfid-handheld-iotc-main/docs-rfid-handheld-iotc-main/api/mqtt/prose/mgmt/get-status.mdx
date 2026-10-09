@@ -1,0 +1,196 @@
+{/* @authoring-guidance — keep this block; it is stripped from the generated page
+   Authoring source for api/mqtt/reference/mgmt/get-status.mdx (a @generated page — never edit that file directly).
+   Edit the prose below, then run `npm run gen:reference`. Full section map: scripts/api/mqtt/docs/generation.md.
+
+   MANUAL — write these freely (the schema cannot supply them):
+     Overview · When to Use · Request Semantics · Response Semantics · Lifecycle · Notes and Caveats
+     · the human rows in Details · the field selection + glosses in Key Fields · the Related links
+     · per-field `desc` and unit-word `enumUnits` · per-code Response-Codes glosses
+     · the Topic Mapping rows + notes (authored in-place in the prose below — project-owned, NOT the schema).
+   SCHEMA-DERIVED — keep aligned with the AsyncAPI contract (the STATEMENT OF TRUTH) BY HAND. NOTHING verifies this — this page is CARRY, so the generator never reads the contract for it and `--check` cannot see a contract change (scripts/api/mqtt/docs/generation.md):
+     the Request/Response Payload field set · types · enums · `required` · nesting · variant count
+     · the Response-Codes set (globals 0+101 + op-specific, from #/operations/receive_get_status/x-iotc-response-codes/{universal,scoped}).
+   @end-authoring-guidance */}
+
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'get_status', desc: 'Fixed command name. Used to get the reader status information.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abcd123', desc: 'A unique identifier for the request, allowing tracking and debugging. Echoed back unchanged in the response.' },
+];
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'get_status', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1', 'V1.2', 'V1.21', 'V1.22'], example: 'V1.21', desc: 'API version the device reports.' },
+  {
+    field: 'deviceStatus',
+    type: 'object',
+    required: false,
+    desc: 'Status snapshot; optional at the envelope level. Which `deviceStatus` fields appear depends on device state and model — see the Example.',
+    children: [
+      { field: 'powerSource', type: 'enum', required: true, enumUnits: ['WALLCHARGER', 'USB', 'CRADLE'], example: 'CRADLE', desc: 'The source of power for the device. The contract’s enum is `WALLCHARGER`, `USB` or `CRADLE`. Current firmware has also been reported to return `NONE` (no external power source attached), which is outside the enum.' },
+      { field: 'radioActivity', type: 'enum', required: true, enumUnits: ['INACTIVE', 'ACTIVE'], example: 'ACTIVE', desc: "The activity status of the device's radio." },
+      { field: 'radioConnection', type: 'enum', required: true, enumUnits: ['CONNECTED', 'DISCONNECTED'], example: 'CONNECTED', desc: 'Connection status of the RFID radio.' },
+      { field: 'hostname', type: 'string', required: false, example: 'RFD40-212735201D0053', desc: 'Device hostname on the network. Optional; may be absent.' },
+      { field: 'systemTime', type: 'string', required: true, enumUnits: 'date-time', example: '2022-07-01T03:01:31.464Z', desc: 'Device system time in ISO 8601.' },
+      { field: 'temperature', type: 'integer', required: false, example: '32', desc: 'Device temperature (distinct from the battery temperature below).' },
+      {
+        field: 'ntp',
+        type: 'object',
+        required: false,
+        desc: 'Details about the Network Time Protocol (NTP) synchronization.',
+        children: [
+          { field: 'offset', type: 'integer', required: false, example: '120', desc: "The offset in milliseconds between the device's clock and the NTP server. Declared in the schema, but current firmware does not populate it — the value shown is the schema's own example, not a device reading. See [Response Semantics](#response-semantics)." },
+          { field: 'reach', type: 'integer', required: false, example: '321', desc: "The reachability score of the NTP server. Declared in the schema, but current firmware does not populate it — the value shown is the schema's own example, not a device reading. See Response Semantics." },
+        ],
+      },
+      {
+        field: 'terminalConnection',
+        type: 'object',
+        required: false,
+        desc: 'Host-terminal link to the sled.',
+        children: [
+          { field: 'status', type: 'enum', required: false, enumUnits: ['CONNECTED', 'DISCONNECTED'], example: 'CONNECTED', desc: 'Terminal connection status.' },
+          { field: 'type', type: 'enum', required: false, enumUnits: ['BLUETOOTH', 'CIO', 'USB'], example: 'USB', desc: 'Terminal transport type.' },
+        ],
+      },
+      {
+        field: 'batteryStatus',
+        type: 'object',
+        required: false,
+        desc: 'Battery status information.',
+        children: [
+          { field: 'mfgDate', type: 'string', required: false, example: '22DEC2024', desc: 'Battery manufacture date.' },
+          { field: 'cycleCount', type: 'integer', required: false, example: '120', desc: 'Completed battery charge cycles.' },
+          { field: 'fullChargeCapacity', type: 'integer', required: false, example: '3200', desc: 'Current full-charge capacity.' },
+          { field: 'temperature', type: 'integer', required: false, example: '32', desc: 'Battery temperature (distinct from the device temperature above).' },
+          { field: 'designCapacity', type: 'integer', required: false, example: '7000', desc: 'Designed battery capacity.' },
+          { field: 'batteryType', type: 'string', required: false, example: 'LI-ION', desc: 'Battery chemistry / type.' },
+          { field: 'capacity', type: 'integer', required: false, example: '5000', desc: 'Remaining battery capacity.' },
+          { field: 'stateOfHealth', type: 'enum', required: false, enumUnits: ['GOOD', 'CRITICAL', 'MODERATE'], example: 'GOOD', desc: 'Long-term battery capacity / health. The same value set as the `batteryAlert.stateOfHealth` carried by [`alerts`](/api-reference/mqtt/events/alerts-event) and [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) — one shared vocabulary, so nothing needs converting. See Response Semantics.' },
+          { field: 'chargePercentage', type: 'integer', required: false, example: '23', desc: 'Percentage of charge remaining.' },
+          { field: 'chargeStatus', type: 'integer', required: false, example: '1', desc: 'Charging status: `0` = charger not connected; `1` = charger connected, charging; `2` = charger connected, battery at 100%.' },
+        ],
+      },
+    ],
+  },
+  {
+    field: 'response',
+    type: 'object',
+    required: true,
+    desc: 'Result wrapper.',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '0', desc: '`0` = Success; non-zero = error. Required by the contract. See [Response Codes](#response-codes) below.' },
+      { field: 'description', type: 'string', required: true, example: 'Success', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const REQUEST_JSON = {
+  command: 'get_status',
+  requestId: 'abcd123',
+};
+
+export const RESPONSE_JSON = {
+  command: 'get_status',
+  requestId: 'abcd123',
+  apiVersion: 'V1.21',
+  deviceStatus: {
+    powerSource: 'USB',
+    radioActivity: 'INACTIVE',
+    radioConnection: 'DISCONNECTED',
+    systemTime: '2026-06-15T09:26:00.443Z',
+    ntp: { offset: 0, reach: 0 },
+    terminalConnection: { status: 'CONNECTED', type: 'USB' },
+    batteryStatus: { mfgDate: '22DEC2024', cycleCount: 8, fullChargeCapacity: 5739, temperature: 24, designCapacity: 6400, batteryType: 'LI-ION', capacity: 2467, stateOfHealth: 'GOOD', chargePercentage: 46, chargeStatus: 1 },
+  },
+  response: { code: 0, description: 'Success' },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** request an on-demand device-health snapshot
+
+## Overview
+
+`get_status` retrieves a point-in-time health and status snapshot of the reader. It is a read-only query on the device-management ([MGMT](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types)) endpoint: the app publishes the command and the device publishes a correlated reply containing power, radio, clock, terminal-link, and battery information under `deviceStatus`.
+
+Because it is read-only, `get_status` is safe to call at any time. It complements the asynchronous [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) push: `heartBeatEVT` carries only a lightweight inventory-status or battery-alert summary, so use the event stream for continuous monitoring and `get_status` for an immediate, full snapshot.
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Interaction Pattern** | Request / Response (app publishes a command; device publishes the correlated reply) |
+| **State Change** | READ-ONLY |
+| **Required Request Fields** | `command`, [`requestId`](/api-reference/mqtt/protocol-reference/message-envelope#correlating-responses) |
+| **Applies To** | **Endpoint:** Management (MGMT). **Reader:** RFD40 series, RFD90 series |
+| **API Version** | `V1.21` ([API Version Reporting](/api-reference/mqtt/protocol-reference/message-envelope#api-version-reporting)) |
+| **Related** | [`get_version`](/api-reference/mqtt/mgmt/get-version), [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region), [`reboot`](/api-reference/mqtt/mgmt/reboot), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) |
+
+## When to Use
+
+Use `get_status` when you need an **immediate, correlated snapshot of reader health** — power source, radio activity/connection, system clock, terminal link, and battery condition — typically in a management workflow over the MGMT endpoint. It confirms device state on demand rather than waiting for the next asynchronous heartbeat.
+
+- **Get:** the current `deviceStatus` snapshot (power, radio, clock, terminal connection, battery).
+- **Use it for:** pre-flight safety checks before a state-changing command, spot health checks, and diagnostics. (`deviceStatus.radioActivity` in the response reports the activity status of the device's radio — see [Key Fields](#key-fields).)
+- **Prefer a different command when:** you want continuous monitoring rather than a single read — subscribe to [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) instead for periodic pushes, though it carries only an inventory-status or battery-alert summary, not the full power/radio/clock/terminal/battery snapshot `get_status` returns.
+
+## Topic Mapping
+
+| Message | Direction | Topic | Note |
+| --- | --- | --- | --- |
+| Request | App → Reader | `<tenantId>/MGMT/clients/cmnd/<serial>` | On the management endpoint. |
+| Response | Reader → App | `<tenantId>/MGMT/clients/resp/<serial>` | Correlated reply to the request above; the in-payload `requestId` links the twin topics. |
+
+Topics follow the pattern `<tenantId>/<topic>/<serial>` — the tenant id assigned to you at provisioning (a slot you fill in, never a literal), the base topic you configure on the endpoint, and the reader's serial number, which the reader appends itself in its model-prefixed form (for example `RFD40-212735201D0053`). `App → Reader` means your app publishes and the reader subscribes; `Reader → App` means the reader publishes and your app subscribes. To watch a whole fleet rather than one reader, put the MQTT single-level wildcard `+` in the serial slot — `<tenantId>/MGMT/clients/resp/+` — as explained under [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure#worked-example).
+
+Credentials are presented once at CONNECT. The `requestId` you send is echoed in the response so you can pair reply to request. The endpoint's `mqttParams` govern QoS and retain, not this command.
+
+See [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure).
+
+## Key Fields
+
+- **`requestId`** (request) — your correlation token; make it unique per request. The device echoes it in the response so you can pair reply to request.
+- **`deviceStatus.radioActivity`** (response) — the activity status of the device's radio (`INACTIVE` / `ACTIVE`).
+- **`deviceStatus.powerSource`** (response) — how the reader is currently powered (`WALLCHARGER` / `USB` / `CRADLE`, the contract's enum); current firmware has also been reported to return `NONE`, which the enum does not allow.
+- **`response.code`** (response) — read this to determine success vs failure (see [Response Codes](#response-codes)).
+
+## Request Payload
+
+The request envelope is just `command` and `requestId` — there is no payload wrapper. Use the **Schema** tab for the field reference and the **Example** tab for a ready-to-send, copy-pasteable request.
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" />
+
+## Response Payload
+
+The response envelope is `command`, `requestId`, `apiVersion`, `response`, and an optional `deviceStatus` snapshot. On the **Schema** tab, expand `deviceStatus` (and its `terminalConnection`, `batteryStatus` sub-objects) to see every field — its type, whether it is required, its enum/units, an example value, and a description; the **Example** tab shows the full JSON. `deviceStatus` is optional at the envelope level; which fields appear depends on device state and model — the **Example** tab shows a representative snapshot.
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" />
+
+## Response Semantics
+
+- **Which `deviceStatus` fields appear depends on device state and model** — absent fields are normal behavior, not an error. Note that `deviceStatus` reports two distinct temperatures: `deviceStatus.temperature` (device) and `deviceStatus.batteryStatus.temperature` (battery) — do not conflate them.
+- **The reader has no RTC backup battery.** After a cold start or factory reset, `systemTime` starts at a baseline default; the device syncs its clock from **network time** once it has a network connection. There is currently no API to change the NTP configuration — set the NTP server details (and, if NTP is unreachable, the device time itself) from the **123RFID Desktop** application. Time-sensitive operations (TLS certificate validity, log/event timestamps) may use the default time until the clock has synced.
+- **`stateOfHealth` is one grade, on two surfaces.** `deviceStatus.batteryStatus.stateOfHealth` here and the `batteryAlert.stateOfHealth` carried by [`alerts`](/api-reference/mqtt/events/alerts-event) and [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) use the **same** enum — `GOOD` / `CRITICAL` / `MODERATE` — so shared battery logic needs no conversion. Keep it distinct from the event's `status`, which is a charge band (`LOW` / `CRITICAL` / `CHARGING` / `FULL` / `HIGH`), not a health grade. See [Interpret `stateOfHealth`](/guides/operate-and-monitor/monitor-reader-health-and-battery#interpret-stateofhealth).
+- **`ntp.offset` and `ntp.reach` are not reported by the reader.** The schema declares both fields; the values on the **Schema** tab (`120` and `321`) are the schema's own field examples, and the contract's message example shows `0` for each. Current firmware has been reported not to populate either one, so treat their absence as normal and do not build clock-health logic on them. Removing them from the schema is an upstream request to the API owners; until then the fields remain declared.
+
+## Response Codes
+
+`get_status` returns `response.code`. The codes applicable to this command are below; for the full table see the [Response Codes](/api-reference/mqtt/response-codes) and [Correlation and Request/Response Pairing](/api-reference/mqtt/protocol-reference/message-envelope#correlation-and-request-response-pairing).
+
+| Code | Description |
+| --- | --- |
+| `0` | Success — status retrieved and returned. |
+| `3` | Not able to retrieve information — the reader could not gather the requested status at this moment. Retry; if persistent, reboot after stopping any active inventory. |
+| `101` | Default error — generic catch-all. |
+
+## Examples
+
+`get_status` is a single request/response exchange. Publish the standard `{command, requestId}` request shown under [Request Payload](#request-payload); the device replies on the response topic with the correlated reply — the `requestId` you send (`abcd123`) is echoed back so you can pair reply to request. The full reply, field by field, is shown under [Response Payload](#response-payload) above.
+
+## Notes and Caveats {#notes--caveats}
+
+- `get_status` is the on-demand poll; [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) and related alerts push a lighter periodic summary (an inventory-status or battery-alert block), not the full `get_status` snapshot. Prefer the events for continuous monitoring and `get_status` for a complete point-in-time check. Cross-command `apiVersion` reporting can differ (for example [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) emits a numeric `apiVersion`); that is a firmware note, not a `get_status` schema difference.
+
+**Related:** 📘 [The Configuration Model](/guides/core-concepts/the-configuration-model) · 📕 [Response Codes](/api-reference/mqtt/response-codes) · 📕 [MQTT API](/api-reference/mqtt)

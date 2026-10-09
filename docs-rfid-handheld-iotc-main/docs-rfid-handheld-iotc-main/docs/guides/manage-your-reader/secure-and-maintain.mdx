@@ -1,0 +1,19 @@
+---
+id: secure-and-maintain
+title: "Secure and Maintain"
+sidebar_label: "Secure and Maintain"
+sidebar_position: 2
+draft: false
+description: "Secure and maintain one reader: install and manage certificates, secure an endpoint with TLS and client certificates, and update firmware and restart the reader."
+sidebar_custom_props: { emoji: "🛡️", card: "Certificates, TLS, and firmware updates for one reader." }
+---
+
+These pages protect a reader's connection and keep its firmware current. Three of the commands involved finish after they reply: `install_certificate` and `set_os` report their outcome later in an `alerts` event, and `reboot` reports none. Subscribe to the event topic before you send them.
+
+- [Install and Manage Certificates](/guides/manage-your-reader/install-and-manage-certificates): install, list, delete and rotate certificates.
+- [Secure an Endpoint with TLS and Client Certificates](/guides/manage-your-reader/secure-an-endpoint): move an endpoint to TLS and choose the verification level.
+- [Update Firmware and Restart the Reader](/guides/manage-your-reader/update-firmware-and-restart): `set_os` and `reboot`.
+
+## In This Section
+
+<HubCards />

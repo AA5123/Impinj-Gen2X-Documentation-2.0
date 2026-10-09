@@ -1,0 +1,24 @@
+---
+id: index
+title: "Inventory Control"
+sidebar_label: "Inventory Control"
+sidebar_position: 3
+draft: false
+description: "Start or stop an RFID inventory (or the barcode scanner) on demand over the control (CTRL) endpoint."
+sidebar_custom_props: { emoji: "▶️", card: "Start or stop an inventory, or the barcode scanner, on the CTRL endpoint." }
+---
+
+
+[`control_operation`](/api-reference/mqtt/ctrl/control-operation) starts and stops an RFID inventory, with `controlType: "RFID"`, or a barcode scan, with `controlType: "SCANNER"`. A `START` during an inventory returns [code `11`](/api-reference/mqtt/response-codes#code-11); a `STOP` while the radio is idle returns [code `12`](/api-reference/mqtt/response-codes#code-12), which is not a failure. When the [operating mode](/api-reference/mqtt/ctrl/set-operating-mode) sets start or stop conditions, the trigger and thresholds also start and stop an inventory.
+
+See [Start and Stop Inventory](/guides/read-tags-and-barcodes/start-and-stop-inventory).
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

@@ -1,0 +1,30 @@
+---
+id: no-tag-data
+title: "No Tag Data, or Reads Are Missing"
+sidebar_label: "No Tag Data or Missing Reads"
+sidebar_position: 3
+draft: false
+description: "Ordered checks when an inventory produces no dataEVT, or fewer reads than expected: the data endpoint and its second publish topic, the data topic, the radio state, filters, the profile, and loss by design."
+sidebar_custom_props: { emoji: "🏷️", card: "Ordered checks when no tag data arrives, or reads go missing." }
+doc_type: how-to
+page_meta:
+  - "Audience: Solution builders, fleet operators"
+  - "Read time: 5 min"
+---
+
+**Applies when:** `control_operation` `START` succeeded, but no `dataEVT` arrives, or fewer tags arrive than you expect.
+
+Work through the checks in order, and stop at the first one that fails.
+
+1. **Is there an active data endpoint?** Without an active `DATA1` endpoint, or tag data routed to a shared endpoint, no tag data arrives, whatever the radio is doing. Check with [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config). See [RP-05](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-05).
+2. **Does it have two publish topics?** Tag data goes to `publishTopics[1]`. With one entry, the endpoint is accepted and streams nothing.
+3. **Are you subscribed to the data topic?** For a dedicated endpoint it is conventionally `<tenantId>/DATA/clients/data1event/<serial>`, where `<serial>` is the model-prefixed serial number, for example `RFD40-212735201D0053`. Use `+` in the serial position to match every reader.
+4. **Is the inventory running?** [`get_status`](/api-reference/mqtt/mgmt/get-status) reports `radioActivity: ACTIVE` during one. A `STOP` answered with code `12` means none was running. Check the start and stop conditions with [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode); a trigger or a stop threshold may have ended it.
+5. **Is a filter excluding the tags?** Check the `select` pre-filters with `get_operating_mode` and the post-filter rules with [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter).
+6. **Is the profile `FAST_READ`?** The contract states that data events are not currently supported with `FAST_READ`. Use another profile.
+7. **Are reads missing rather than absent?** At QoS 0 a lost tag-data message is not resent, and tag data is not retained; a message over 6144 bytes is dropped without an error; and a slow consumer loses messages. The contract says an application that needs guaranteed capture must reconcile against `inventoryStatus`, which `heartBeatEVT` carries. Reconciliation can reveal a discrepancy; it cannot prove capture is complete, and what the counters count is not yet specified. See [Manage Tag Data Throughput](/guides/build-your-integration/manage-tag-data-throughput).
+8. **Are the tags readable at all?** If everything above is right, the problem is on the air. See [RFID Read Performance](/guides/diagnose-and-recover/diagnose-by-system-area/rfid-read-performance).
+
+**If none apply:** collect the evidence in [Escalate to Support](/guides/diagnose-and-recover/escalate-to-support).
+
+**Related:** [RP-05](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-05) · [FM-DATA-01](/guides/diagnose-and-recover/diagnose-by-system-area#fm-data-01) · [The Tag Data Stream](/guides/core-concepts/the-tag-data-stream)

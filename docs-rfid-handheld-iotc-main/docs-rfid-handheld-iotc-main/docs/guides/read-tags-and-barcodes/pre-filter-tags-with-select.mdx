@@ -1,0 +1,66 @@
+---
+id: pre-filter-tags-with-select
+title: "Pre-Filter Tags with Select"
+sidebar_label: "Pre-Filter Tags with Select"
+sidebar_position: 1
+description: "Pre-filtering in IOTC: the Gen2 SELECT command the radio issues before an inventory round, the select array and its action enum, and when to pre-filter rather than post-filter."
+sidebar_custom_props: { emoji: "🔎", card: "The Gen2 SELECT before a round, and when to use it instead of a filter." }
+doc_type: how-to
+page_meta:
+  - "Audience: Solution Builder"
+  - "Read time: 4 min"
+  - "Ties to: [Operating Mode](/api-reference/mqtt/control/operating-mode/)"
+---
+
+
+**See in the API Reference** — Section: Operating Mode. Operations: [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode) · [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+IOTC filters tags at **two points** in the read pipeline. Filtering early saves the radio work. Filtering late saves the application work. Each has its own surface, its own API, and its own cost.
+
+This page covers the early one — the **pre-filter**, which runs on the air before the tag is ever singulated. Its sibling, [Post-Filter Reported Tags](/guides/read-tags-and-barcodes/post-filter-reported-tags), covers the late one.
+
+### The Gen2 SELECT Pre-Filter (`select`)
+
+The reader's pre-filter runs on the air. The radio issues a Gen2 SELECT command before the inventory round, telling tags "only respond if your memory matches this pattern." Non-matching tags stay silent. This is the air-protocol filter.
+
+Pre-filters live inside `set_operating_mode`'s `operatingModes.select` array (up to **32 entries** — exceeded returns error code `24`). Each entry matches a hex `tagPattern` against a memory bank (`EPC` / `TID` / `USER`) at a bit `offset`/`length`, and its `action` sets the tag's SL flag and inventory state on a match. The full per-field list is in the [operating-mode reference](/api-reference/mqtt/ctrl/set-operating-mode); the payload you actually send is in [Configure the Operating Mode](/guides/read-tags-and-barcodes/configure-advanced-radio-settings#configure-the-operating-mode).
+
+The savings are radio savings: tags excluded by the filter do not take part in the inventory round, which matters most in dense populations.
+
+### Pre-Filter Actions and Targets
+
+Each entry's `target` says which flag its `action` changes: `SESSION_SL` targets the tag's SL flag, and `SESSION_0` to `SESSION_3` target the inventoried flag of that session.
+
+Each `action` value is a Gen2 Select action, named `<effect on matching tags>_<effect on non-matching tags>`. The part before `OR` applies when the target is a session's inventoried flag, and the part after it applies when the target is the SL flag:
+
+- `INV_A` and `INV_B` set the inventoried flag to state A or B.
+- `ASRT_SL` and `DSRT_SL` assert or deassert the SL flag, and `NEG_SL` negates it.
+- `A2BB2A` flips A to B and B to A.
+- A leading `NOT_` means "do nothing to matching tags".
+
+For example, `INV_B_NOT_INV_A_OR_DSRT_SL_NOT_ASRT_SL`, used in the contract's examples, sets matching tags to B and non-matching tags to A when it targets a session, and deasserts SL on matching tags and asserts it on the others when it targets `SESSION_SL`. Pair an SL-based filter with `query.slFlag` set to `ASSERTED` or `DEASSERTED`, so that the inventory round selects on the flag the filter set. The eight values are listed on the [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) reference, and a complete `select` example is in [Pre-Filter with Select](/guides/read-tags-and-barcodes/configure-advanced-radio-settings#select).
+
+### Two Rules to Remember
+
+1. **Pre-filter `offset` is in bits; access-operation `offset` is in 16-bit words.** This trips up nearly everyone — same field name, different unit.
+2. **A `PREFIX` post-filter and `select` pre-filters are mutually exclusive.** When a `PREFIX` post-filter is active, Gen2 `select` pre-filters cannot also be applied — `SUFFIX` and `REGEX` post-filters have no such restriction. Check the post-filters installed on each data endpoint before you rely on a pre-filter: [Post-Filter Reported Tags](/guides/read-tags-and-barcodes/post-filter-reported-tags).
+
+### Pre or Post: When to Use Which
+
+| Concern | Pre-filter | Post-filter |
+|---|---|---|
+| Optimize for radio efficiency in dense populations | ✓ | — |
+| Reduce broker bandwidth | (limited; tags still singulated) | ✓ |
+| Match by EPC prefix / suffix | ✓ (hex patterns) | ✓ |
+| Match by regular expression | — | ✓ |
+| Match against TID or USER memory | ✓ | — |
+| Filter different endpoints differently | — | ✓ (per-`dataEpType`) |
+| Maximum number of filters | 32 | (no documented hard cap) |
+
+A typical production deployment uses **both**: pre-filters narrow the air-protocol catch to the EPC family that matters, post-filters narrow the application stream to the specific endpoint the consumer cares about. The one combination to avoid is a `PREFIX` post-filter alongside `select` pre-filters — see rule 2 above.
+
+### Out of Scope
+
+- **`accessOperations` (read, write, lock, kill on tag memory)** — that is the tag-side operation surface, not filtering, even though it sits beside `select` in the same `set_operating_mode` payload. Covered as an advanced surface in the [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) reference and in [Configure the Operating Mode](/guides/read-tags-and-barcodes/configure-advanced-radio-settings#configure-the-operating-mode).
+
+**Related:** 📙 [Post-Filter Reported Tags](/guides/read-tags-and-barcodes/post-filter-reported-tags) · 📙 [Configure the Operating Mode](/guides/read-tags-and-barcodes/configure-advanced-radio-settings#configure-the-operating-mode) · 📘 [Choose an Operating Mode](/guides/read-tags-and-barcodes/choose-a-performance-profile#choose-an-operating-mode) · 📘 [The Tag Data Stream](/guides/core-concepts/the-tag-data-stream) · 📕 [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) · 📕 [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter)

@@ -1,0 +1,27 @@
+---
+id: index
+title: "Device Lifecycle"
+sidebar_label: "Device Lifecycle"
+sidebar_position: 6
+draft: false
+description: "System-level actions — OS update and reboot."
+sidebar_custom_props: { emoji: "🔧", card: "System-level actions — OS update and reboot." }
+---
+
+
+Two commands change what a reader is running. [`set_os`](/api-reference/mqtt/mgmt/set-os) downloads and installs firmware; [`reboot`](/api-reference/mqtt/mgmt/reboot) restarts the reader. Both reply with [code `1`](/api-reference/mqtt/response-codes#code-1) before the work is done:
+
+- `set_os` reports its outcome in [`alerts`](/api-reference/mqtt/events/alerts-event) events with `id: "FIRMWARE_UPDATE"`. While an update runs, the reader refuses other commands with [code `4`](/api-reference/mqtt/response-codes#code-4).
+- `reboot` reports no outcome event, and is refused during an inventory with [code `5`](/api-reference/mqtt/response-codes#code-5). The [operating mode](/api-reference/mqtt/ctrl/set-operating-mode) is lost on reboot.
+
+See [Update Firmware and Restart the Reader](/guides/manage-your-reader/update-firmware-and-restart).
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

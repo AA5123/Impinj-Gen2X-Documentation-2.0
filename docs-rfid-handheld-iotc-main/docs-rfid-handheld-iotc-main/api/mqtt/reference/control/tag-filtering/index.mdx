@@ -1,0 +1,24 @@
+---
+id: index
+title: "Tag Filtering"
+sidebar_label: "Tag Filtering"
+sidebar_position: 2
+draft: false
+description: "Read back and manage the reader's post-filter rules — per data endpoint — that include or exclude scanned tag data before reporting, over the control (CTRL) endpoint."
+sidebar_custom_props: { emoji: "🔍", card: "Read back and manage the reader's post-filter rules — per data endpoint." }
+---
+
+
+Post-filter rules decide which read tags a data endpoint reports: `DATA_EP1` for the [`DATA1`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) endpoint. (`DATA_EP2` targets [`DATA2`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types), which is currently not supported.) [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter) adds, modifies or deletes one rule per request (a delete names only the data endpoint), matching the tag ID by `PREFIX`, `SUFFIX` or `REGEX`, and including or excluding what matches. [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter) returns the installed rules and is safe to send again. Pre-filters, which act on the air, are part of the [operating mode](/api-reference/mqtt/ctrl/set-operating-mode).
+
+See [Post-Filter Reported Tags](/guides/read-tags-and-barcodes/post-filter-reported-tags).
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

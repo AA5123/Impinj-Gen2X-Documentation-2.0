@@ -1,0 +1,78 @@
+---
+id: respond-to-alerts
+title: "Respond to Alerts"
+sidebar_label: "Respond to Alerts"
+sidebar_position: 5
+description: "Receive the alerts event, recognize it among other events, read the detail block its id requires, and route it by state and priority without assuming rules the contract does not state."
+sidebar_custom_props: { emoji: "🚨", card: "Receive alerts, read their detail block, and route them." }
+doc_type: how-to
+page_meta:
+  - "Audience: Fleet operators, integrators"
+  - "Read time: 5 min"
+  - "Ties to: [alerts](/api-reference/mqtt/events/alerts-event)"
+---
+
+The reader publishes the [`alerts`](/api-reference/mqtt/events/alerts-event) event when a battery, power, network, firmware-update or file-download condition changes. This page shows how to receive alerts, tell them apart from other events, and route them.
+
+**Before you start:** the reader has an active management endpoint, and the alert types you want are enabled with [`config_events`](/api-reference/mqtt/mgmt/config-events) (see [Configure Event Reporting](/guides/operate-and-monitor/configure-event-reporting)). A `config_events` change takes effect after a reboot.
+
+## 1. Subscribe to the Event Topic {#subscribe}
+
+Subscribe to the endpoint's event topic, for example `<tenantId>/MGMT/clients/event/<serial>`, before the condition you care about can happen. Alerts are published at QoS 1 and are not retained, so an alert published before your subscription is active is not delivered to you later. See [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure) for how the topic is built.
+
+## 2. Recognize an Alert {#recognize}
+
+Events carry no common field that names their kind. The heartbeat also arrives on the event topic, so tell the two apart by their required fields:
+
+- An **alert** has `type`, `state`, `id` and `priority`.
+- A **heartbeat** has `eventName` set to `"heartbeat"`.
+
+An alert carries no `requestId` and no `response` object, because it answers no command.
+
+## 3. Read the Detail Block for Its `id` {#read-details}
+
+Each `id` requires one member of `alertDetails`:
+
+| `id` | Required detail block | What it reports |
+|---|---|---|
+| `BATTERY` | `batteryAlert` | `status`, `stateOfHealth`, `chargePercentage` |
+| `POWER` | `powerEvent` | `powerSource`, `powerMode` |
+| `NETWORK_EVENT` | `networkInfo` | Interface status and addresses |
+| `FIRMWARE_UPDATE` | `fwUpdateStatus` | `updateStatus` text, and optionally `overallProgress` and `stage` |
+| `FILE_DOWNLOAD` | `downloadInfo` | `fileType`, `fileName`, `status` |
+
+No alert reports temperature: the contract declares a `temperatureInfo` block but no `TEMPERATURE` `id`, and the `temperature` event flag is reserved. `updateStatus` is free text rather than a closed set of values, so show it to a person instead of matching on it.
+
+This power alert is one of the contract's published examples:
+
+```json title="alerts — event (contract example: Power alert)"
+{
+  "type": "ALERT",
+  "timestamp": "2026-04-29T12:33:34.290Z",
+  "state": "ONESHOT",
+  "id": "POWER",
+  "priority": "HIGH",
+  "alertDetails": {
+    "powerEvent": {
+      "powerSource": "BATTERY",
+      "powerMode": "ACTIVE"
+    }
+  }
+}
+```
+
+## 4. Route by `state` and `priority` {#route}
+
+- **`state`** is `SET` (the condition is active), `CLEAR` (it has been resolved) or `ONESHOT` (a one-time alert). The contract states no rule about which `id` values latch and which are one-time, and its own examples publish `FIRMWARE_UPDATE` both as `SET` and as `ONESHOT`. Open an incident on `SET` and close it on the matching `CLEAR`, but do not assume that every `id` sends one or the other.
+- **`priority`** is `CRITICAL`, `HIGH` or `LOW`, in descending severity. The contract attaches no operational meaning to each level, so map the levels to your own paging and logging policy.
+- **`type`** is `EVENT`, `NOTIFICATION` or `ALERT`.
+
+**Result:** each alert reaches the handler for its `id`, with its detail block parsed and its severity mapped to your policy.
+
+## If No Alerts Arrive {#no-alerts}
+
+- Confirm the flag for the alert type is `true` in the endpoint's `eventConfiguration` with [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config), and that the reader has rebooted since you set it.
+- Confirm you subscribed before the condition occurred; alerts are not replayed.
+- Check that the flag is one current firmware acts on. See [What the Event Flags Do Not Produce](/guides/operate-and-monitor/what-to-monitor-and-why#what-is-not-currently-emitted).
+
+**Related:** 📕 [`alerts`](/api-reference/mqtt/events/alerts-event) · 📕 [`config_events`](/api-reference/mqtt/mgmt/config-events) · 📘 [What to Monitor and Why](/guides/operate-and-monitor/what-to-monitor-and-why) · 📙 [Configure Event Reporting](/guides/operate-and-monitor/configure-event-reporting)

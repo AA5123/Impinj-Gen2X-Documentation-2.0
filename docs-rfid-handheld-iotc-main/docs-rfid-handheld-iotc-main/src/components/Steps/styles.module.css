@@ -1,0 +1,134 @@
+:root {
+  --step-number-background-color: rgba(172, 172, 172, 0.08);
+  --step-line-color: rgba(39, 39, 39, 0.12);
+}
+
+[data-theme='dark'] {
+  --step-number-background-color: rgba(255, 255, 255, 0.05);
+  --step-line-color: rgba(255, 255, 255, 0.14);
+}
+
+.steps {
+    margin-bottom: 1.5625rem;
+}
+
+.step.withtitle {
+  display: flex;
+  flex-direction: column;
+}
+
+.step.withouttitle {
+  display: flex;
+  flex-direction: row;
+  gap: 0.625rem;
+}
+
+.step.withouttitle .content {
+  /* Optical baseline nudge that drops this text onto the numeral's own baseline. It is a
+     `margin`, which the unit rule converts, and 1/16 divides exactly; the contract's px
+     exemption list is closed and covers borders and hairlines, not margins. 0.0625rem is
+     1px at the 16px root and scales with the type it is correcting. */
+  margin-top: 0.0625rem;
+}
+
+.step.withtitle .content {
+  margin-top: 0.9375rem;
+}
+
+.step > .titlerow {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+.step .stepnum {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* rem, not px: this badge carries TEXT, so at a raised root font-size the numeral has
+     to keep its circle. The 1px border is inside the box (box-sizing: border-box,
+     infima default.css:369-371), and .linecont below is pinned to the same figure so the
+     connector stays on the numeral's centre — move one and all four move. */
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  font-weight: 600;
+  background-color: var(--step-number-background-color);
+  border: 1px solid var(--step-line-color);
+  border-radius: 50%;
+  /* Was 0.9rem = 14.4px, which is on no rung of the ratified scale. --zebra-fs-ui is the
+     nearest rung at 14px, a 0.4px snap; the 12px micro-label rung is not taken, because
+     shrinking a numeral inside a fixed circle is a design change no ruling asks for. */
+  font-size: var(--zebra-fs-ui);
+  margin: 0;
+}
+
+.step.withtitle .stepnumcont {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.step .line {
+  width: 1px;   /* the connector is a hairline rule, which the unit rule keeps in px */
+  background-color: var(--step-line-color);
+}
+
+.step > .contentrow {
+  display: flex;
+  align-items: stretch;
+  flex-direction: row;
+  gap: 0.625rem;
+}
+
+.step > .stepnumcol {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.step .content {
+  flex-grow: 1;
+  width: 100%;
+}
+
+.step .linecont {
+  display: flex;
+  justify-content: center;
+  flex-grow: 1;
+  flex-shrink: 0;
+  width: 1.75rem;      /* locked to the .stepnum badge above, or the connector drifts off centre */
+  max-width: 1.75rem;
+}
+
+.step > .titlerow .title {
+  margin-top: 0.0625rem;   /* same 1px optical nudge as .withouttitle .content above */
+}
+
+.step.withtitle:not(:last-of-type) .padder .linecont {
+  height: 0.9375rem;
+}
+
+/* PRE-EXISTING 2px DISCREPANCY, REPORTED AND NOT FIXED (type contract 2026-08-16, ruling
+   17). This reserves 2.5rem (40px) for the column beside it, but that column measures
+   1.75rem + 0.625rem = 2.375rem (38px): `.step .linecont` at :102-103 is 28px wide and
+   `.step > .contentrow`'s gap at :82 is 10px. The conversion carried both figures across
+   faithfully rather than closing the gap, because the ruling says to report it. */
+.step .content {
+  width: calc(100% - 2.5rem);
+}
+
+.step:last-of-type .content > *:last-child {
+  margin: unset;
+}
+
+.title > h1,
+.title > h2,
+.title > h3,
+.title > h4,
+.title > h5,
+.title > h6 {
+  margin: unset;
+}

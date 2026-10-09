@@ -1,0 +1,103 @@
+---
+id: what-to-monitor-and-why
+title: "What to Monitor and Why"
+sidebar_label: "What to Monitor and Why"
+sidebar_position: 1
+description: "Which signals an RFD40 or RFD90 reader gives a monitoring system, what each one tells you, which of them are switched on by config_events, and which event flags produce nothing on current firmware."
+sidebar_custom_props: { emoji: "🧬", card: "Which signals a reader gives you, and what each one tells you." }
+doc_type: explanation
+page_meta:
+  - "Audience: Integrators, fleet operators"
+  - "Read time: 7 min"
+---
+
+A reader reports on itself in two ways. It publishes events without being asked, and it answers the commands you send it. This page explains which of those signals a monitoring system can use, what each one tells you, and how to switch them on. Field-level detail lives in the [MQTT API](/api-reference/mqtt) reference, linked from each signal.
+
+## The Signals {#the-signals}
+
+| Signal | Kind | What it tells you | Delivery |
+|---|---|---|---|
+| [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) | Periodic event | The reader is running and its session is up. It can also carry inventory counters and battery state. | QoS 0, not retained, on the endpoint's event topic |
+| [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) | Event on a connection change | A session was established (`CONNECTED`), or ended without a clean disconnect (`DISCONNECTED`, published by the broker as the Last Will) | QoS 0, on each endpoint's own connection-state topic |
+| [`alerts`](/api-reference/mqtt/events/alerts-event) | Event on a condition change | Battery, power, network, firmware-update and file-download conditions | QoS 1, not retained, on the endpoint's event topic |
+| [`get_status`](/api-reference/mqtt/mgmt/get-status) | Command reply | A snapshot of power source, radio activity, battery, temperature and system time, when you ask for it | QoS 1 reply on the response topic |
+| [`dataEVT`](/api-reference/mqtt/data/tag-data-event) | Tag data during an inventory | The tags read. It is output, not a health signal. | QoS set on its topic (0 or 1), not retained |
+
+Events carry no `requestId` and no `response` object. They answer no command, so [Response Codes](/api-reference/mqtt/response-codes) do not apply to them. The reader publishes each event on a topic of the endpoint that has it enabled; see [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure) for how those topics are built.
+
+## Liveness {#liveness}
+
+**The heartbeat is the primary liveness signal.** The reader publishes `heartBeatEVT` at the configured interval (at most 65,535 seconds) while the heartbeat is enabled with `config_events`; a reboot applies the setting. Monitoring can rely on it as its primary liveness signal: when `heartBeatEVT` stops arriving, the reader, its session, or the path to your application needs attention. `heartBeatEVT` is published at QoS 0, so the MQTT layer does not resend one lost in transit. Choose how many missed intervals your application treats as an outage.
+
+**The connection event marks session changes.** The reader publishes a `CONNECTED` `mqttConnEVT` when its session is established. If the session ends without a clean disconnect, the broker publishes the Last Will: the `DISCONNECTED` form, without a timestamp. A clean disconnect suppresses the Will, and the contract does not say whether the reader reports one. The absence of a `DISCONNECTED` message therefore does not mean the reader is connected.
+
+Every active endpoint publishes its own connection state on its own topic, so a reader with a management endpoint and a control endpoint produces two independent streams. Whether the connection-state message is retained is not settled: the contract declares it not retained on the channel and retained on the operation. Until that is resolved, do not rely on a late subscriber receiving the last known state.
+
+**A reconnect is not a restart.** After `reboot` is accepted (code `1`), the next `CONNECTED` `mqttConnEVT` shows that a new session was established. On its own, it does not show that a restart occurred, because a network reconnect produces the same message. The `upTime` in `heartBeatEVT` shows a restart to a person reading it; it is free text, not machine-readable.
+
+## Reader Health {#reader-health}
+
+| Condition | Pushed by | Pulled with | Values |
+|---|---|---|---|
+| Battery | `alerts` with `id: BATTERY` (`alertDetails.batteryAlert`); `heartBeatEVT` when `heartbeatConfiguration.batteryStatus` is `true` (`data.batteryAlert`) | `get_status` (`deviceStatus.batteryStatus`) | `status`: `LOW`, `CRITICAL`, `CHARGING`, `FULL`, `HIGH`. `stateOfHealth`: `GOOD`, `CRITICAL`, `MODERATE`. `chargePercentage`: 0 to 100. |
+| Power | `alerts` with `id: POWER` (`alertDetails.powerEvent`) | `get_status` (`deviceStatus.powerSource`) | `powerSource`: `BATTERY`, `USB`, `CRADLE`, `WALL_CHARGER` on the alert, `WALLCHARGER`, `USB`, `CRADLE` on `get_status`, and `NONE` from firmware. `powerMode`: `ACTIVE`, `LOWPOWER`. |
+| Network | `alerts` with `id: NETWORK_EVENT` (`alertDetails.networkInfo`) | [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi), [`get_eth`](/api-reference/mqtt/mgmt/get-eth) | Per-interface status and addresses |
+| Temperature | Not pushed on current firmware (see below) | `get_status` (`deviceStatus.temperature`) | An integer reading |
+
+Battery health uses one vocabulary everywhere: `GOOD`, `CRITICAL` and `MODERATE`, whether it arrives in an alert, a heartbeat or a `get_status` reply. The battery's charge state is the separate `status` field.
+
+The contract declares a `temperatureInfo` block of NGE, power-amplifier and ambient readings in degrees Celsius, but no `TEMPERATURE` alert `id` selects it, and the `temperature` event flag is reserved: setting it has no effect on current firmware, and no temperature alert is emitted. Poll `get_status` if you need the reading.
+
+## Operations in Progress {#operations-in-progress}
+
+Three commands finish after they reply. [`set_os`](/api-reference/mqtt/mgmt/set-os), [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) and [`reboot`](/api-reference/mqtt/mgmt/reboot) answer with code `1`, which means the reader accepted the request, not that it succeeded. `set_os` and `install_certificate` report the outcome later in an `alerts` event; subscribe to the event topic before you send them, because events are not retained and anything published before your subscription is active is lost. `reboot` has no outcome event. The next `CONNECTED` `mqttConnEVT` shows that a new session was established; on its own it does not show that a restart occurred, because a network reconnect produces the same message.
+
+- **`FIRMWARE_UPDATE` alerts** carry `alertDetails.fwUpdateStatus`: an `updateStatus` text, an optional `overallProgress` percentage, and an optional `stage`. `updateStatus` is free text, not a closed set of values: compare it only against `FW update success`, follow progress with `overallProgress`, and confirm the new firmware with [`get_version`](/api-reference/mqtt/mgmt/get-version).
+- **`FILE_DOWNLOAD` alerts** carry `alertDetails.downloadInfo`: `fileType` (`FILE_TYPE_FW` or `FILE_TYPE_CERT`), `fileName`, and `status` (`DOWNLOAD SUCCESS`, `DOWNLOAD FAIL`, `SAVE SUCCESS`, `SAVE FAIL`). A successful certificate install reports `DOWNLOAD SUCCESS` and then `SAVE SUCCESS`.
+
+## What the Event Flags Do Not Produce {#what-is-not-currently-emitted}
+
+`config_events` accepts more flags than current firmware acts on. The contract marks seven as supported on v1.1: `heartbeat`, `battery`, `power`, `network`, `firmwareUpdate`, `fileDownload` and `terminalConnection`.
+
+The others are reserved. The reader accepts them, stores them and returns them when you read the configuration back, but setting them has no effect: `antenna`, `gpi`, `exceptions`, `ntp`, `userApp`, `temperature`, `cpuUsage`, `flashUsage` and `ramUsage`, and the four thresholds `cpuThreshold`, `ramThreshold`, `flashThreshold` and `temperatureThreshold`. Do not build monitoring that waits for an event one of these flags would produce.
+
+## Switching the Signals On {#configuration-paths}
+
+[`config_events`](/api-reference/mqtt/mgmt/config-events) sets which events the reader publishes, and [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) carries the same settings per endpoint in `eventConfiguration`. The contract does not state which of the two takes precedence when both are set. A `config_events` change takes effect after a reboot.
+
+This contract example switches on the seven supported flags and a heartbeat every 100 seconds that carries both optional blocks:
+
+```json title="config_events — request (contract example: Enable all events)"
+{
+  "command": "config_events",
+  "requestId": "abc123",
+  "eventConfiguration": {
+    "terminalConnection": true,
+    "firmwareUpdate": true,
+    "network": true,
+    "heartbeat": true,
+    "power": true,
+    "battery": true,
+    "temperature": true,
+    "fileDownload": true,
+    "heartbeatConfiguration": {
+      "interval": 100,
+      "inventoryStatus": true,
+      "batteryStatus": true
+    }
+  }
+}
+```
+
+Two signals need no flag. No `config_events` flag controls `mqttConnEVT`; the contract describes every active endpoint as publishing its own. `dataEVT` flows while an inventory runs and a data endpoint is active; see [The Tag Data Stream](/guides/core-concepts/the-tag-data-stream).
+
+## Choosing What to Watch {#choosing-what-to-watch}
+
+- **To know a reader is up,** watch `heartBeatEVT` and set your own threshold of missed intervals. Use `mqttConnEVT` to see session changes as they happen.
+- **To keep devices charged,** enable `battery` alerts and the heartbeat's battery block, and use `get_status` when you need a reading on demand.
+- **To follow a firmware rollout,** subscribe to the event topic before sending `set_os`, and watch `FILE_DOWNLOAD` and `FIRMWARE_UPDATE` alerts.
+- **To watch temperature,** poll `get_status`; current firmware publishes no temperature alert.
+
+For the procedures, see [Configure Event Reporting](/guides/operate-and-monitor/configure-event-reporting), [Monitor Reader Connectivity](/guides/operate-and-monitor/monitor-reader-connectivity), [Monitor Reader Health and Battery](/guides/operate-and-monitor/monitor-reader-health-and-battery) and [Respond to Alerts](/guides/operate-and-monitor/respond-to-alerts).
+
+**Related:** 📕 [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) · 📕 [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) · 📕 [`alerts`](/api-reference/mqtt/events/alerts-event) · 📕 [`config_events`](/api-reference/mqtt/mgmt/config-events) · 📕 [Delivery and Retry Semantics](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics)

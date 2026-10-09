@@ -1,0 +1,60 @@
+---
+id: about-the-rest-api
+title: "About the REST API"
+sidebar_label: "About the REST API"
+sidebar_position: 1
+draft: false
+description: "About the REST API — Zebra Handheld RFID IoT Connector documentation. This page is part of the IOTC information architecture and has content under refactoring."
+sidebar_custom_props: { emoji: "📕" }
+---
+
+> 📘 **EXPLANATION** · **Audience:** All personas · **Read time:** ~2 min
+
+:::important[Scope: fixed readers only]
+
+This reference covers the **REST API of the Zebra FXR60 and FXR90 fixed RFID readers**
+running IoT Connector, and nothing else.
+
+The rest of this site documents a **different product line** — the RFD40 and RFD90
+handheld RFID reader sleds — whose IoT Connector interface is MQTT, and which is
+covered by the [MQTT API](/api-reference/mqtt) reference and the
+[guides](/guides/get-oriented). Nothing on these FXR pages describes, applies to, or
+changes the handheld product. If you are working with a handheld sled, you are on the
+wrong branch of this site: start at [About this documentation](/guides/get-oriented).
+
+:::
+
+## What this reference is
+
+This reference is read directly from the vendor's OpenAPI 3.1 document for IoT
+Connector on the fixed reader line, so every path, parameter, schema and response in it
+is the specification itself rather than a re-description of it. The source document is
+held in this repository read-only and is never hand-edited. There is no generation step
+between the two: [Endpoints](/api-reference/rest/endpoints) renders that document as it
+stands, so replacing the file is all it takes to publish a reissued specification.
+
+The reference is grouped by the specification's own tags — Control, System, Logs,
+Network, Certificate, Region, Firmware and the rest — so the grouping you see is the
+one the API's authors chose. The document's component schemas are not published as
+pages of their own; each one renders inline on every operation that uses it, so
+a schema is read where it is used.
+
+Three pages here are hand-written rather than generated — [Your First REST Call](/api-reference/rest/your-first-rest-call),
+[Authentication and Tenancy](/api-reference/rest/authentication-and-tenancy) and [Errors and Status Codes](/api-reference/rest/errors-and-status-codes)
+— and all three are sourced from the same document.
+
+## What it does not tell you
+
+- **There is no base URL in it.** The source document declares no `servers` block, so
+  the pages give the path of each operation but not the host to send it to. Take the
+  host from the reader's own network configuration.
+- **It is a specification, not a product manual.** [Your First REST Call](/api-reference/rest/your-first-rest-call),
+  [Authentication and Tenancy](/api-reference/rest/authentication-and-tenancy) and [Errors and Status Codes](/api-reference/rest/errors-and-status-codes)
+  carry the orientation a caller needs — where the base URL comes from, how to get a
+  token, how to make a first call, and what the document does and does not say about
+  failures — but that is the extent of it. There is no worked example sequence and
+  no troubleshooting material for the fixed readers on this site. For those, use
+  Zebra's fixed reader product documentation.
+- **It says nothing about the handheld line.** See the scope note above.
+
+**Related:** 📕 [MQTT API](/api-reference/mqtt) — the handheld (RFD40 / RFD90) surface this site is otherwise about · 📘 [Native MQTT and the OpenAPI surface](/guides/core-concepts/how-the-iot-connector-works#interfaces-mqtt-and-tools) — how the handheld's interfaces relate to each other · external: [Zebra support and downloads](https://www.zebra.com/us/en/support-downloads.html) — firmware and product documentation for the fixed reader line

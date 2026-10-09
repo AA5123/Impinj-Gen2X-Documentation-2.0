@@ -1,0 +1,249 @@
+{/* @authoring-guidance — keep this block; it is stripped from the generated page
+   Authoring source for api/mqtt/reference/ctrl/set-post-filter.mdx (a @generated page — never edit that file directly).
+   Edit the prose below, then run `npm run gen:reference`. Full section map: scripts/api/mqtt/docs/generation.md.
+
+   MANUAL — write these freely (the schema cannot supply them):
+     Overview · When to Use · Request Semantics · Response Semantics · Lifecycle · Notes and Caveats
+     · the human rows in Details · the field selection + glosses in Key Fields · the Related links
+     · per-field `desc` and unit-word `enumUnits` · per-code Response-Codes glosses
+     · the Topic Mapping rows + notes (authored in-place in the prose below — project-owned, NOT the schema).
+   SCHEMA-DERIVED — keep aligned with the API contract (the FINAL source of truth) BY HAND. NOTHING verifies this — this page is CARRY, so the generator never reads the contract for it and `--check` cannot see a schema change (scripts/api/mqtt/docs/generation.md):
+     the Request/Response Payload field set · types · enums · `required` · nesting · variant count
+     · the Response-Codes set (globals 0+101 + op-specific, from the operation's `x-iotc-response-codes`).
+   @end-authoring-guidance */}
+
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+import {VariantSelect, Variant} from '@site/src/components/VariantSelect';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'set_post_filter', desc: 'Fixed command name.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: 'A unique identifier for the request; echoed back in the response.' },
+  {
+    field: 'postFilterPayload',
+    type: 'object',
+    required: false,
+    desc: 'The single post-filter rule to add, delete, or modify. Optional in the contract, as is every field inside it, but a request without it carries no rule to apply.',
+    children: [
+      { field: 'operation', type: 'enum', required: false, enumUnits: ['ADD', 'DELETE', 'MODIFY'], example: 'ADD', desc: '`ADD` a new filter, `DELETE` an existing one, or `MODIFY` one. See [Request Semantics](#request-semantics).' },
+      { field: 'dataEpType', type: 'enum', required: false, enumUnits: ['DATA_EP1', 'DATA_EP2'], example: 'DATA_EP1', desc: 'The data-endpoint TYPE the filter binds to. ⚠️ This is the enum value `DATA_EP1`/`DATA_EP2`, not the endpoint name (see Request Semantics) — a wrong value returns [code `23`](/api-reference/mqtt/response-codes#code-23). `DATA_EP2` targets the [`DATA2`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) endpoint, which is currently not supported.' },
+      { field: 'matchPattern', type: 'string', required: false, example: 'FFFFBBBBA500', desc: 'The value matched against scanned tag data. For `PREFIX`/`SUFFIX`: hex digits only, even count. For `REGEX`: a regular expression. See Request Semantics.' },
+      { field: 'matchPatternMethod', type: 'enum', required: false, enumUnits: ['PREFIX', 'SUFFIX', 'REGEX'], example: 'REGEX', desc: 'How the pattern is matched — beginning (`PREFIX`), end (`SUFFIX`), or regular expression (`REGEX`).' },
+      { field: 'reportOperation', type: 'enum', required: false, enumUnits: ['INCLUDE', 'EXCLUDE'], example: 'INCLUDE', desc: '`INCLUDE` reports only matching tag data; `EXCLUDE` drops matching tag data from reporting.' },
+    ],
+  },
+];
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'set_post_filter', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1', 'V1.2', 'V1.21', 'V1.22'], example: 'V1.1', desc: 'API version reported by this command. Emitted per-handler, not device-wide.' },
+  {
+    field: 'response',
+    type: 'object',
+    required: true,
+    desc: 'Status-only result — set_post_filter echoes no configuration.',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '0', desc: '`0` = Success; non-zero = error. Required by the contract. Readers have been reported to omit it on success — see [Response Payload](#response-payload) and Response Codes below.' },
+      { field: 'description', type: 'string', required: true, example: 'Success', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const REQUEST_JSON = {
+  command: 'set_post_filter',
+  requestId: 'abc123',
+  postFilterPayload: {
+    operation: 'ADD',
+    dataEpType: 'DATA_EP1',
+    matchPattern: 'FFFFBBBBA500',
+    matchPatternMethod: 'PREFIX',
+    reportOperation: 'INCLUDE',
+  },
+};
+
+export const REGEX_JSON = {
+  command: 'set_post_filter',
+  requestId: 'abc123',
+  postFilterPayload: {
+    operation: 'ADD',
+    dataEpType: 'DATA_EP1',
+    matchPattern: 'E280',
+    matchPatternMethod: 'REGEX',
+    reportOperation: 'EXCLUDE',
+  },
+};
+
+export const DELETE_JSON = {
+  command: 'set_post_filter',
+  requestId: 'abc123',
+  postFilterPayload: { operation: 'DELETE', dataEpType: 'DATA_EP1' },
+};
+
+export const SUFFIX_JSON = {
+  command: 'set_post_filter',
+  requestId: 'abc123',
+  postFilterPayload: {
+    operation: 'ADD',
+    dataEpType: 'DATA_EP1',
+    matchPattern: 'BBBBEEEE',
+    matchPatternMethod: 'SUFFIX',
+    reportOperation: 'INCLUDE',
+  },
+};
+
+export const RESPONSE_JSON = {
+  command: 'set_post_filter',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 0, description: 'Success' },
+};
+
+export const SUCCESS_NOCODE_JSON = {
+  command: 'set_post_filter',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { description: 'Success' },
+};
+
+export const ERROR_JSON = {
+  command: 'set_post_filter',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 23, description: 'Invalid enum value' },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** add, delete, or modify a post-filter rule on the reader
+
+## Overview
+
+`set_post_filter` **configures a post-filter** — a rule that includes or excludes scanned RFID **tag data** before it is reported to a data endpoint. Each call operates on **one** filter, chosen by `postFilterPayload.operation` (`ADD` / `DELETE` / `MODIFY`): the rule matches tag data by pattern (prefix, suffix, or regex) and either reports (`INCLUDE`) or drops (`EXCLUDE`) it, scoped to a data endpoint. It is a state-changing **control-plane ([CTRL](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types)) command**; read the current filters back with [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter).
+
+This is a **CTRL-endpoint command**, published on the **control** endpoint (`<tenantId>/CTRL/clients/cmnd/<serial>`) and answered only there (not on the [MGMT](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types)/[MDM](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) channel). Returning a response requires an **active CTRL endpoint** ([`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint), `epType: CTRL`, `activate: true`). Also: `dataEpType` is the **enum** `DATA_EP1`/`DATA_EP2`, **not** the endpoint *name* — sending an endpoint name returns [code `23`](/api-reference/mqtt/response-codes#code-23) (see [Request Semantics](#request-semantics)).
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Interaction Pattern** | Request / Response (app publishes a command; device publishes the correlated reply) |
+| **State Change** | STATE-CHANGING (adds/removes a filter) |
+| **Reversibility** | REVERSIBLE (an `ADD` is undone by a `DELETE` on the same `dataEpType`) |
+| **Supported Operations** | `ADD` (new), `DELETE` (existing), `MODIFY` (existing) |
+| **Required Request Fields** | `command`, [`requestId`](/api-reference/mqtt/protocol-reference/message-envelope#correlating-responses) (`postFilterPayload` is optional in the contract; send it with the rule) |
+| **Applies To** | **Endpoint:** Control (CTRL). **Reader:** RFD40 series, RFD90 series |
+| **API Version** | `V1.1` ([API Version Reporting](/api-reference/mqtt/protocol-reference/message-envelope#api-version-reporting)) |
+| **Related** | [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode), [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) |
+
+## When to Use
+
+Use `set_post_filter` to **control which scanned tag data reaches a data endpoint**:
+
+- **Include only matching tags** — `reportOperation: INCLUDE` reports only tags whose data matches; everything else is dropped.
+- **Exclude noisy tags** — `reportOperation: EXCLUDE` drops matching tags from reporting.
+- **Match by prefix, suffix, or regex** — choose `matchPatternMethod` to fit the tag-data pattern.
+- **Manage the rule set** — `ADD` to install, `DELETE` to remove, `MODIFY` to update; verify with [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter).
+
+## Topic Mapping
+
+| Message | Direction | Topic | Note |
+| --- | --- | --- | --- |
+| Request | App → Reader | `<tenantId>/CTRL/clients/cmnd/<serial>` | On the **control** endpoint. Requires an **active CTRL endpoint**. |
+| Response | Reader → App | `<tenantId>/CTRL/clients/resp/<serial>` | Correlated reply; the in-payload `requestId` links the twin topics. |
+
+Topics follow the pattern `<tenantId>/<topic>/<serial>` — the tenant id assigned to you at provisioning (a slot you fill in, never a literal), the base topic you configure on the endpoint, and the reader's serial number, which the reader appends itself in its model-prefixed form (for example `RFD40-212735201D0053`). `App → Reader` means your app publishes and the reader subscribes; `Reader → App` means the reader publishes and your app subscribes.
+
+Control commands are answered **only on the CTRL endpoint**.
+
+Post-filters act on **tag data** (post-singulation), distinct from the Gen2 `select` pre-filters in [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) that act on the air interface. If control commands time out, confirm a CTRL endpoint is active and activate one with [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) if needed.
+
+See [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure).
+
+## Key Fields
+
+- **`postFilterPayload.operation`** (request) — `ADD` / `DELETE` / `MODIFY`; determines the action on the rule set.
+- **`dataEpType`** (request) — the data-endpoint enum (`DATA_EP1` / `DATA_EP2`) the filter binds to — ⚠️ not the endpoint name (see [Request Semantics](#request-semantics)).
+- **`matchPattern` + `matchPatternMethod`** (request) — what to match and how (`PREFIX` / `SUFFIX` / `REGEX`).
+- **`reportOperation`** (request) — `INCLUDE` (report matches) or `EXCLUDE` (drop matches).
+- **`response.code`** (response) — read this to determine success vs failure. The contract requires it; note the reported success-path omission (see [Success without a code](/api-reference/mqtt/protocol-reference/message-envelope#success-omits-code)). See [Response Codes](#response-codes).
+
+## Request Payload
+
+The envelope is `command`, `requestId`, and the single-rule `postFilterPayload`. Pick a **match method** below; the Example and Schema update together. Use the **Schema** tab for the full field reference and the **Example** tab for the concrete payload.
+
+<VariantSelect label="Post filter scenario" groupId="set-post-filter-request">
+<Variant value="prefix" label="Filter tags using prefix">
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" exampleCaption="ADD, prefix" />
+
+</Variant>
+
+<Variant value="regex" label="Filter tags using regex">
+
+<ApiBody rows={REQUEST_ROWS} json={REGEX_JSON} title="Request payload" exampleCaption="ADD, regex" />
+
+</Variant>
+
+<Variant value="suffix" label="Filter tags using suffix">
+
+<ApiBody rows={REQUEST_ROWS} json={SUFFIX_JSON} title="Request payload" exampleCaption="ADD, suffix" />
+
+</Variant>
+
+<Variant value="delete" label="Delete post filter">
+
+<ApiBody rows={REQUEST_ROWS} json={DELETE_JSON} title="Request payload" exampleCaption="DELETE, DATA_EP1" />
+
+</Variant>
+</VariantSelect>
+
+## Request Semantics
+
+**Modes.** `postFilterPayload.operation` selects the action; each call handles one rule:
+
+- **`ADD`** — install a new post-filter for the given `dataEpType`.
+- **`DELETE`** — remove the post filter on a data endpoint. Send `operation: DELETE` with `dataEpType` alone; `matchPattern`, `matchPatternMethod` and `reportOperation` are not needed. Undoes a prior `ADD` on the same `dataEpType`.
+- **`MODIFY`** — update an existing filter.
+
+Confirm the resulting rule set with [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter), which returns the stored `postFilter[]` (or nothing when none remain).
+
+- **`dataEpType` is an enum, not the endpoint name.** `dataEpType` must be the enum value `DATA_EP1` or `DATA_EP2` — **not** the endpoint *name* you gave a data endpoint in [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) (e.g. `DATA1_EP`). Sending the endpoint name is an enum violation and the device rejects it with **[code `23`](/api-reference/mqtt/response-codes#code-23)** ("Invalid enum value"). Map your [`DATA1`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) endpoint to `DATA_EP1` when setting a filter; `DATA_EP2` targets the `DATA2` endpoint, which is currently not supported.
+- **`matchPattern` rules follow the match method.** For `PREFIX` and `SUFFIX` methods, `matchPattern` must be **hexadecimal digits only, with an even count** — the contract states this rule in the field description but does not enforce it with a pattern; for `REGEX` it is a free-form regular expression.
+- **`PREFIX` post-filters and Gen2 `select` pre-filters are mutually exclusive.** A `PREFIX` post-filter precludes using Gen2 `select` pre-filters at the same time.
+
+## Response Payload
+
+`set_post_filter` returns a **status-only** envelope — `command`, `requestId`, `apiVersion`, and `response`. Confirm with [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter) — there is no filter echo.
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" />
+
+The contract requires `response.code`. Readers have been reported to omit it on a successful reply, returning just `response: { "description": "Success" }` — treat that as success too. See [Success without a code](/api-reference/mqtt/protocol-reference/message-envelope#success-omits-code).
+
+As reported, a successful set or delete can arrive with `code` omitted. This form does not validate against the contract; the reply with `code: 0` above is the documented form:
+
+<JsonBlock title="Response — success reported without code (not accepted by the contract)" data={SUCCESS_NOCODE_JSON} />
+
+## Response Codes
+
+`set_post_filter` returns `response.code`. The codes applicable to this command are below; for the full table see the [Response Codes](/api-reference/mqtt/response-codes) and [Correlation and Request/Response Pairing](/api-reference/mqtt/protocol-reference/message-envelope#correlation-and-request-response-pairing).
+
+| Code | Description |
+| --- | --- |
+| `0` | Success — the filter was added, deleted, or modified. (Readers have been reported to omit `code` on this reply — see above.) |
+| `23` | Invalid enum value (`IOT_ERROR_INVALID_ENUM`) — a field (`operation`, `dataEpType`, `matchPatternMethod`, or `reportOperation`) is outside its allowed set. **Commonly triggered by sending an endpoint _name_ (e.g. `DATA1_EP`) as `dataEpType` instead of the enum `DATA_EP1` — see [Request Semantics](#request-semantics).** |
+| `101` | Default error — generic catch-all. |
+
+## Examples
+
+Publish `set_post_filter` over the CTRL endpoint; the device replies with the status envelope under [Response Payload](#response-payload). The **Post filter scenario** dropdown under [Request Payload](#request-payload) shows each contract example: an `ADD` by prefix, regex and suffix, and a `DELETE`. In the regex example, `matchPattern` is free-form; the hex-digit rule applies only to prefix and suffix patterns.
+
+Sending an endpoint **name** (not the enum) as `dataEpType` is rejected with **[code `23`](/api-reference/mqtt/response-codes#code-23)**:
+
+<JsonBlock title="Response — invalid enum value (code 23)" data={ERROR_JSON} />
+
+## Notes and Caveats {#notes--caveats}
+
+- **Post-filters vs pre-filters.** `set_post_filter` configures **post-filters** — rules applied to scanned **tag data** before it reaches a data endpoint (`INCLUDE`/`EXCLUDE`). These are separate from the Gen2 `select` **pre-filters** in [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode), which filter on the air interface during inventory.
+
+`set_post_filter` is **reversible** — an `ADD` is undone by a `DELETE` on the same `dataEpType`. It carries no credentials (match patterns are tag-data hex/regex strings). After setting a filter, **verify with [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter)** — the setter's response has no configuration echo. For the concept-level view, see [Post-Filter Reported Tags](/guides/read-tags-and-barcodes/post-filter-reported-tags).
+
+**Related:** 📕 [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter) · 📕 [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) · 📕 [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) · 📘 [Post-Filter Reported Tags](/guides/read-tags-and-barcodes/post-filter-reported-tags) · 📕 [Response Codes](/api-reference/mqtt/response-codes)

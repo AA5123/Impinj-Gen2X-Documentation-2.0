@@ -1,0 +1,182 @@
+---
+id: install-and-manage-certificates
+title: "Install and Manage Certificates"
+sidebar_label: "Install and Manage Certificates"
+sidebar_position: 1
+description: "Install certificates on a reader by download or inline, confirm the install from its FILE_DOWNLOAD alerts, list what is installed and when it expires, delete certificates safely, and plan a rotation."
+sidebar_custom_props: { emoji: "🔒", card: "Install, list, delete and rotate the certificates on a reader." }
+doc_type: how-to
+page_meta:
+  - "Audience: Solution builders, integrators, fleet operators"
+  - "Read time: 10 min"
+  - "Ties to: [Certificate Management](/api-reference/mqtt/management/certificate-management/)"
+---
+
+A reader needs certificates to connect to a broker over TLS, to join an 802.1X Wi-Fi network, and to authenticate the server it downloads certificates from. This page shows how to install them with [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate), confirm the result, list them with [`get_installed_certificates`](/api-reference/mqtt/mgmt/get-installed-certificates) and remove them with [`delete_certificate`](/api-reference/mqtt/mgmt/delete-certificate). Why each certificate matters is explained in [The Security Model](/guides/core-concepts/the-security-model).
+
+## Before You Begin {#before-you-begin}
+
+- Subscribe to the management endpoint's event topic, for example `<tenantId>/MGMT/clients/event/<deviceSerialNumber>`, as well as its response topic. The install outcome arrives as an event, and events are not retained.
+- Enable `fileDownload` event reporting with [`config_events`](/api-reference/mqtt/mgmt/config-events), so that the reader publishes `FILE_DOWNLOAD` alerts. A `config_events` change takes effect only after the reader reboots. See [Configure Event Reporting](/guides/operate-and-monitor/configure-event-reporting).
+- Prepare the certificate material in the form the reader accepts.
+
+## Prepare the Certificate Material {#certificate-format-and-size}
+
+| Rule | Detail |
+|---|---|
+| Encoding | PEM only. `certFormat: "BASE64"` sends the same PEM text base64-encoded again; it is not a bare DER body |
+| Private keys | PKCS1-encoded (`-----BEGIN RSA PRIVATE KEY-----`) |
+| Size | At most 4 KB of certificate content |
+| Client pairs | Install a client certificate together with its key. Sending one without the other returns code `36` |
+
+A key in PKCS8 form (`-----BEGIN PRIVATE KEY-----`) must be converted first. With OpenSSL 3, for example:
+
+```bash
+openssl rsa -in key-pkcs8.pem -out key-pkcs1.pem -traditional
+```
+
+The certificate `type` says where it is used:
+
+| `type` | Used for |
+|---|---|
+| `mqtt` | The MQTT broker connection |
+| `wifi` | 802.1X Wi-Fi authentication |
+| `filestore` | Authenticating the server the reader downloads certificates from |
+| `client` | A client identity certificate the reader presents |
+| `server` | A server certificate or trust anchor the reader validates against |
+
+Always send a `type`. `delete_certificate` matches on type, and a certificate installed without one cannot be deleted.
+
+## Install a Certificate {#install}
+
+`certDetails` requires `type` and `authenticationType`. `certSource` chooses how the content arrives:
+
+- **`HTTP`**, the default: the reader downloads each component from the URL you give in `url`. Without `url` the reply is code `29`.
+- **`DIRECT`**: the content is inline in `certificateBundle`. Without it the reply is code `30`.
+
+`authenticationType` describes how the reader authenticates to the download server, not the certificate itself: `NONE`, or `CERTIFICATE` to use a CA given in `caCertificateFileContent` or an installed `filestore` certificate. It is still required for `DIRECT`.
+
+1. Publish `install_certificate`. This contract example downloads a CA, a client certificate and a client key for the broker connection:
+
+   ```json title="install_certificate — request (adapted from contract example: MQTT certificates without authentication; addresses replaced with fictional ones)"
+   {
+     "command": "install_certificate",
+     "requestId": "19001",
+     "certDetails": {
+       "name": "mqtt_certs",
+       "type": "mqtt",
+       "authenticationType": "NONE",
+       "certSource": "HTTP",
+       "url": [
+         {
+           "key": "client_cert",
+           "value": "https://192.0.2.107:8080/mqtt_client_cert.pem"
+         },
+         {
+           "key": "client_key",
+           "value": "https://192.0.2.107:8080/mqtt_client_key.pem"
+         },
+         {
+           "key": "ca_cert",
+           "value": "https://192.0.2.107:8080/mqtt_ca_cert.pem"
+         }
+       ],
+       "verificationType": "VERIFY_HOST_AND_PEER"
+     }
+   }
+   ```
+
+   This one sends a CA certificate inline:
+
+   ```json title="install_certificate — request (adapted from contract example: MQTT CA certificate install; certificate content abridged)"
+   {
+     "command": "install_certificate",
+     "requestId": "18996",
+     "certDetails": {
+       "type": "mqtt",
+       "authenticationType": "NONE",
+       "certSource": "DIRECT",
+       "certificateBundle": {
+         "ca_cert": "-----BEGIN CERTIFICATE-----\n…\n-----END CERTIFICATE-----"
+       }
+     }
+   }
+   ```
+
+   The contract shortens the certificate body to `…`. Send the full PEM text, with its line breaks written as `\n` inside the JSON string.
+
+2. Check the reply. Code `1` means the reader accepted the request, not that the certificate is installed:
+
+   ```json title="install_certificate — response (contract example: Certificate installed)"
+   {
+     "command": "install_certificate",
+     "requestId": "18996",
+     "apiVersion": "V1.1",
+     "response": {
+       "code": 1,
+       "description": "Command payload is accepted"
+     }
+   }
+   ```
+
+3. Wait for the outcome on the event topic. The reader publishes `alerts` events with `id: "FILE_DOWNLOAD"`, whose `alertDetails.downloadInfo` carries `fileType: "FILE_TYPE_CERT"` and a `status`. A successful install reports `DOWNLOAD SUCCESS` and then `SAVE SUCCESS`; `DOWNLOAD FAIL` or `SAVE FAIL` ends it. The contract specifies no timeout, so choose your own. See [Track Asynchronous Commands](/guides/build-your-integration/track-asynchronous-commands).
+
+| Code | Meaning | What to do |
+|---|---|---|
+| `9` | File not found | Check the URL and that the file exists |
+| `21` | Certificate not found | Check the certificate reference |
+| `23` | Invalid enum value | Correct the value from the enum on the reference page |
+| `29` | Url missing for HTTP source | Add `url`, or send `certSource: "DIRECT"` |
+| `30` | Certificate content missing for direct source | Add `certificateBundle` |
+| `34` | Certificate base64 decode failed | Check the base64 encoding |
+| `36` | Missing client key or client certificate | Send the client certificate and its key together |
+
+## List Installed Certificates {#list}
+
+```json title="get_installed_certificates — request (contract example: Installed certificates list)"
+{
+  "command": "get_installed_certificates",
+  "requestId": "abc123"
+}
+```
+
+The reply lists each certificate in `installedCerts.certInfo[]` with its `name`, `type`, `issuerName`, `subjectName`, `serial`, `validFrom` and `validTill`. In the contract's examples, `name` holds a component identifier such as `ca_cert` or `client_cert`, not the name sent at install. See [`get_installed_certificates`](/api-reference/mqtt/mgmt/get-installed-certificates) for the full reply.
+
+`validTill` is the only expiry signal the MQTT API gives. No event warns that a certificate is about to expire, so read the list on a schedule and compare `validTill` with the current date.
+
+## Delete a Certificate {#delete}
+
+`delete_certificate` identifies a certificate by `type` and, optionally, `name`:
+
+```json title="delete_certificate — request (contract example: Delete mqtt client cert)"
+{
+  "command": "delete_certificate",
+  "requestId": "abc123",
+  "certificateInfo": {
+    "name": "client_cert",
+    "type": "mqtt"
+  }
+}
+```
+
+:::danger[A delete without a name removes every certificate of that type]
+When `name` is left out, the reader deletes every installed certificate of the given `type`. `{"type": "mqtt"}` removes all MQTT certificates, which breaks every TLS endpoint that uses them. Always send `name`, and check it against `get_installed_certificates` first.
+:::
+
+The contract does not settle which name `delete_certificate` matches: the name sent at install, or a component identifier such as `ca_cert`. Its examples use component identifiers. Code `21` means no certificate matched. Deleting a certificate that an active endpoint or Wi-Fi profile still uses is not described in the available sources; move the configuration off a certificate before you delete it.
+
+## Rotate Certificates {#the-logical-name-rotation-pattern}
+
+Rotation replaces a certificate before it expires without leaving a reader unable to connect. The contract leaves open how installed certificates are named on the reader: it does not state how the file names that an endpoint's `securityParams` uses (`caCertificateFile`, `clientCert`, `clientKey`) relate to the `name` sent at install, or whether installing a second certificate of the same type and component replaces the first. Confirm that behavior on a test reader before you plan a fleet rotation around it.
+
+Whatever the naming turns out to be, these steps limit the risk:
+
+1. Read `get_installed_certificates` and `get_endpoint_config` and record what each endpoint uses.
+2. Install the new certificate and wait for `SAVE SUCCESS`.
+3. Point the endpoint at it with [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint). An active endpoint must be deactivated before it can be changed, so do this over a different management endpoint.
+4. Confirm the reconnection from the endpoint's `mqttConnEVT`. See [Monitor Reader Connectivity](/guides/operate-and-monitor/monitor-reader-connectivity).
+5. Delete the old certificate by name only after the reader has reconnected with the new one.
+
+Roll the change out to a few readers before the rest of the fleet. See [Roll Out Changes in Stages](/guides/scale-to-a-fleet/roll-out-changes-in-stages).
+
+**Related:** 📘 [The Security Model](/guides/core-concepts/the-security-model) · 📙 [Secure an Endpoint with TLS and Client Certificates](/guides/manage-your-reader/secure-an-endpoint) · 📕 [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) · 📕 [`get_installed_certificates`](/api-reference/mqtt/mgmt/get-installed-certificates) · 📕 [`delete_certificate`](/api-reference/mqtt/mgmt/delete-certificate) · 📕 [`alerts`](/api-reference/mqtt/events/alerts-event)

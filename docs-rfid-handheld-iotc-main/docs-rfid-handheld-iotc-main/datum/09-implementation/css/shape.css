@@ -1,0 +1,95 @@
+/* -----------------------------------------------------------------------------
+   SPACE AND SHAPE — GENERATED, DO NOT EDIT
+   Layer 1 and 2 of 3: primitives -> roles. (No component layer for this domain —
+   05-components/button/button.css consumes these roles directly, the way
+   typography.css's roles are consumed directly with no component indirection.)
+
+   Five independent primitive domains: spacing, radius, border width, motion,
+   elevation. Source of truth: 03-tokens/primitives/{spacing,radius,border,motion,
+   elevation}.json, plus 03-tokens/semantic/{spacing,radius,border,motion}.json for
+   the roles. Generator: tools/build_shape.py. Verifier: tools/verify-shape.py.
+
+   PRIMITIVES ARE INTERNAL. Elevation has no roles at all yet — no component has
+   named one. decisions/001-build-design-system.md decision 3 records the same
+   reasoning already applied to component color tokens: a token with no consumer to
+   verify it against is a guess.
+
+   Independent of color and typography: this file references neither, and nothing in
+   primitives.css, semantic.css, components.css or typography.css references this file.
+   ----------------------------------------------------------------------------- */
+
+:root {
+  /* ---------- the 4px spacing grid ---------- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  32px;
+  --space-8:  40px;
+  --space-9:  48px;
+  --space-10: 64px;
+  --space-11: 80px;
+  --space-12: 96px;
+
+  /* ---------- corner radius ---------- */
+  --radius-0:    0px;
+  --radius-4:    4px;
+  --radius-full: 9999px;
+
+  /* ---------- border width ---------- */
+  --border-width-1: 1px;
+  --border-width-2: 2px;
+  --border-width-4: 4px;
+  --border-width-6: 6px;
+
+  /* ---------- duration and easing ---------- */
+  --duration-1:    150ms;
+  --duration-2:    200ms;
+  --duration-3:    300ms;
+  --ease-standard: cubic-bezier(0.42, 0, 0.58, 1);
+
+  /* ---------- shadow (light) + material blur radius (dark) — see elevation.json ---------- */
+  --elevation-1:      0px 0.125rem 0.25rem 0px rgba(0, 0, 0, 0.075);
+  --elevation-2:      0px 5px 10px -5px rgba(0, 0, 0, 0.2);
+  --elevation-3:      0px 1rem 3rem 0px rgba(0, 0, 0, 0.175);
+  --elevation-1-blur: 6px;
+  --elevation-2-blur: 14px;
+  --elevation-3-blur: 26px;
+
+  /* ----------------------------------------------------------------------
+     ROLES — the layer components consume
+     ---------------------------------------------------------------------- */
+
+  /* spacing roles */
+  --space-control-padding-x:    var(--space-4);
+  --space-control-padding-x-sm: var(--space-3);
+  --space-control-padding-y:    var(--space-2);
+  --space-control-padding-y-sm: var(--space-1);
+  --space-control-padding-y-lg: var(--space-3);
+  --space-control-gap:          var(--space-2);
+  --space-container-padding:    var(--space-4);
+  --space-container-gap:        var(--space-3);
+
+  /* radius roles */
+  --radius-control:   var(--radius-full);
+  --radius-container: var(--radius-0);
+  --radius-item:      var(--radius-0);
+  --radius-indicator: var(--radius-4);
+  --radius-pill:      var(--radius-full);
+
+  /* border roles */
+  --border-width-control:           var(--border-width-2);
+  --border-width-focus-ring:        var(--border-width-4);
+  --border-width-focus-ring-offset: var(--border-width-2);
+  --border-width-divider:           var(--border-width-1);
+  --border-width-callout-accent:    var(--border-width-6);
+  --border-width-indicator-bar:     var(--border-width-4);
+
+  /* motion roles */
+  --duration-control: var(--duration-1);
+  --ease-control:     var(--ease-standard);
+  --duration-nav:     var(--duration-2);
+  --duration-layout:  var(--duration-3);
+}

@@ -1,0 +1,418 @@
+/* 404 page | Zebra Handheld RFID Reader IOTC
+ * Styles for src/pages/404.tsx.
+ * Tracks /_meta/governance/site-rulebooks/404-PAGE.md §4 visual design rules and §8 accessibility.
+ */
+
+.notFoundMain {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 1.5rem 5rem;
+  min-height: 60vh;
+}
+
+.container {
+  max-width: 51.25rem; /* was 820px — a content column is a layout dimension, so the rem default applies; 820/16 is 51.25 exactly. */
+  width: 100%;
+}
+
+/* NO PROSE CAP. A 51.25rem column of 16px Inter runs ~95-100 characters, past the
+   50-75 band the 2026-08-16 specification asks for, and this file briefly carried a
+   52ch cap on the text inside it. It was withdrawn with the site-wide one: a `ch` cap
+   holds a constant character count by VARYING the width per rung, which left four
+   unaligned left edges down a page. The column is the measure here. See the decision
+   record at the head of src/css/custom.scss. */
+
+/* §3a Status acknowledgement */
+.statusBlock {
+  margin-bottom: 1.25rem;
+}
+
+.statusCode {
+  /* was 6.5rem, changed 2026-08-16. The numeral itself is decoration (aria-hidden
+     at NotFoundBody.tsx:203) and off the type ladder, but it is half of the ratio
+     404-PAGE.md:60 records as a 2-3x band against the h1, and the h1 moved to 2rem:
+     104/32 = 3.25x is outside the band, 88/32 = 2.75x is inside it. The phone step
+     below is unaffected — 72/32 = 2.25x, already in band. */
+  font-size: 5.5rem;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--ifm-color-emphasis-300);
+  letter-spacing: -0.04em;
+  margin-bottom: 0.5rem;
+  font-feature-settings: 'tnum' 1;
+}
+
+[data-theme='dark'] .statusCode {
+  color: var(--ifm-color-emphasis-400);
+}
+
+/* was 3rem, changed 2026-08-16. The rule that governs this declaration did not
+   move — _meta/governance/site-rulebooks/404-PAGE.md:159, "Same size as standard
+   doc page H1 (don't enlarge or shrink)" — the doc h1 did. The type contract pins
+   H1 at 2rem in :root (custom.scss:135) and re-asserts it over Infima's 3rem
+   framework default (node_modules/infima/dist/css/default/default.css:1077-1078)
+   at custom.scss:490-491, so the three routes the old note recorded at 48px —
+   /guides/get-oriented/choose-your-path/,
+   /guides/diagnose-and-recover/symptoms-and-likely-causes/ and
+   /guides/scale-to-a-fleet/provisioning/provision-a-three-reader-fleet/ — resolve to
+   32px, and this surface follows them down. That figure is read off the cascade,
+   not re-measured in a browser here. Reading the token instead of a second 2rem
+   literal is what stops the two drifting apart again. Precedence is
+   unchanged: zebra-design-system.md §12.20(1) cedes "the h1 size" on this surface
+   to the 404 rulebook, so §4.2(6)'s display-page row RECORDS a value rather than
+   licensing one — and that row and what ships now agree at 2rem. /_meta is not in
+   this checkout, so those citations are carried forward and were not re-read.
+   There is no phone step left to keep in sync: 2rem is the h1 at every width. */
+.title {
+  font-size: var(--ifm-h1-font-size);
+  font-weight: 600; /* Checked against the 2026-08-16 type contract and kept. 404-PAGE.md:159 ties size only, not weight, and the contract puts bold on headings as what it is PRIMARILY for rather than as a mandate — not enough to close OQ-44 in _meta/governance/site-rulebooks/zebra-design-system.md:747, which stays the owner's. */
+  margin: 0 0 0.5rem 0;
+  line-height: var(--zebra-lh-h1); /* was 1.25; 1.2 is the H1 rung (custom.scss:152), and a class here would otherwise out-rank the global `h1` rule at custom.scss:513. */
+  color: var(--ifm-heading-color);
+}
+
+.subtitle {
+  font-size: 1rem; /* was 1.05rem — 16.8px, on no rung. This lede is body copy. */
+  color: var(--ifm-color-emphasis-700);
+  margin: 0;
+  line-height: var(--ifm-line-height-base);
+}
+
+/* §3b Diagnostics strip */
+.diagnostics {
+  margin: 1.5rem 0;
+  padding: 0.85rem 1rem;
+  background-color: var(--ifm-color-emphasis-100);
+  border-radius: var(--radius-container);  /* was 4px — square/pill, aw-style-guide.md 6.1 */
+  /* NO ACCENT BAR — 2026-09-10, owner instruction: "remove the left-side thick border on the
+     diagnostics element." It is also the last one on the site: decision L1 deleted the 3px bar
+     from every admonition in the same pass that gave them stroked icons, on the grounds that a
+     filled panel already says "this is set apart" and the bar only says it twice, louder. This
+     box was swizzled before that pass and kept the old language. The fill and the 12px radius
+     carry it now. */
+}
+
+[data-theme='dark'] .diagnostics {
+  background-color: var(--ifm-color-emphasis-200);
+}
+
+.diagnosticsLine {
+  margin: 0 0 0.3rem 0;
+  /* was 0.92rem — 14.72px, on no rung. The strip is metadata, but each line is a
+     label followed by the URL the reader actually has to read, so it takes the
+     14px floor the rung note at custom.scss:157-161 sets for anything read as a
+     sentence, not the 13px caption step below it. */
+  font-size: var(--zebra-fs-ui);
+  color: var(--ifm-color-emphasis-800);
+}
+
+.diagnosticsLine:last-of-type {
+  margin-bottom: 0.5rem;
+}
+
+.diagnosticsLabel {
+  color: var(--ifm-color-emphasis-700);
+}
+
+.urlCode {
+  font-family: var(--ifm-font-family-monospace);
+  background-color: var(--ifm-color-emphasis-200);
+  padding: 0.12rem 0.4rem;
+  border-radius: var(--radius-container);  /* was 3px — square/pill, aw-style-guide.md 6.1 */
+  /* Absolute, not the 85% --ifm-code-font-size chip ratio: this <code> sits inside
+     a 14px line, so 85% would land it at 11.9px and the old 0.88em at 12.32px —
+     under the 13px floor, on the one string on the page a reader has to read
+     character by character (it is set `word-break: break-all` below for exactly
+     that reason). Pinned to the caption rung, 13px, a shade above the 12.95px the
+     0.88em measured against the old 14.72px parent. */
+  font-size: var(--zebra-fs-caption);
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+[data-theme='dark'] .urlCode {
+  background-color: var(--ifm-color-emphasis-300);
+}
+
+.diagnosticsMeta {
+  /* was 0.78rem — 12.48px, between two rungs. Uppercase and tracked, but it is the
+     page's HTTP metadata rather than a chip or a badge, so it takes the caption
+     rung (13px) and not --zebra-fs-micro (12px), which custom.scss:157-161 reserves
+     for labels that are not read as text. */
+  font-size: var(--zebra-fs-caption);
+  line-height: var(--zebra-lh-caption); /* The caption rung is 13/1.4. Without this the <p> inherited the 1.5 body leading and measured 13/19.5 against the 18.2 every other caption on the site holds (custom.scss:548-551 does the same pairing for breadcrumbs). */
+  /* WAS --ifm-color-emphasis-600, which is #8d949e and measures 2.83:1 on this panel's #F5F6F7 --
+     a real AA failure, confirmed against the painted pixel by
+     .audit/2026-08-22_shadcn/probe-residual-contrast.mjs.
+
+     The emphasis ramp is deliberately NOT mapped onto the Apple palette: it has ten rungs, Apple has
+     four neutrals, and mapping four of ten leaves it non-monotonic while Infima derives borders and
+     hovers by stepping along it. So the ramp still carries Infima's own greys, and reaching into it
+     for TEXT is how a page ends up with a colour the design system never audited.
+
+     --ifm-color-content-secondary is the token for quieter-than-body text and is mapped to
+     --muted-foreground: #6E6E73 light for 4.67:1 here, #9D9DA2 dark. Same intent, measured value. */
+  color: var(--ifm-color-content-secondary);
+  margin: 0;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* §6 Did-you-mean callout */
+.didYouMean {
+  margin: 1.5rem 0;
+  padding: 0.85rem 1rem;
+  background-color: rgba(59, 130, 246, 0.08);
+  border-radius: var(--radius-container);  /* was 4px — square/pill, aw-style-guide.md 6.1 */
+  /* Bar removed with .diagnostics's, and for the same reason — these two boxes sit one above the
+     other on the same page, so keeping an accent on this one alone would read as a mistake rather
+     than as a distinction. The blue fill is what separates it from the grey strip above. */
+  font-size: 1rem;
+}
+
+.didYouMean p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-900);
+}
+
+[data-theme='dark'] .didYouMean {
+  background-color: rgba(96, 165, 250, 0.14);
+}
+
+.suggestionLink {
+  font-weight: 600;
+}
+
+/* §3c / §3d / §3e Generic section blocks */
+.section {
+  margin-top: 2.5rem;
+}
+
+/* Real <h2> elements (NotFoundBody.tsx:242, 254, 325), so they take the H2 rung:
+   1.05rem was 16.8px, a heading the same size as the body under it. 24px against
+   the 32px h1 is exactly the ladder's step. No line-height here — the global `h2`
+   rule at custom.scss:514 already carries --zebra-lh-h2, and there is no class to
+   out-rank it. Weight stays 600 to match .title above; the same OQ-44 note applies
+   and a 700 here would leave the section headings heavier than the page title. */
+.sectionTitle {
+  font-size: var(--ifm-h2-font-size);
+  font-weight: 600;
+  margin: 0 0 0.85rem 0;
+  color: var(--ifm-heading-color);
+}
+
+.reasonList {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin: 0;
+  color: var(--ifm-color-emphasis-800);
+  line-height: var(--ifm-line-height-base); /* was 1.7; body leading is 1.5, and a looser list has no recorded exception. */
+}
+
+.reasonList li {
+  margin-bottom: 0.25rem;
+}
+
+/* §3d Search */
+.searchForm {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 0.65rem 0.85rem;
+  font-size: 1rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--radius-control);  /* was 4px — square/pill, aw-style-guide.md 6.1 */
+  background-color: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+  font-family: var(--ifm-font-family-base);
+}
+
+/* Focus recipe: the same 2px ring at 2px offset the shared chrome rule ships in
+   custom.scss, reading the same --focus-ring-color token. This route is one of two
+   the visual gate never sweeps, so it had drifted to an unqualified focus selector
+   at 1px offset — a ring that touched the field's own border and fired on mouse
+   clicks too. Worded without the literal selector so the drift check that counts
+   unqualified focus selectors in this file is not defeated by its own comment. */
+.searchInput:focus-visible {
+  outline: 2px solid var(--focus-ring-color, var(--ifm-color-primary));
+  outline-offset: 2px;
+  border-color: var(--ifm-color-primary);
+}
+
+[data-theme='dark'] .searchInput {
+  background-color: var(--ifm-color-emphasis-100);
+  border-color: var(--ifm-color-emphasis-400);
+}
+
+.searchButton {
+  padding: 0.65rem 1.4rem;
+  /* The UI rung, was 1rem. The exception that lifts .searchInput to 1rem is the
+     iOS Safari focus-zoom floor, and that reaches text-entry controls only —
+     nobody types into a button — so this one has no licence to leave the ladder's
+     button row and follows its twin .actionButton on /report-broken-link/. The
+     old note here argued the button should match the field because two sizes in
+     one row read as a mistake; that is a preference, not a ruling, and it is
+     reported for the owner rather than self-authorised in this comment. */
+  font-size: var(--zebra-fs-ui);
+  border: 1px solid var(--ifm-color-primary);
+  background-color: var(--ifm-color-primary);
+  /* Was the keyword `white`, which carries no theme mapping and which the hex
+     census cannot see. On the dark brand fill (#6CB4EE) it measured 2.234:1 —
+     this is 14px/500 text, and WCAG's large-text allowance starts at 24px (or
+     18.66px bold), so the floor is 4.5:1, not the 3:1 the design system's
+     register scored the same pair against for a graphical mark. The ratios below
+     are size-independent and did not move when the rung did.
+     --ifm-font-color-base-inverse resolves through --ifm-color-content-inverse
+     to --ifm-color-emphasis-0, which Infima re-declares per theme: #ffffff on
+     the light brand, #000000 on the light-blue dark brand. One declaration,
+     both themes, no [data-theme='dark'] rule — the token carries the theme
+     (design system §10.1(2)). Measured: light 8.466 rest / 10.053 hover,
+     UNCHANGED (the token resolves to the same #ffffff the keyword did);
+     dark 2.234 -> 9.401 rest and 2.568 -> 8.178 hover. Only `color` moves, so
+     hover keeps the fill channel and focus keeps the ring channel (§8.1(1)).
+     404-PAGE.md:272; zebra-design-system.md §11.1(1). */
+  color: var(--ifm-font-color-base-inverse);
+  border-radius: var(--radius-control);  /* was 4px — square/pill, aw-style-guide.md 6.1 */
+  cursor: pointer;
+  font-weight: 500;
+  font-family: var(--ifm-font-family-base);
+  white-space: nowrap;
+}
+
+.searchButton:hover {
+  background-color: var(--ifm-color-primary-dark);
+  border-color: var(--ifm-color-primary-dark);
+}
+
+.searchButton:focus-visible {
+  outline: 2px solid var(--focus-ring-color, var(--ifm-color-primary));
+  outline-offset: 2px;
+}
+
+/* §3d no-JS notice. Replaces .searchHint, which styled the "use the search box
+   in the navigation bar above" sentence — that sentence is gone (it pointed at a
+   control the reader cannot see from here, and both search entry points survive
+   without it), so its rule went with it rather than being left orphaned.
+
+   Painted only when scripting is disabled (the <noscript> in NotFoundBody hides
+   .searchForm and renders this instead), which makes it the ONLY explanation
+   such a reader gets — so it takes the base font colour rather than a muted one,
+   and cannot be the next contrast finding. */
+.noJsNotice {
+  margin: 0.55rem 0 0 0;
+  font-size: 1rem; /* was 0.95rem — 15.2px, on no rung. By the paragraph above it is the only explanation this reader gets, so it is body prose at the body rung, not caption. */
+  color: var(--ifm-font-color-base);
+}
+
+/* §3e Curated recovery jumps */
+.jumpsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.jumpItem {
+  margin-bottom: 0.35rem;
+}
+
+.jumpLink {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius-container);  /* was 4px — square/pill, aw-style-guide.md 6.1 */
+  text-decoration: none;
+  color: inherit;
+  transition: background-color var(--motion-base) ease;
+}
+
+.jumpLink:hover {
+  background-color: var(--ifm-color-emphasis-100);
+  text-decoration: none;
+}
+
+[data-theme='dark'] .jumpLink:hover {
+  background-color: var(--ifm-color-emphasis-200);
+}
+
+.jumpLink:focus-visible {
+  outline: 2px solid var(--focus-ring-color, var(--ifm-color-primary));
+  outline-offset: 2px;
+}
+
+/* Replaced the `content: '▸'` pseudo-element on 2026-09-10 — see NotFoundBody.tsx for why. The
+   `font-size`/`line-height` pair that used to sit here existed only to seat a TEXT glyph on the
+   label's baseline; an <svg> has no baseline to fight, so the seating is a plain `margin-top`
+   of (24px label line box − 16px glyph) / 2 = 4px, stated in rem.
+   `align-self`, because `.jumpLink` is `align-items: baseline` and an <svg>'s baseline is its
+   BOTTOM EDGE — the row would otherwise hang the glyph a full descender below the label.
+   Opting this one item out is the correct scope: the label and description still share the
+   baseline that rule exists for. */
+.jumpIcon {
+  color: var(--ifm-link-color);
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+/* The CTA mark at the end of "Report broken link". `vertical-align` and not a margin-block: the
+   chevron's own side bearing already leaves ~2px inside its box, so a margin would read as a
+   gap. 0.1em nudges it onto the sentence's optical centre and scales with the type. */
+.reportIcon {
+  flex-shrink: 0;
+  vertical-align: -0.18em;
+  margin-inline-start: 0.1em;
+}
+
+.jumpLabel {
+  font-weight: 600;
+  color: var(--ifm-link-color);
+}
+
+.jumpDescription {
+  color: var(--ifm-color-emphasis-700);
+  font-size: var(--zebra-fs-ui); /* was 0.95rem — 15.2px, on no rung. Secondary to the 16px/600 label beside it, but still a sentence ("Read your first tag in 30 minutes"), so it stops at the 14px floor rather than the caption rung. */
+}
+
+/* §3f Report broken link */
+.reportSection {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+  font-size: var(--zebra-fs-ui); /* was 0.95rem — 15.2px, on no rung. A footnote by position, but a full sentence carrying the page's last recovery link, so it takes the 14px floor and not the 13px footnote rung. */
+  color: var(--ifm-color-emphasis-700);
+}
+
+.reportSection p {
+  margin: 0;
+}
+
+.reportLink {
+  font-weight: 500;
+}
+
+/* Phone. $bp-phone-max, _meta/governance/site-rulebooks/zebra-design-system.md §5.3(2) */
+@media (max-width: 576px) { /* Layout folds plus the one numeral step, as of 2026-08-16. The h1 and subtitle overrides that used to live here are gone: the doc h1 is a flat 2rem at every width, so Infima's <=576px rule (node_modules/infima/dist/css/default/default.css:2989-2991, which sets --ifm-h1-font-size: 2rem) restates the desktop value and there is no step left for this surface to mirror — .title and .subtitle would have re-declared what the cascade already gives them. The old note's coupling argument is spent too: both sides of 404-PAGE.md:60's 2-3x band are now in band on their own, 88/32 = 2.75x from 577px up and 72/32 = 2.25x below. The breakpoint does NOT move; it stays where §5.3(4)(b)'s recorded "Decision: fold" put the 404 half, and it still earns its place on five rules: the padding, the 4.5rem numeral, the search-form stack, the jump-row stack and the hidden glyph. The numeral is the one font-size left in the block, and it is not a ladder value — .statusCode is aria-hidden decoration whose only constraint is the 2-3x band above. /report-broken-link/ folds at 600px, which this file cannot reconcile alone. */
+  .notFoundMain {
+    padding: 1.5rem 1rem 3rem;
+  }
+  .statusCode {
+    font-size: 4.5rem;
+  }
+  .searchForm {
+    flex-direction: column;
+  }
+  .jumpLink {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    padding-left: 0.4rem;
+  }
+  .jumpIcon {
+    display: none;
+  }
+}

@@ -1,0 +1,96 @@
+---
+id: start-and-stop-inventory
+title: "Start and Stop Inventory"
+sidebar_label: "Start and Stop Inventory"
+sidebar_position: 1
+description: "Start and stop an RFID inventory with control_operation, read the reply codes, let the reader stop itself on its stop conditions, and stop the inventory before changing the operating mode or restarting."
+sidebar_custom_props: { emoji: "⏯️", card: "Start and stop an inventory with control_operation, and read the replies." }
+doc_type: how-to
+page_meta:
+  - "Audience: All"
+  - "Time: 5 min"
+  - "Ties to: [Control](/api-reference/mqtt/control/)"
+---
+
+An inventory starts and stops with [`control_operation`](/api-reference/mqtt/ctrl/control-operation). What the radio does while it runs, and when it stops on its own, is set beforehand with [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode).
+
+## Before You Begin {#before-you-begin}
+
+- An active data endpoint exists, or tag data is routed to a shared endpoint. Without one, an inventory runs and no tag data arrives. See [Where Tag Data Is Published](/guides/core-concepts/the-tag-data-stream#topic-routing).
+- Your application is subscribed to the tag-data topic and to the response topic of the endpoint you send commands on.
+- The operating mode is set. The reader refuses `set_operating_mode` with code `11` while an inventory runs, so configure first. See [Choose a Performance Profile](/guides/read-tags-and-barcodes/choose-a-performance-profile).
+
+## Start an Inventory {#start}
+
+1. Publish `control_operation` with `controlType: "RFID"` and `operation: "START"`:
+
+   ```json title="control_operation — request (contract example: Start inventory)"
+   {
+     "command": "control_operation",
+     "requestId": "abcd1432",
+     "ctrlOprPayload": {
+       "controlType": "RFID",
+       "operation": "START"
+     }
+   }
+   ```
+
+2. Check the reply. Success is code `0`, or no code with the description `Success`:
+
+   ```json title="control_operation — response (contract example: Control operation success)"
+   {
+     "command": "control_operation",
+     "requestId": "abc123",
+     "apiVersion": "V1.1",
+     "response": {
+       "code": 0,
+       "description": "Success"
+     }
+   }
+   ```
+
+   Code `11`, `Inventory in progress`, means an inventory was already running and your `START` changed nothing.
+
+3. Watch the tag-data topic for [`dataEVT`](/api-reference/mqtt/data/tag-data-event).
+
+When the operating mode has no `radioStartConditions`, the radio begins the inventory as soon as it receives `START`. With start conditions, see [Configure Trigger and Stop Conditions](/guides/read-tags-and-barcodes/configure-trigger-and-stop-conditions).
+
+## Stop an Inventory {#stop}
+
+1. Publish `control_operation` with `operation: "STOP"`:
+
+   ```json title="control_operation — request (contract example: Stop inventory)"
+   {
+     "command": "control_operation",
+     "requestId": "abcd1432",
+     "ctrlOprPayload": {
+       "controlType": "RFID",
+       "operation": "STOP"
+     }
+   }
+   ```
+
+2. Check the reply. Code `12`, `No Radio Operation in Progress`, means the radio was already idle; no action is needed.
+
+When the operating mode has no `radioStopConditions`, the inventory runs until it receives `STOP`. Stop conditions can end it without a `STOP`: a trigger action, a number of unique tags (`tagCount`), a time in milliseconds (`stopTimeout`) or a number of inventory cycles (`inventoryCount`). The contract does not say which condition wins when several are set, or what `0` means for the three counters, so test the combination you use.
+
+## Stop Before You Reconfigure or Restart {#stop-first}
+
+Two commands are refused while an inventory runs:
+
+| Command | Refusal |
+|---|---|
+| [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) | Code `11`, `Inventory in progress` |
+| [`reboot`](/api-reference/mqtt/mgmt/reboot) | Code `5`, `Can't reboot device, inventory in progress` |
+
+Send `STOP`, then confirm with [`get_status`](/api-reference/mqtt/mgmt/get-status) that `deviceStatus.radioActivity` is `INACTIVE` before you send either command.
+
+## Handle Repeats {#repeats}
+
+`control_operation` is not safe to send twice while the first is in effect. The reader executes every copy it receives: a repeated `START` returns code `11`, and a repeated `STOP` returns code `12`. Both mean that the radio is already in the state you asked for. See [Retry Commands Safely](/guides/build-your-integration/retry-commands-safely).
+
+## Barcodes {#barcodes}
+
+`controlType: "SCANNER"` starts and stops a barcode scan in the same way, on a reader with a barcode imager. See [Scan Barcodes](/guides/read-tags-and-barcodes/scan-barcodes).
+
+**Related:** 📕 [`control_operation`](/api-reference/mqtt/ctrl/control-operation) · 📙 [Configure Trigger and Stop Conditions](/guides/read-tags-and-barcodes/configure-trigger-and-stop-conditions) · 📘 [The Tag Data Stream](/guides/core-concepts/the-tag-data-stream) · 📙 [Consume Tag Data](/guides/build-your-integration/consume-tag-data) · 📕 [Response Codes](/api-reference/mqtt/response-codes)

@@ -1,0 +1,75 @@
+---
+id: endpoints-topics-and-channels
+title: "Endpoints, Topics, and Channels"
+sidebar_label: "Endpoints, Topics, and Channels"
+sidebar_position: 3
+description: "What an MQTT endpoint is on an RFD40 or RFD90 reader, the six endpoint types, how the reader builds each topic, and why the position of a publish topic decides what the reader sends on it."
+sidebar_custom_props: { emoji: "🚰", card: "Endpoint types, how topics are built, and the publish-topic slots." }
+doc_type: explanation
+page_meta:
+  - "Audience: Integrators, solution architects"
+  - "Read time: 6 min"
+  - "Ties to: [Endpoint Configuration](/api-reference/mqtt/management/mqtt-endpoint-configuration/)"
+---
+
+An **MQTT endpoint** is a named connection configuration stored on the reader: which broker to reach, how to secure the connection, which topics to use, and which class of traffic to carry. This page explains the endpoint types, how the reader builds a topic, and the one rule about publish topics that decides where each message goes.
+
+## Endpoint Types {#endpoint-types}
+
+Each endpoint has an `epType`:
+
+| `epType` | Carries |
+|---|---|
+| `MGMT` | Device-management commands, replies and events |
+| `MGMT_EVT` | Management events, on a separate endpoint |
+| `CTRL` | RFID control commands and replies |
+| `DATA1` | Tag and barcode data |
+| `DATA2` | A second tag-data channel. Currently not supported |
+| `MDM` | A mobile-device-management form of the management endpoint |
+
+Each active endpoint opens its own MQTT session to the broker in its configuration. Tag data goes to a `DATA1` endpoint; `DATA2` is currently not supported.
+
+You create and change endpoints with [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) and read them back with [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config). An endpoint name is at most 15 characters, and adding an endpoint whose name already exists returns code `10`. See [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints).
+
+## How a Topic Is Built {#topic-format}
+
+Every topic has three segments:
+
+```text
+<tenantId> / <middle segment> / <deviceSerialNumber>
+```
+
+- **`tenantId`** is set once per endpoint, in its configuration, and is at most 48 characters.
+- **The middle segment** is what you write in each entry of the endpoint's `publishTopics` and `subscribeTopics`.
+- **`deviceSerialNumber`** is appended by the reader.
+
+With tenant `acme`, middle segment `MGMT/clients/resp` and serial `RFD40-211545201D0034`, the reader publishes replies to `acme/MGMT/clients/resp/RFD40-211545201D0034`.
+
+Never write the tenant ID or the serial number into a `topic` value. The reader adds them anyway, and the doubled topic is one nothing subscribes to. The contract calls this the most common configuration mistake with this API. See [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure).
+
+## Publish Topics Are Slots {#publish-topic-slots}
+
+An endpoint has at most one subscribe topic, on which the reader receives commands, and at most three publish topics. The **position** of a publish topic decides what the reader sends on it; the reader never reads the topic text to decide:
+
+| Position | Carries |
+|---|---|
+| `publishTopics[0]` | Command replies |
+| `publishTopics[1]` | Events; on a `DATA1` endpoint, tag data |
+| `publishTopics[2]` | The Last Will and `mqttConnEVT` |
+
+The conventional names `resp`, `event` and `rfid` are only a convention. Two consequences follow:
+
+- **A data endpoint needs two entries.** Tag data goes to `publishTopics[1]`, so a `DATA1` endpoint with a single publish topic accepts the configuration and never streams tag data. Put a filler topic in slot 0.
+- **Order matters.** Swapping two entries re-routes live traffic, and the configuration stays valid.
+
+Two endpoint types differ. On a `CTRL` endpoint, slot 1 is stored but not used for events. A `MGMT_EVT` endpoint currently publishes its events on its subscribe topic instead of slot 1, which the API owners record as a firmware defect. A fourth publish topic is rejected with code `25`, and a second subscribe topic with code `26`.
+
+Each topic entry carries its own `qos` and `retain`, and the contract requires both. The reader's default endpoints use QoS 0 on every topic and retain only the Last Will topic.
+
+## One Endpoint or Several {#one-or-several}
+
+An endpoint can carry commands, replies, events and connection state. Tag data can also be routed to a management or control endpoint, where it arrives on that endpoint's `rfid` topic; the contract calls that the fallback placement and recommends a dedicated `DATA1` endpoint for sustained inventory (`DATA2` is currently not supported), so that tag traffic does not share a topic tree with connection-state events.
+
+Separate endpoints also let each one use its own broker, credentials and TLS settings, and let broker access rules treat each class of traffic separately.
+
+**Related:** 📙 [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints) · 📕 [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) · 📕 [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure) · 📘 [The Security Model](/guides/core-concepts/the-security-model) · 📘 [Commands, Responses, and Events](/guides/core-concepts/commands-responses-and-events)

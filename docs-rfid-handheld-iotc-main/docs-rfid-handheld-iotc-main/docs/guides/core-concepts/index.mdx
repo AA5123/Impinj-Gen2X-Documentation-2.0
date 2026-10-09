@@ -1,0 +1,27 @@
+---
+id: index
+title: "Core Concepts"
+sidebar_label: "Core Concepts"
+sidebar_position: 3
+draft: false
+description: "The mental models the rest of the documentation assumes: the three actors, how the radio reads a tag, MQTT itself, the four endpoint planes, configuration and reader state, the security model, and the interfaces IOTC exposes."
+sidebar_custom_props: { emoji: "🧩", card: "The mental models the rest of the documentation assumes: the three actors." }
+---
+
+
+These pages explain the ideas the rest of the documentation relies on. Read them when a procedure asks you to do something and you want to know why, or before you design an integration.
+
+- **The Communication Model** explains how the reader, the broker and your application exchange messages: MQTT as the IoT Connector uses it, endpoints and topics, the three kinds of message, what delivery guarantees you get, and how the connection is secured.
+- **Reading and Configuring** explains how the radio finds tags, how reads become tag-data messages, and how the reader's configuration is organized.
+
+Each page names the reference pages that hold the exact field definitions. The procedures are in the task sections, starting with [Manage Your Reader](/guides/manage-your-reader).
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

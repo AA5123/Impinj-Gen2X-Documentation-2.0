@@ -1,0 +1,122 @@
+{
+  "size": {
+    "w": 1200,
+    "h": 630
+  },
+  "scale": 2,
+  "template": "C6 Brand block",
+  "sections": [
+    {
+      "key": "home",
+      "routePrefix": "/",
+      "eyebrow": "Zebra Handheld RFID Reader",
+      "title": "IoT Connector",
+      "description": "MQTT API documentation for the RFD40 and RFD90 handheld RFID reader sleds.",
+      "glyph": "home"
+    },
+    {
+      "key": "guides",
+      "routePrefix": "/guides/",
+      "eyebrow": "Documentation",
+      "title": "Guides",
+      "description": "Ten sections, from first tag read to fleet rollout.",
+      "glyph": "book"
+    },
+    {
+      "key": "api-reference",
+      "routePrefix": "/api-reference/",
+      "eyebrow": "Documentation",
+      "title": "API Reference",
+      "description": "Two machine-generated references \u2014 MQTT for handhelds, REST for fixed readers.",
+      "glyph": "code"
+    },
+    {
+      "key": "mqtt",
+      "routePrefix": "/api-reference/mqtt/",
+      "eyebrow": "API Reference",
+      "title": "MQTT API",
+      "description": "Connection and security, protocol, management, control, events and telemetry.",
+      "glyph": "broadcast"
+    },
+    {
+      "key": "rest",
+      "routePrefix": "/api-reference/rest/",
+      "eyebrow": "API Reference",
+      "title": "REST API",
+      "description": "The IoT Connector REST API for FXR60 and FXR90 fixed readers.",
+      "glyph": "globe"
+    },
+    {
+      "key": "resources",
+      "routePrefix": "/resources/",
+      "eyebrow": "Documentation",
+      "title": "Resources",
+      "description": "Glossary, FAQs, quick reference, changelog and support.",
+      "glyph": "layers"
+    },
+    {
+      "key": "glossary",
+      "routePrefix": "/resources/glossary/",
+      "eyebrow": "Resources",
+      "title": "Glossary",
+      "description": "Every IOTC, MQTT and RFID term used across the documentation.",
+      "glyph": "abc"
+    },
+    {
+      "key": "faqs",
+      "routePrefix": "/resources/faqs/",
+      "eyebrow": "Resources",
+      "title": "FAQs",
+      "description": "The questions that come up most, grouped by what you are trying to do.",
+      "glyph": "help"
+    },
+    {
+      "key": "quick-reference",
+      "routePrefix": "/resources/quick-reference/",
+      "eyebrow": "Resources",
+      "title": "Quick Reference",
+      "description": "Lookup cards for the things you check repeatedly.",
+      "glyph": "card"
+    },
+    {
+      "key": "additional-reference",
+      "routePrefix": "/resources/additional-reference/",
+      "eyebrow": "Resources",
+      "title": "Additional Reference",
+      "description": "Hardware and feature matrix, RF regions, tag and EPC standards, tools.",
+      "glyph": "archive"
+    },
+    {
+      "key": "api-changelog",
+      "routePrefix": "/resources/api-changelog/",
+      "eyebrow": "Resources",
+      "title": "API Changelog",
+      "description": "How the IOTC API has changed, and the baseline this site documents.",
+      "glyph": "clock"
+    },
+    {
+      "key": "support",
+      "routePrefix": "/resources/support/",
+      "eyebrow": "Resources",
+      "title": "Support",
+      "description": "Self-serve first, collect the right evidence, then escalate with a case that lands.",
+      "glyph": "life"
+    },
+    {
+      "key": "404",
+      "routePrefix": "/404/",
+      "eyebrow": "Zebra Handheld RFID Reader",
+      "title": "Page not found",
+      "description": "The URL you requested is not part of this documentation.",
+      "glyph": "alert"
+    },
+    {
+      "key": "report-broken-link",
+      "routePrefix": "/report-broken-link/",
+      "eyebrow": "Zebra Handheld RFID Reader",
+      "title": "Report a Broken Link",
+      "description": "Tell us about a broken or stale URL and we will fix it.",
+      "glyph": "link"
+    }
+  ]
+}

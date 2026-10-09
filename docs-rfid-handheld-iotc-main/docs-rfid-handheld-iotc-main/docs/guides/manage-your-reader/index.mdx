@@ -1,0 +1,31 @@
+---
+id: index
+title: "Manage Your Reader"
+sidebar_label: "Manage Your Reader"
+sidebar_position: 4
+draft: false
+description: "Configure one reader end to end — how configuration works, network, MQTT endpoints, security and certificates, regional RF, host pairing, and firmware and system operations."
+sidebar_custom_props: { emoji: "🎛️", card: "Configure one reader end to end — how configuration works, network." }
+---
+
+
+These pages cover one reader at a time: getting it onto the network and the broker, checking what it is, configuring its connections, securing them, and keeping its firmware current. To do the same across many readers, see [Scale to a Fleet](/guides/scale-to-a-fleet).
+
+A reader's first connection is made outside MQTT, with 123RFID Desktop over USB-C. After that, everything on these pages is done with MQTT commands sent to the reader's management endpoint:
+
+1. [Bootstrap a Reader with 123RFID Desktop](/guides/manage-your-reader/bootstrap-reader) gives the reader its region, Wi-Fi and first MQTT endpoint.
+2. [Inspect Reader Identity and Status](/guides/manage-your-reader/inspect-reader-identity-and-status) confirms which reader you reached and what state it is in.
+3. [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints) and [Configure Wi-Fi](/guides/manage-your-reader/configure-wi-fi) shape its connections.
+4. [Secure an Endpoint with TLS and Client Certificates](/guides/manage-your-reader/secure-an-endpoint) moves its traffic to TLS.
+
+How configuration behaves across these domains is explained in [The Configuration Model](/guides/core-concepts/the-configuration-model).
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

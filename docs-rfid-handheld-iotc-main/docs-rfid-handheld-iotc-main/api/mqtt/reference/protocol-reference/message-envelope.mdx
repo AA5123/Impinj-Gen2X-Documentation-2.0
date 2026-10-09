@@ -1,0 +1,297 @@
+---
+id: message-envelope
+title: "Message Envelopes and Correlation"
+sidebar_label: "Message Envelopes and Correlation"
+sidebar_position: 5
+description: "What every MQTT API message contains: the command envelope and each command's payload key, the response envelope and each command's result key, and the root shape that identifies each event."
+sidebar_custom_props: { emoji: "📜", card: "Command, response, and event shapes, and how to tell events apart." }
+doc_type: reference
+page_meta:
+  - "Audience: API consumer"
+  - "Use: build a command, locate the result in a reply, and recognize an event from its root shape"
+---
+
+
+Every MQTT API message is a JSON object with the content type `application/json`. Commands and responses share an envelope. Events don't: each event has its own root shape and carries no `requestId`.
+
+## Commands {#command-envelope}
+
+A command is a JSON object with these top-level members:
+
+| Member | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `command` | string | Yes | The command name, for example [`get_status`](/api-reference/mqtt/mgmt/get-status) |
+| `requestId` | string, 1 to 64 characters | Yes | An identifier you choose. The reader returns it unchanged in the reply. |
+| The command's payload key | object | Required where the command defines one | The command's parameters. See [Command Payload Keys](#command-payload-keys). |
+
+A command carries no `apiVersion`. The command, response, and event envelopes are defined in [Common Objects](/api-reference/mqtt/schemas/common-objects#envelopes).
+
+```json title="control_operation request (contract example: Stop inventory)"
+{
+  "command": "control_operation",
+  "requestId": "abcd1432",
+  "ctrlOprPayload": {
+    "controlType": "RFID",
+    "operation": "STOP"
+  }
+}
+```
+
+### Command Payload Keys {#command-payload-keys}
+
+| Command | Payload key | Required |
+| --- | --- | --- |
+| [`get_version`](/api-reference/mqtt/mgmt/get-version), [`get_status`](/api-reference/mqtt/mgmt/get-status), [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region), [`get_eth`](/api-reference/mqtt/mgmt/get-eth), [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi), [`get_installed_certificates`](/api-reference/mqtt/mgmt/get-installed-certificates), [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter), [`reboot`](/api-reference/mqtt/mgmt/reboot) | None | — |
+| [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) | `endpointDetails` | No |
+| [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi) | `wifiConfig` | Yes |
+| [`delete_wifi_profile`](/api-reference/mqtt/mgmt/delete-wifi-profile) | `wifiProfileInfo` | Yes |
+| [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) | `epConfig` | Yes |
+| [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) | `certDetails` | Yes |
+| [`delete_certificate`](/api-reference/mqtt/mgmt/delete-certificate) | `certificateInfo` | Yes |
+| [`config_events`](/api-reference/mqtt/mgmt/config-events) | `eventConfiguration` | Yes |
+| [`set_os`](/api-reference/mqtt/mgmt/set-os) | `OSUpdateDetails` | Yes |
+| [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) | `operatingMode` | Yes |
+| [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter) | `postFilterPayload` | Yes |
+| [`control_operation`](/api-reference/mqtt/ctrl/control-operation) | `ctrlOprPayload` | Yes |
+
+### `operation` Values {#operation-values}
+
+Four commands take an `operation` member. Each uses its own set of values, with its own casing. Send them exactly as listed.
+
+| Command | Member | Values |
+| --- | --- | --- |
+| [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) | `epConfig.operation` | `add`, `delete`, `update` |
+| [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi) | `wifiConfig.operation` | `CREATE`, `MODIFY` |
+| [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter) | `postFilterPayload.operation` | `ADD`, `DELETE`, `MODIFY` |
+| [`control_operation`](/api-reference/mqtt/ctrl/control-operation) | `ctrlOprPayload.operation` | `START`, `STOP` |
+
+### What Happens to a Malformed Command {#malformed-commands}
+
+| Condition | What the sources state |
+| --- | --- |
+| The `command` value is not a recognized command name | The reader drops the message without replying and without a response code. |
+| The payload fails a command's validation | Some commands return [code `2`](/api-reference/mqtt/response-codes#code-2) or `23`; see [Codes by Command](/api-reference/mqtt/response-codes#codes-by-command). |
+| A top-level member that the command does not define | The contract does not close its messages, so a schema validator accepts it. What the reader does with it is not specified in the available sources. |
+| More commands than the reader can queue | The reader's command queue holds 10 commands. Commands beyond that are not queued and can be lost. |
+| A command larger than the reader accepts | Firmware reports a limit of 16,384 bytes on the command topic, not yet confirmed. The reader drops an oversized message and keeps the connection open. |
+
+## Responses {#response-envelope-summary}
+
+The reader answers each command it carries out with one response on the endpoint's response topic. A response contains:
+
+| Member | Type | Meaning |
+| --- | --- | --- |
+| `command` | string | The command being answered |
+| `requestId` | string | The `requestId` from the request |
+| `apiVersion` | string | The version reported by the command handler. Optional only on [`delete_wifi_profile`](/api-reference/mqtt/mgmt/delete-wifi-profile). |
+| `response` | object | `code` and `description`: the outcome of the command |
+| The command's result key | object | The data the command returns, for commands that return data |
+
+How to pair a response with its request and decide the outcome is specified in [Correlation and Request/Response Pairing](/api-reference/mqtt/protocol-reference/message-envelope#correlation-and-request-response-pairing).
+
+### Result Keys {#result-keys}
+
+| Command | Result key |
+| --- | --- |
+| [`get_version`](/api-reference/mqtt/mgmt/get-version) | `readerVersion` |
+| [`get_status`](/api-reference/mqtt/mgmt/get-status) | `deviceStatus` |
+| [`get_current_region`](/api-reference/mqtt/mgmt/get-current-region) | `currentRegion` |
+| [`get_eth`](/api-reference/mqtt/mgmt/get-eth) | `ethConfig` |
+| [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi) | `wifiProfiles`; with Wi-Fi disabled, a top-level `wifiConfig` |
+| [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) | `endpointResponse` |
+| [`get_installed_certificates`](/api-reference/mqtt/mgmt/get-installed-certificates) | `installedCerts` |
+| [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode) | `operatingMode` |
+| [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter) | `postFilterPayload` |
+| All other commands | None: the `response` object is the whole result |
+
+## Events {#events}
+
+Events have no shared envelope and no member that names the event. Recognize each event by the members it requires, and by the topic it arrives on.
+
+| Event | Identified by | Required members | Body | Topic slot |
+| --- | --- | --- | --- | --- |
+| [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) | `"eventName": "heartbeat"` | `timestamp`, `eventName`, `eventNumber` | `data` | [`publishTopics[1]`](/api-reference/mqtt/protocol-reference/endpoints-and-topic-slots) |
+| [`alerts`](/api-reference/mqtt/events/alerts-event) | `state`, `id`, and `priority` | `timestamp`, `type`, `state`, `id`, `priority` | `alertDetails` | `publishTopics[1]` |
+| [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) | `connectionState` | `connectionState`, `deviceModel`, `deviceSerialNo`, `apiVersion`, `mqttVersion` | None; all members are at the root | `publishTopics[2]` |
+| [`dataEVT`](/api-reference/mqtt/data/tag-data-event) | `data` containing `tagData` or `barcodeData`, and no `eventName` | `timestamp` | `data` | `publishTopics[1]` on a data endpoint. When inventory output goes to a management or control endpoint, its `rfid` topic; the slot is not specified in the available sources. |
+
+Two members need care:
+
+- **`type` has two meanings.** On `alerts`, it is the alert category. On `dataEVT`, it is the [operating-mode](/api-reference/mqtt/ctrl/set-operating-mode) profile that was active. Don't dispatch on `type` alone.
+- **`timestamp` is not required on `mqttConnEVT`.** The `DISCONNECTED` form is the [Last Will](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#retention-and-last-will), registered with the broker before the disconnect happens, so it carries no timestamp. `heartBeatEVT`, `alerts`, and `dataEVT` require one.
+
+### Dispatching Events {#dispatching-events}
+
+This order of checks is consistent with the required members above. It is a recommendation, not a rule the contract states:
+
+1. If `connectionState` is present, the message is [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event).
+2. If `eventName` is `"heartbeat"`, it is [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event).
+3. If `state`, `id`, and `priority` are present, it is [`alerts`](/api-reference/mqtt/events/alerts-event).
+4. If `data` is present, it is [`dataEVT`](/api-reference/mqtt/data/tag-data-event).
+
+Treat any other message as unrecognized, and log it.
+
+### Event Size {#event-size}
+
+A [`dataEVT`](/api-reference/mqtt/data/tag-data-event) message is limited to 6,144 bytes. Firmware reports 10,240 bytes as the largest message the reader publishes, not yet confirmed. The reader drops an oversized message instead of reporting an error.
+
+**Related:** 📕 [Correlation and Request/Response Pairing](/api-reference/mqtt/protocol-reference/message-envelope#correlation-and-request-response-pairing) · 📕 [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure) · 📕 [Common Objects](/api-reference/mqtt/schemas/common-objects) · 📕 [Response Codes](/api-reference/mqtt/response-codes)
+
+## Correlation and Request/Response Pairing {#correlation-and-request-response-pairing}
+
+Commands and their replies travel on a shared pair of topics, and MQTT itself does not pair them. The `requestId` in the JSON payload is the only thing that links a reply to its request.
+
+A command and its reply each make two hops through the broker, and only the `requestId` pairs them:
+
+```d2
+vars: {d2-config: {pad: 8}}
+shape: sequence_diagram
+app: "Your\napplication"
+broker: Broker
+reader: Reader
+app -> broker: "1. SUBSCRIBE to the response topic"
+app -> broker: "2. get_version, requestId abc123"
+broker -> reader: "3. get_version"
+reader -> broker: "4. Reply, requestId abc123, code 0"
+broker -> app: "5. Reply"
+```
+
+### Response Envelope {#response-envelope}
+
+```json title="get_status response (contract example: Device status info)"
+{
+  "command": "get_status",
+  "requestId": "abcd123",
+  "apiVersion": "V1.21",
+  "deviceStatus": {
+    "powerSource": "USB",
+    "radioActivity": "INACTIVE",
+    "radioConnection": "DISCONNECTED",
+    "systemTime": "2026-06-15T09:26:00.443Z",
+    "ntp": {
+      "offset": 0,
+      "reach": 0
+    },
+    "terminalConnection": {
+      "status": "CONNECTED",
+      "type": "USB"
+    },
+    "batteryStatus": {
+      "mfgDate": "22DEC2024",
+      "cycleCount": 8,
+      "fullChargeCapacity": 5739,
+      "temperature": 24,
+      "designCapacity": 6400,
+      "batteryType": "LI-ION",
+      "capacity": 2467,
+      "stateOfHealth": "GOOD",
+      "chargePercentage": 46,
+      "chargeStatus": 1
+    }
+  },
+  "response": {
+    "code": 0,
+    "description": "Success"
+  }
+}
+```
+
+| Member | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `command` | string | Yes | The command being answered, copied from the request |
+| `requestId` | string, 1 to 64 characters | Yes | The request's `requestId`, copied unchanged |
+| `apiVersion` | string: `V1.0`, `V1.1`, `V1.2`, `V1.21`, or `V1.22` | Yes, except on [`delete_wifi_profile`](/api-reference/mqtt/mgmt/delete-wifi-profile) | The version reported by the command handler. See [API Version Reporting](#api-version-reporting). |
+| `response.code` | integer | Yes | The outcome. See [Response Codes](/api-reference/mqtt/response-codes). |
+| `response.description` | string, at least 1 character | Yes | Human-readable text. Its wording can change between firmware builds. |
+| Result key | object | No | The data a command returns. See [Result Keys](/api-reference/mqtt/protocol-reference/message-envelope#result-keys). |
+
+### Correlating Responses {#correlating-responses}
+
+1. **Choose a new `requestId` for every request.** It must be 1 to 64 characters. Treat it as opaque: the reader does not parse it.
+2. **Subscribe to the response topic before you publish.** Responses are not retained, so a reply published before your subscription is active is lost.
+3. **Match on `requestId`, and check `command`.** Replies arrive out of order and interleaved with other traffic, including replies to other clients. Ignore replies whose `requestId` you did not send.
+4. **Expect a reply to arrive more than once.** The response channel uses [QoS 1](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#qos), so the broker can deliver the same reply twice. See [Delivery and Retry Semantics](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics).
+
+:::caution[A repeated `requestId` does not prevent a repeat]
+The reader keeps no request history. If the same command reaches it twice, with the same `requestId` or a different one, it carries out both copies. See [Duplicates and Retries](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#idempotency).
+:::
+
+### Deciding the Outcome {#reading-response-code}
+
+Read `response`, and decide in this order:
+
+| Condition | Outcome | What to do |
+| --- | --- | --- |
+| `code` is `0` | Success | Read the result key, if the command has one |
+| `code` is absent and `description` is `"Success"` | Success | As above. See [Success Without a Code](#success-omits-code). |
+| `code` is `1` | Accepted, not finished | Wait for the outcome. See [Asynchronous Commands](#async-accept). |
+| Any other `code` | The command did not succeed | Look up the code in [Response Codes](/api-reference/mqtt/response-codes) |
+
+Don't branch on `description` except to recognize `"Success"` when `code` is absent.
+
+#### Success Without a Code {#success-omits-code}
+
+A successful reply to any command may omit `response.code`, for example `"response": { "description": "Success" }`. The contract requires `code` on every reply, but readers have been reported to omit it on success for [`control_operation`](/api-reference/mqtt/ctrl/control-operation), [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode), [`get_post_filter`](/api-reference/mqtt/ctrl/get-post-filter), and [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter), and the device owners state that it can happen on any command. Error replies always carry a numeric `code`.
+
+The firmware team also states the intent that every reply carry a code. Handle both forms, and don't depend on the code being absent.
+
+### MQTT Acknowledgments and Reader Responses {#mqtt-acknowledgments}
+
+MQTT acknowledgments and reader responses answer different questions. Don't treat one as the other.
+
+| Signal | Sent by | What it tells you |
+| --- | --- | --- |
+| CONNACK | Broker | Whether the broker accepted your client's connection |
+| SUBACK | Broker | Which QoS the broker granted for your subscription |
+| PUBACK, for a QoS 1 publish | Broker | That the broker received your command. It says nothing about the reader. |
+| Reader response | Reader | That the reader received the command, and the outcome in `response` |
+| [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) | Reader, or the broker for the Last Will | That a reader endpoint connected, or lost its session without a clean disconnect |
+
+MQTT 3.1.1 defines return codes for CONNACK and SUBACK. Those codes, and errors raised by your MQTT client library, are separate from the reader's [response codes](/api-reference/mqtt/response-codes).
+
+### Asynchronous Commands {#async-accept}
+
+Most commands finish when they reply. Three reply with [code `1`](/api-reference/mqtt/response-codes#code-1), "Command payload is accepted", which means only that the reader took the request.
+
+| Command | How you learn the outcome |
+| --- | --- |
+| [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate#lifecycle) | An [`alerts`](/api-reference/mqtt/events/alerts-event) event with `id: "FILE_DOWNLOAD"`. Read `alertDetails.downloadInfo.status`: `DOWNLOAD SUCCESS`, then `SAVE SUCCESS`. |
+| [`set_os`](/api-reference/mqtt/mgmt/set-os#lifecycle) | An `alerts` event with `id: "FIRMWARE_UPDATE"`. Success is `alertDetails.fwUpdateStatus.updateStatus` equal to `FW update success`. Other `updateStatus` values are free text: don't parse them. |
+| [`reboot`](/api-reference/mqtt/mgmt/reboot#lifecycle) | No event reports the outcome. The reader replies, then drops its session. |
+
+For `install_certificate` and `set_os`:
+
+1. Subscribe to the endpoint's event topic before you publish the command. Events are not retained, so an outcome published before your subscription is active is lost.
+2. Make sure the matching event category is enabled with [`config_events`](/api-reference/mqtt/mgmt/config-events): `fileDownload` for `install_certificate`, and `firmwareUpdate` for `set_os`.
+3. Choose your own deadline. No timeout is specified.
+
+For `reboot`, the next `CONNECTED` [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) shows that a new session was established. On its own, it does not prove that a restart happened, because a network reconnect produces the same message. The `upTime` text in [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) shows a restart to a person reading it; it is not machine-readable.
+
+### Timeouts {#timeouts}
+
+No timeout is specified for any command. Reply time depends on network and reader conditions, so set a deadline that suits your application. If the deadline passes, don't assume the command failed: read the reader's state before you send a state-changing command again.
+
+### Known Device Deviations {#device-deviations}
+
+These are the places where readers are known to send a different form. Handle them as shown.
+
+| Case | What to expect | How to handle it |
+| --- | --- | --- |
+| Success reply without `code` | `"response": { "description": "Success" }` | See [Success Without a Code](#success-omits-code) |
+| `apiVersion` and `mqttVersion` on `mqttConnEVT` | Numbers, such as `1.21` and `3.0999999`, where command replies use strings such as `V1.21`. | Accept a number or a string. Don't compare `3.0999999` with `3.1` for equality. |
+| `fwUpdateStatus.updateStatus` on [`alerts`](/api-reference/mqtt/events/alerts-event) | Free text during a firmware update | Test only for `FW update success` |
+| Connection status in network-interface replies | `Connected` and `Disconnected` on the Ethernet `linkStatus.status`; `CONNECTED` and `DISCONNECTED` on every other status member | Compare case-insensitively |
+| `apiVersion` on [`delete_wifi_profile`](/api-reference/mqtt/mgmt/delete-wifi-profile) | Absent on success; the contract does not declare it for this reply | Treat `apiVersion` as optional on every reply |
+| Events on a [`MGMT_EVT`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) endpoint | Published on the endpoint's subscribe topic | See [Topic Slots](/api-reference/mqtt/protocol-reference/topic-structure#topic-slots) |
+
+### API Version Reporting {#api-version-reporting}
+
+`apiVersion` is reported by each command handler, not once for the reader. Two commands on the same firmware can report different values. The contract declares one set of values for all commands and does not say which command reports which value.
+
+- **Don't use `apiVersion` for feature detection,** and don't compare two values to decide which is newer.
+- **Log it** with the `requestId` when you report an issue.
+- **To identify the IoT Connector version,** read `readerVersion.detailedVersions.iotcVersion` from [`get_version`](/api-reference/mqtt/mgmt/get-version).
+
+See [API Version Support](/api-reference/mqtt/versioning-and-deprecation-policy#api-version-support).
+
+**Related:** 📕 [Message Envelopes and Correlation](/api-reference/mqtt/protocol-reference/message-envelope) · 📕 [Response Codes](/api-reference/mqtt/response-codes) · 📕 [Delivery and Retry Semantics](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics) · 📙 [Send Commands and Handle Responses](/guides/build-your-integration/send-commands-and-handle-responses)

@@ -1,0 +1,61 @@
+---
+id: endpoints-and-topic-slots
+title: "Endpoints and Topic Slots"
+sidebar_label: "Endpoints and Topic Slots"
+sidebar_position: 4
+draft: false
+description: "The six endpoint types and what each carries, the publish-topic slots and which traffic each position routes, the per-endpoint limits, and the known MGMT_EVT deviation."
+sidebar_custom_props: { emoji: "🧷", card: "Endpoint types, the publish-topic slot table, and per-endpoint limits." }
+doc_type: reference
+page_meta:
+  - "Audience: API consumer"
+  - "Use: look up what each endpoint type carries and which slot routes which traffic"
+---
+
+An endpoint is a named MQTT connection configuration stored on the reader. Its members are documented in [MQTT Endpoints](/api-reference/mqtt/schemas/mqtt-endpoints); it is created with [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) and read with [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config).
+
+## Endpoint Types {#endpoint-types}
+
+| `epType` | Carries | Status |
+| --- | --- | --- |
+| `MGMT` | Device-management commands, replies and events | |
+| `MGMT_EVT` | Management events on a separate endpoint | No published example exercises it; see the deviation below |
+| `CTRL` | RFID control commands and replies | |
+| `DATA1` | Tag and barcode data, on the first data channel | |
+| `DATA2` | Tag and barcode data, on a second data channel | Currently not supported |
+| `MDM` | A mobile-device-management form of the management endpoint | |
+
+## Topic Slots {#topic-slots}
+
+The position of an entry in `mqttParams.publishTopics` decides what the reader publishes on it. The reader never reads the topic text to decide.
+
+| `epType` | `subscribeTopics[0]` | `publishTopics[0]` | `publishTopics[1]` | `publishTopics[2]` |
+| --- | --- | --- | --- | --- |
+| `MGMT`, `MDM` | Required: commands | Required: replies | Recommended: events | Recommended: [Last Will](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics#retention-and-last-will) and [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) |
+| `CTRL` | Required: control commands | Required: control replies | Optional: stored, not used for events | Optional: Last Will and `mqttConnEVT` |
+| `MGMT_EVT` | Required: events are currently published here | Not used | Not used | Optional: Last Will |
+| `DATA1` | Not used | Not used for tag data | **Required: tag data** | Optional: Last Will |
+
+- A partial array is read from index 0 upward, so a data endpoint needs a filler entry in slot 0 to put its tag-data topic in slot 1. With one entry, the endpoint is accepted and streams nothing.
+- Swapping two entries re-routes live traffic, and the configuration stays valid.
+- A slot marked "not used" may still be sent and is stored.
+- [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) reads the slots back in the same order. A read-back with fewer than three entries does not say which slots are unused, so re-send the full array when you change one entry.
+
+### Deviation: `MGMT_EVT` {#mgmt-evt-deviation}
+
+A `MGMT_EVT` endpoint currently publishes its events on its subscribe topic instead of `publishTopics[1]`. The API owners record this as a firmware defect to be corrected. Confirm the behavior on your firmware before you build against it.
+
+## Limits {#limits}
+
+| Limit | Value | Code when exceeded |
+| --- | --- | --- |
+| Publish topics per endpoint | 3 | `25` |
+| Subscribe topics per endpoint | 1 | `26` |
+| `endpointName` length | 15 characters | Not specified |
+| `tenantId` length | 48 characters | `27` |
+| An `add` with a name that exists | — | `10` or `33` |
+| Changing an active endpoint | — | `35` |
+
+Each topic entry has its own `qos` and `retain`, and the contract requires both; see [Delivery and Retry Semantics](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics). Topics are built as described in [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure).
+
+**Related:** 📕 [MQTT Endpoints](/api-reference/mqtt/schemas/mqtt-endpoints) · 📕 [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure) · 📕 [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) · 📘 [Endpoints, Topics, and Channels](/guides/core-concepts/endpoints-topics-and-channels) · 📙 [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints)

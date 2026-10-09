@@ -1,0 +1,259 @@
+/**
+ * Layout for the Scalar API reference route. Everything Scalar itself paints comes from its own
+ * bundle, retuned by src/css/scalar-api-reference.scss; this file only fits it into the Docusaurus
+ * shell and draws the one row of chrome that replaces the docs sidebar here.
+ */
+
+/* THE DOCUMENT SCROLLS, AND THIS ROUTE MUST NOT TRY TO OWN THE SCROLL ITSELF.
+ *
+ * This block used to declare `height: calc(100dvh - var(--ifm-navbar-height))` with `overflow: hidden`
+ * on the belief that Scalar's modern layout is an application shell whose panes scroll internally. It
+ * is not, and the belief cost the reader the page: measured on the live route, `.scalar-app` reports
+ * its full natural height — 42077px for this document — while the clipping ancestor was 804px tall, so
+ * 41273px of reference was cut off with NO scroll container anywhere in the subtree. That is the
+ * reported "each of the pages seem to be stuck, I'm unable to scroll up or down", and it was this
+ * stylesheet's doing rather than the renderer's.
+ *
+ * Scalar's own markup says which model it wants. Its sidebar is
+ *   <aside class="… sticky top-(--refs-header-height) h-(--refs-sidebar-height) …">
+ * i.e. a STICKY sidebar over a SCROLLING DOCUMENT, and the only rule in the whole vendor stylesheet
+ * that makes it fill its container instead is `--full-height: 100% !important` inside `@media print`.
+ * There is no supported fill-the-container mode to opt into. So this route now scrolls exactly the way
+ * every other page on the site scrolls, and the two variables below are how the renderer is told what
+ * sits above it. */
+.wrapper {
+  /* The height of the chrome row below the navbar, DECLARED rather than left to its content, because
+     it is handed to Scalar as an offset and a value that merely looks right shows up as a sidebar
+     overhanging the viewport or an anchored heading landing underneath the band. `.chrome` is pinned
+     to it, so the two cannot drift. */
+  --ziotc-scalar-chrome-height: 2.5rem;
+
+  /* SCALAR'S OWN INTEGRATION POINT FOR A HOST HEADER — the supported way to say "this much fixed site
+     chrome sits above me". Scalar's comments in @scalar/api-reference/dist/style.css call it "The
+     header height" and derive three things from it: `--refs-header-height` (the sidebar's `top`),
+     `--refs-sidebar-height` (`100dvh` minus this, the sidebar's height) and `--refs-viewport-offset`
+     (how far it scrolls an anchored heading down). Verified in the browser rather than assumed:
+     setting it to 100px moved the sidebar's `top` from 0px to 100px and its height from 900px to
+     800px.
+       Both terms are real, permanently visible chrome — the navbar is `position: sticky; top: 0` at
+     `--ifm-navbar-height`, and the band below it is sticky too — so the reference's usable viewport
+     genuinely starts this far down. Anything that changes either one changes this automatically.
+     (The rest of this route's `--scalar-*` values live in src/css/scalar-api-reference.scss; this one
+     is here because it is a fact about the shell, not about the theme.) */
+  --scalar-custom-header-height: calc(var(--ifm-navbar-height) + var(--ziotc-scalar-chrome-height));
+}
+
+/* NOTHING SIZES THE RENDERER, ON PURPOSE. There is deliberately no rule for the element Scalar is
+ * mounted into, nor for the container around it: Scalar establishes its own height, and every rule
+ * this file has ever added there has been a bug — first a `max-width` that capped the whole renderer
+ * at 992px, then the clipping described above. The container keeps only the `ziotc-scalar` class, which
+ * exists to scope the token map and paints nothing. */
+
+/* One row of site chrome: where you are, and the way back to the hand-written REST pages.
+ *
+ * STICKY, for two reasons. It keeps the offset handed to Scalar true — if this row scrolled away the
+ * fixed chrome above the reference would shrink from 100px to the navbar's 60px and the sticky sidebar
+ * would then sit 40px too low for the rest of the page. And it keeps the way back to the docs
+ * reachable from anywhere in a document that is 42000px tall. */
+.chrome {
+  position: sticky;
+  top: var(--ifm-navbar-height);
+  /* Above Scalar's sticky sidebar and its scrolling content, which come later in the DOM and would
+     otherwise paint over this row; far below the navbar's own 200 so navbar menus still overlay it. */
+  z-index: 3;
+  height: var(--ziotc-scalar-chrome-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  /* No vertical padding: the height above is the whole box (border-box), and the items are centred. */
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+  background-color: var(--ifm-background-surface-color);
+  font-size: 0.8125rem;
+}
+
+.back {
+  font-weight: 600;
+  color: var(--ifm-link-color);
+
+  span {
+    margin-right: 0.25rem;
+  }
+}
+
+.scope {
+  color: var(--ifm-color-emphasis-700);
+}
+
+@media (max-width: 996px) {
+  /* The label is a qualifier, not navigation; the back link is what has to survive a narrow
+     viewport. */
+  .scope {
+    display: none;
+  }
+}
+
+/* THE SERVER-RENDERED OPERATION INDEX. Styled lightly and deliberately so: Scalar replaces it within
+ * a second of the renderer loading, so anything elaborate here is work nobody sees. What it does need
+ * is to be legible on its own, because it is also what a crawler and a no-JavaScript reader get. */
+/* IN FLOW, AND IT NO LONGER NEEDS A CONTAINER OF ITS OWN. The index used to be absolutely positioned
+ * over the host, because the host claimed the full height of a clipped box; now that the document
+ * scrolls, the empty host is zero-high until Scalar fills it, so the index simply follows it and
+ * scrolls with the page. React removes it once the renderer is up. It is still a SIBLING of the host
+ * and never a child — see index.tsx for what a non-empty host does to Scalar. */
+/* THE ONLY THING PAINTED BEFORE THE RENDERER ARRIVES — AND ON A NORMAL LOAD, NOTHING IS.
+ *
+ * Two separate complaints produced this rule, and the second is why it is not simply deleted.
+ *
+ * FIRST: it must not flash. The renderer mounted at 477ms on localhost (measured), so a line rendered
+ * at first contentful paint was on screen for about a third of a second and read as a page appearing
+ * and vanishing. It is therefore delayed rather than removed: `opacity: 0` with an animation that does
+ * not begin for 900ms, comfortably past a local mount, so a normal load never shows it at all.
+ *
+ * SECOND: something has to be there when the load is NOT normal. The renderer is a 3.1 MB chunk, so on
+ * a slow connection this is the difference between "it is working on it" and an empty white pane that
+ * looks broken. Deleting the line outright would have traded a flash nobody wants for a blank nobody
+ * can interpret. The delay gives both: invisible when the wait is imperceptible, present when it is not.
+ *
+ * CENTRED IN THE SPACE THE RENDERER IS ABOUT TO FILL, not at the top of it — the viewport minus the
+ * fixed chrome above this route (the navbar plus the band), which are the same two terms handed to
+ * Scalar as `--scalar-custom-header-height` at the top of this file. */
+.fallbackNote {
+  min-height: calc(100dvh - var(--ifm-navbar-height) - var(--ziotc-scalar-chrome-height));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 1.5rem;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.9375rem;
+  text-align: center;
+
+  opacity: 0;
+  animation: ziotc-scalar-note-in 150ms 900ms ease-out forwards;
+}
+
+@keyframes ziotc-scalar-note-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Keep the DELAY, drop the fade. The delay is what stops the flash and is not motion; the 150ms
+     cross-fade is, and it is the part worth removing here. */
+  .fallbackNote {
+    animation-duration: 0s;
+  }
+}
+
+/* The same paragraph carries the failure message, because the list below it is the useful part of
+   either state: if the renderer never arrives, this page is still every operation in the document.
+     IT SKIPS THE DELAY, deliberately: an error is not a wait, so there is nothing to hide it for. It
+   also stops centring, because in this state it is a heading above a 73-row list rather than the only
+   thing on screen. Compounded so it beats the single-class rule above on specificity (0,2,0) and not
+   on the order the two happen to sit in. */
+.fallbackNote.fallbackNoteFailed {
+  min-height: 0;
+  display: block;
+  padding: 2rem 1.5rem 0;
+  max-width: 62rem;
+  margin: 0 auto 1.25rem;
+  text-align: left;
+  color: var(--ifm-color-danger);
+  font-weight: 600;
+  opacity: 1;
+  animation: none;
+}
+
+/* PRESENT IN THE HTML, BUT NOT PAINTED — AND THAT IS THE WHOLE POINT OF THIS RULE.
+ *
+ * This list is server-rendered, so it was on screen from first contentful paint (measured at 160ms)
+ * until Scalar replaced it, which read as "another page that shows all the REST API operations
+ * flashing past" on every load. It is not a small window either: the renderer arrives in a 3.1 MB
+ * chunk, so what is a quarter-second on localhost is seconds on a real connection.
+ *
+ * Hiding it VISUALLY rather than removing it keeps all three jobs it exists for (see index.tsx): the
+ * anchors are still in the prerendered html for `onBrokenAnchors`, and the 73 method/path/summary rows
+ * are still there for the DocSearch crawler, which extracts DOM text and does not consult CSS.
+ *
+ * It is revealed in exactly two cases, both decided by fact rather than by a timeout: when the renderer
+ * FAILS (React adds .fallbackBodyShown — see ScalarMount), and when there is no JavaScript at all (a
+ * <noscript> style block in the same component). No guessed delay, so there is no load slow enough to
+ * make it flash again and no load fast enough to hide it from someone who needs it.
+ *
+ * The clip technique rather than `display: none` on purpose: it leaves the list in the accessibility
+ * tree, so a screen-reader user gets the operations while the renderer loads instead of an empty pane. */
+.fallbackBody {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 2rem;
+  /* Two columns once there is room: 73 rows in one column is a long scroll for something that is
+     about to be replaced. */
+  columns: 2;
+  column-gap: 2.5rem;
+}
+
+.fallbackGroup {
+  break-inside: avoid;
+  margin-bottom: 1.25rem;
+}
+
+.fallbackTag {
+  margin-bottom: 0.4rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ifm-color-emphasis-700);
+
+  a {
+    color: inherit;
+  }
+}
+
+.fallbackList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    break-inside: avoid;
+    margin-bottom: 0.4rem;
+  }
+
+  code {
+    /* The method and path are the identifying part, so they lead and carry the mono face. */
+    font-size: 0.8125rem;
+  }
+
+  span {
+    color: var(--ifm-color-emphasis-700);
+    font-size: 0.8125rem;
+  }
+}
+
+/* Undoes the clip above. Compounded with `.fallbackBody` so it wins on specificity (0,2,0) rather than
+   on source order, which a future reordering of this file could silently flip. */
+.fallbackBody.fallbackBodyShown {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+}
+
+@media (max-width: 768px) {
+  .fallbackBody {
+    columns: 1;
+  }
+}

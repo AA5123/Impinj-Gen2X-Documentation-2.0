@@ -1,0 +1,79 @@
+---
+id: choose-tag-data-fields
+title: "Choose Which Tag Fields Are Reported"
+sidebar_label: "Choose Which Tag Fields Are Reported"
+sidebar_position: 3
+draft: false
+description: "Choose the optional fields each tag record carries with the tagMetaDataToEnable flags of set_operating_mode, see which flag switches on which field, and keep records small enough for the 6144-byte message limit."
+sidebar_custom_props: { emoji: "🏷️", card: "Switch the optional tag-record fields on and off with tagMetaDataToEnable." }
+doc_type: how-to
+page_meta:
+  - "Audience: Solution builders, API consumers"
+  - "Read time: 5 min"
+  - "Ties to: [Operating Mode](/api-reference/mqtt/control/operating-mode/)"
+---
+
+Each tag record in [`dataEVT`](/api-reference/mqtt/data/tag-data-event) carries a set of optional fields. The `tagMetaDataToEnable` flags of the operating mode switch those fields on and off. Report only what your application uses: every field you add makes each record larger, and a whole message is limited to 6144 bytes.
+
+## Which Flag Controls Which Field {#flag-to-field}
+
+| Flag | Field in the tag record | What it reports |
+|---|---|---|
+| `RSSI` | `peakRssi` | The peak signal strength, in dBm, since the tag's last report |
+| `PHASE` | `phase` | The phase of the tag's reply, in degrees. Present only when every read is reported on its own |
+| `SEENCOUNT` | `seenCount` | How many times the tag was read since its last report |
+| `CHANNEL` | `channel` | An opaque channel index, not a frequency. Present only when every read is reported on its own |
+| `PC` | `PC` | The tag's Protocol Control word, as hex |
+| `XPC` | `XPC` | The tag's Extended Protocol Control word, as hex, if the tag has one |
+| `CRC` | `CRC` | The tag's CRC, as hex |
+| `EPC` | `EPC` or `EPCid` | The tag's EPC. A record can carry both, and the contract does not say which one this flag controls |
+| `TID` | `TID` | The tag's TID memory, as hex |
+| `USER` | `USER` | The tag's USER memory, as hex |
+| `MAC` | `MAC` | The MAC address of the reader that read the tag |
+| `HOSTNAME` | `HOSTNAME` | The host name of the reader that read the tag |
+
+Some fields have no flag: `RESERVED`, `firstSeenTime`, `lastSeenTime`, `accessResults`, `userDefined` and `format`. Every record must carry `EPCid` and `eventNum`. In the reader's default operating mode, `RSSI` and `SEENCOUNT` are on and every other flag is off, so a reader that was never sent `tagMetaDataToEnable` reports `peakRssi` and `seenCount`.
+
+## Set the Flags {#set}
+
+1. Stop any running inventory. The reader refuses `set_operating_mode` with code `11` while one runs.
+2. Send [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) with the flags. A partial update leaves the rest of the operating mode unchanged:
+
+   ```json title="set_operating_mode — request (contract example: Tag metadata settings)"
+   {
+     "command": "set_operating_mode",
+     "requestId": "1286",
+     "operatingMode": {
+       "operatingModes": {
+         "tagMetaDataToEnable": {
+           "RSSI": true,
+           "PHASE": true,
+           "SEENCOUNT": true,
+           "CHANNEL": true,
+           "PC": false,
+           "EPC": true,
+           "TID": false,
+           "USER": false,
+           "MAC": false,
+           "HOSTNAME": false
+         }
+       }
+     }
+   }
+   ```
+
+3. Check that the reply is a success, and read the flags back with [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode).
+4. Start an inventory and check a tag record against what you expect.
+5. Re-apply the flags after every restart. The operating mode is lost on reboot.
+
+## Write a Consumer That Tolerates Any Set {#consumer}
+
+- **Treat every field except `eventNum` as optional.** Even with its flag on, `channel` and `phase` are left out when reads are aggregated.
+- **Match hex values without regard to case.** The reader emits both upper-case and lower-case hex.
+- **Read both `EPC` and `EPCid`** until you know which one your firmware sends for the `EPC` flag.
+
+## Keep Messages Under the Limit {#message-size}
+
+The reader drops a `dataEVT` message larger than 6144 bytes, and reports no error. Large fields such as `TID`, `USER` and `RESERVED` fill that limit fastest. If messages go missing when you add fields, remove fields you do not use, or reduce the endpoint's `maxPayloadSizePerReport`. See [How Reads Become Messages](/guides/core-concepts/the-tag-data-stream#batching) and [Manage Tag Data Throughput](/guides/build-your-integration/manage-tag-data-throughput).
+
+**Related:** 📘 [The Tag Data Stream](/guides/core-concepts/the-tag-data-stream#metadata-flags) · 📕 [`dataEVT`](/api-reference/mqtt/data/tag-data-event) · 📙 [Consume Tag Data](/guides/build-your-integration/consume-tag-data) · 📕 [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode)

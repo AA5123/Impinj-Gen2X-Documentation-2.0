@@ -1,0 +1,22 @@
+---
+id: harden-for-production
+title: "Harden for Production"
+sidebar_label: "Harden for Production"
+sidebar_position: 4
+draft: false
+description: "Retry commands safely, recover from disconnects, manage tag data throughput, and test your integration."
+sidebar_custom_props: { emoji: "🔧", card: "Retries, reconnects, throughput, and testing." }
+---
+
+An integration that works on a desk still has to survive repeated commands, lost messages, dropped connections and high tag volumes. These pages cover each:
+
+- [Retry Commands Safely](/guides/build-your-integration/retry-commands-safely): which commands are safe to send again, and how to read a refusal.
+- [Recover from Disconnects](/guides/build-your-integration/recover-from-disconnects): resubscribe, re-read state, and settle pending requests.
+- [Manage Tag Data Throughput](/guides/build-your-integration/manage-tag-data-throughput): batching, trimmed fields, filters and dedicated endpoints.
+- [Test Your Integration](/guides/build-your-integration/test-your-integration): validate against the contract and exercise the failure paths.
+
+The reasons behind these practices are in [Delivery, Retries, and Disconnects](/guides/core-concepts/delivery-retries-and-disconnects).
+
+## In This Section
+
+<HubCards />

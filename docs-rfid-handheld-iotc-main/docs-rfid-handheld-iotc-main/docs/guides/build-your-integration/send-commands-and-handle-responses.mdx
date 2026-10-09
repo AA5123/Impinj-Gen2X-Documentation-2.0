@@ -1,0 +1,129 @@
+---
+id: send-commands-and-handle-responses
+title: "Send Commands and Handle Responses"
+sidebar_label: "Send Commands and Handle Responses"
+sidebar_position: 2
+description: "Send a command, pair its reply by requestId, apply the success rule, and turn every response code into the right action: continue, wait for an event, clear a condition and retry, or fix the request."
+sidebar_custom_props: { emoji: "🐍", card: "Send a command, pair the reply, and act on every response code." }
+doc_type: how-to
+page_meta:
+  - "Audience: Solution builders"
+  - "Read time: 12 min"
+---
+
+Every command your application sends gets one reply, and the reply's `response` object says what happened. MQTT itself reports nothing about the outcome: a failed command is a normal message with a non-zero code. This page shows how to pair each reply with its request and act on its code. The Python sketches are illustrative and have not been run against a reader.
+
+## Before You Begin {#before-you-begin}
+
+- The reader has an endpoint you can send commands to, such as the `CTRL` or MDM endpoint from the [Quick Start: Read Your First Tag](/guides/quick-start#first-tag-reads).
+- Your application is connected to the broker and subscribed to that endpoint's response topic, for example `<tenantId>/CTRL/clients/resp/<deviceSerialNumber>`, before it publishes. Replies are not retained.
+
+## Step 1: Give Each Command a Unique `requestId` {#request-id}
+
+The reader echoes your `requestId` in its reply, and that is the only way to pair the two: replies arrive out of order and interleaved with events. Treat the value as an opaque string of 1 to 64 characters, and make each one unique.
+
+The reader does not use `requestId` to detect repeats. It executes every copy of a command it receives, so sending the same `requestId` twice does not make a command safe to repeat.
+
+## Step 2: Keep a Map of Pending Requests {#correlation}
+
+Record each request before you publish it, and look up each reply by its `requestId`:
+
+```python
+import json, time, uuid
+
+pending = {}   # requestId -> (command, time sent)
+
+def send(client, topic, command, payload=None):
+    request_id = uuid.uuid4().hex
+    message = {"command": command, "requestId": request_id, **(payload or {})}
+    pending[request_id] = (command, time.monotonic())
+    client.publish(topic, json.dumps(message), qos=1)
+    return request_id
+
+def on_reply(message: dict):
+    entry = pending.pop(message.get("requestId"), None)
+    if entry is None:
+        return      # not ours, or a late duplicate: log it and ignore it
+    handle(entry[0], message)
+```
+
+A reply whose `requestId` you do not recognize can belong to another application on the same topic, or be a late duplicate. Log it and ignore it.
+
+## Step 3: Apply the Success Rule {#success-rule}
+
+A reply succeeded when `response.code` is `0`, or when `code` is absent and `response.description` is `"Success"`. Some firmware sends a success reply without `code`. Handle that form as described in [Success Without a Code](/api-reference/mqtt/protocol-reference/message-envelope#success-omits-code). Otherwise, branch on the code, never on the description: the description is text for people and can change between firmware builds.
+
+```python
+def outcome(message: dict):
+    response = message.get("response", {})
+    code = response.get("code")
+    if code == 0 or (code is None and response.get("description") == "Success"):
+        return "success"
+    return code
+```
+
+## Step 4: Act on the Code {#codes}
+
+| Code | Meaning | What to do |
+|---|---|---|
+| `0` | Success | Continue |
+| `1` | Command payload is accepted | Not a success yet. Wait for the outcome event; see [Track Asynchronous Commands](/guides/build-your-integration/track-asynchronous-commands) |
+| `12` | No Radio Operation in Progress | The radio was already idle. If you asked it to stop, treat this as done |
+| `3` | Not able to retrieve information | Retry after a short delay |
+| `4`, `5`, `11`, `16`, `35` | The reader is busy with something that conflicts | Clear the condition, then retry |
+| `8`, `13`, `14` | A firmware update could not proceed or failed | Fix the cause (flash space, battery, URL, network), then retry |
+| `10`, `18`, `19`, `33` | The item exists already, or a limit is reached | Check whether an earlier attempt succeeded, then change the request or free a slot |
+| Any other code | The request itself is wrong, or a resource is missing | Fix the request. Sending it again unchanged returns the same code |
+
+The contract marks codes `3`, `4`, `5`, `8`, `10`, `11`, `13`, `14`, `16`, `18`, `19`, `33` and `35` as ones where a later retry may succeed, because the condition can change without the request changing. For every other code, the request must change first. The meaning of each code is on [Response Codes](/api-reference/mqtt/response-codes), and each command's reference page lists the codes it can return.
+
+Codes `6` and `7` are internal: no published command returns them.
+
+## Step 5: Clear a Condition Before You Retry {#clear-condition}
+
+For a busy condition, remove the cause rather than retrying in a loop:
+
+| Code | Cause | Clear it by |
+|---|---|---|
+| `4` | A firmware update is running | Waiting for it to finish; every command is refused with `4` until then |
+| `5` | `reboot` during an inventory | Stopping the inventory |
+| `11` | `set_operating_mode` or `control_operation` `START` during an inventory | Stopping the inventory |
+| `16` | Deleting the connected Wi-Fi profile | Connecting to another profile |
+| `35` | Changing an active endpoint | Deactivating the endpoint |
+
+For example, `set_operating_mode` is refused while an inventory runs:
+
+```json title="set_operating_mode — response (code 11)"
+{
+  "command": "set_operating_mode",
+  "requestId": "set-mode-001",
+  "apiVersion": "V1.1",
+  "response": {
+    "code": 11,
+    "description": "Inventory in progress"
+  }
+}
+```
+
+Stop the inventory with `control_operation` `STOP`. Both code `0` and code `12` mean that the radio is now idle. Then send `set_operating_mode` again, with a new `requestId`.
+
+## Step 6: Set Your Own Timeout {#timeout}
+
+The contract specifies no timeout for any command. Choose one for each command, and decide what to do when it expires. A missing reply does not tell you whether the reader acted: the command may have been lost, the reply may have been lost, or the reader may still be working. Before you send a state-changing command again, read the state back with the matching `get_*` command. The reader queues at most 10 commands, so do not send large batches at once.
+
+```python
+def expire(timeout_s: float):
+    now = time.monotonic()
+    for request_id, (command, sent) in list(pending.items()):
+        if now - sent > timeout_s:
+            del pending[request_id]
+            on_timeout(command, request_id)   # read the state back before any resend
+```
+
+Which commands are safe to send again is covered in [Retry Commands Safely](/guides/build-your-integration/retry-commands-safely).
+
+## When to Involve a Person {#escalate}
+
+Some conditions need someone at the reader: a battery too low for a firmware update (`14`), no free flash (`8`), or a reader without Wi-Fi (`20`). Surface these to an operator instead of retrying. For symptoms you cannot yet tie to a code, start from [Diagnose and Recover](/guides/diagnose-and-recover).
+
+**Related:** 📕 [Response Codes](/api-reference/mqtt/response-codes) · 📕 [Message Envelopes and Correlation](/api-reference/mqtt/protocol-reference/message-envelope) · 📘 [Commands, Responses, and Events](/guides/core-concepts/commands-responses-and-events) · 📙 [Retry Commands Safely](/guides/build-your-integration/retry-commands-safely) · 📙 [Track Asynchronous Commands](/guides/build-your-integration/track-asynchronous-commands)

@@ -1,0 +1,59 @@
+---
+id: what-the-iot-connector-is
+title: "What the IoT Connector Is"
+sidebar_label: "What the IoT Connector Is"
+sidebar_position: 1
+description: "The Zebra IoT Connector is the firmware on RFD40 and RFD90 handheld readers that exposes the MQTT API: what it lets an application do, by domain, what it does not do, and which readers run it."
+sidebar_custom_props: { emoji: "🔌", card: "What the IoT Connector does, what it does not, and which readers run it." }
+doc_type: explanation
+page_meta:
+  - "Audience: All personas"
+  - "Read time: 5 min"
+---
+
+The **Zebra IoT Connector** is the firmware on an RFD40 or RFD90 handheld RFID reader that lets your applications control the reader and receive its data over MQTT 3.1.1. The reader connects to an MQTT broker you provide; your applications connect to the same broker. Everything between them is a message on a topic: a command, its reply, an event, or tag data.
+
+Three names recur throughout this documentation:
+
+- **Reader:** the RFD40 or RFD90, the hardware and its state.
+- **IoT Connector:** the firmware on the reader that provides the API.
+- **MQTT API:** the interface itself, defined by the contract the [MQTT API](/api-reference/mqtt) reference is generated from.
+
+## What It Lets You Do {#capabilities}
+
+The MQTT API has 20 commands and 4 events, grouped by domain:
+
+| Domain | What you can do | Commands and events |
+|---|---|---|
+| Identity and status | Read the model, serial number, firmware versions, power, battery, radio state and regulatory region | `get_version`, `get_status`, `get_current_region` |
+| Network | Manage Wi-Fi profiles; read the Ethernet interface | `set_wifi`, `get_wifi`, `delete_wifi_profile`, `get_eth` |
+| MQTT endpoints | Add, change, activate and remove the reader's broker connections | `config_endpoint`, `get_endpoint_config` |
+| Security | Install, list and delete certificates for TLS, Wi-Fi and downloads | `install_certificate`, `get_installed_certificates`, `delete_certificate` |
+| System | Update firmware and restart the reader | `set_os`, `reboot` |
+| Monitoring | Choose which events the reader publishes, and receive them | `config_events`; `heartBeatEVT`, `alerts`, `mqttConnEVT` |
+| RFID and barcode control | Set the operating mode, start and stop inventories and barcode scans, and filter what is reported | `set_operating_mode`, `get_operating_mode`, `control_operation`, `set_post_filter`, `get_post_filter` |
+| Tag data | Receive tag and barcode reads | `dataEVT` |
+
+The reader carries this traffic on **endpoints**: named MQTT connections, each with its own broker, credentials and topics, and a type that says which traffic it carries. See [Endpoints, Topics, and Channels](/guides/core-concepts/endpoints-topics-and-channels).
+
+## What It Does Not Do {#non-capabilities}
+
+- **No REST or HTTP API.** The reader's interface is MQTT only; the contract defines no HTTP surface.
+- **No store-and-forward.** The contract describes nothing that keeps events or tag data while the reader is disconnected and sends them later.
+- **No first connection over MQTT.** A reader's region, its first Wi-Fi profile if it has Wi-Fi, and its first endpoint are set with 123RFID Desktop before any MQTT command can reach it, and no MQTT command sets the region.
+- **No whole-device configuration.** Each domain has its own commands; nothing reads or writes a reader's whole configuration at once.
+- **No logs over MQTT.** The events report conditions and status, not diagnostic logs.
+- **No locate workflow.** Tag records can carry signal strength, but the API has no command to find one tag.
+- **No request history.** The reader executes every copy of a command it receives, and specifies no timeout.
+
+## Which Readers Run It {#readers}
+
+The documentation covers the RFD40 Premium, the RFD40 Premium Plus, the RFD40-M Premium Plus, and the RFD90 in its RFD9030 and RFD9090 forms. It also covers the RFD40 Standard, which has no Wi-Fi and reaches the broker through a communication cradle. The contract's model vocabulary has two values, `RFD40` and `RFD90`. Barcode scanning needs a reader with a barcode imager: the RFD40 Premium Plus, the RFD40-M Premium Plus or the RFD90. Minimum firmware and features by model are in [Supported Readers and Features](/resources/supported-readers-and-features).
+
+## Where to Go Next {#next}
+
+- **See it work:** [Quick Start: Read Your First Tag](/guides/quick-start).
+- **Check what you need:** [What You Need](/guides/get-oriented/what-you-need).
+- **Understand how it fits together:** [How the IoT Connector Works](/guides/core-concepts/how-the-iot-connector-works).
+
+**Related:** 📕 [What You Need](/guides/get-oriented/what-you-need) · 📘 [How the IoT Connector Works](/guides/core-concepts/how-the-iot-connector-works) · 📘 [Commands, Responses, and Events](/guides/core-concepts/commands-responses-and-events) · 📕 [MQTT API](/api-reference/mqtt)

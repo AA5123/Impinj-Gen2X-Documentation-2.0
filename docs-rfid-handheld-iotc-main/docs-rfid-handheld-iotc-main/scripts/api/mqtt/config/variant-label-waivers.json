@@ -1,0 +1,35 @@
+{
+  "$comment": [
+    "VARIANT LABELS THAT DELIBERATELY DO NOT MATCH A CONTRACT EXAMPLE NAME. Read by",
+    "scripts/api/mqtt/variant_labels.py.",
+
+    "IT IS EMPTY, AND THAT IS THE POINT. Seeded 2026-09-09 with zero entries, immediately after",
+    "the 20 Tier-1 label corrections landed. The gate it serves runs at threshold 0 with no",
+    "baseline, so this file exists as a DOCUMENTED ESCAPE HATCH rather than as a list of things",
+    "already being escaped. Creating it empty is deliberate: the next author who needs to publish",
+    "a scenario the contract has not caught up with should find the mechanism and its rules",
+    "already here, instead of inventing one under time pressure.",
+
+    "TWO HARD RULES FOR AN ENTRY:",
+    "  1. The key is '<path relative to api/mqtt/prose/>:<groupId>:<value>'. Exactly two colons.",
+    "     Keyed on `value`, never on `label` -- example-naming N-19, and `value` is what",
+    "     VariantSelect.tsx:288 actually selects on.",
+    "  2. The reason MUST name either the upstream issue that retires it, or the scenario the",
+    "     contract does not carry. 'Legacy' and 'known issue' are not reasons.",
+
+    "WHY THIS IS NOT AN ALLOWLIST. Every entry is printed in full on every run, before a single",
+    "finding, so waiving something costs a line of output on every push forever. And a waiver",
+    "that is no longer needed is itself a FAILURE: once the label starts matching, the recorded",
+    "reason has become a false statement about this repository, and the gate reports the entry as",
+    "STALE. There is no way to silence an individual finding permanently.",
+
+    "WHAT THIS FILE IS NOT FOR. It is not for a label you would prefer to word differently.",
+    "Example-naming T-1 permits CASE repair on an inherited name and forbids rewording it --",
+    "'Delete wifi ca cert' becomes 'Delete Wi-Fi CA cert', NOT 'Delete Wi-Fi CA certificate'.",
+    "The 27 editorial rewordings considered in .ai-history/077-select-variant-fix.md section 4",
+    "are forbidden, not deferred, so none of them may be waived into existence here."
+  ],
+  "contract_version": "1.22.0",
+  "seeded": "2026-09-09",
+  "waived": {}
+}

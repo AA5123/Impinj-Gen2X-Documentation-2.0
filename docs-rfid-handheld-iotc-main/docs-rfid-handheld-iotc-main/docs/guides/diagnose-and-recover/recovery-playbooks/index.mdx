@@ -1,0 +1,72 @@
+---
+id: index
+title: "Recovery Playbooks"
+sidebar_label: "Recovery Playbooks"
+sidebar_position: 3
+description: "Step-by-step recovery playbooks, RP-01 to RP-09, grouped by what has gone wrong: reconnect the reader, restore MQTT, fix configuration, fix firmware, and re-bootstrap."
+sidebar_custom_props: { emoji: "🛟", card: "Nine step-by-step recovery playbooks (RP-01 to RP-09) for IOTC failures." }
+---
+
+
+Nine recovery playbooks, RP-01 to RP-09, plus the procedure for re-bootstrapping a reader. Each is a sequence of steps that brings a failing reader back to a known state, written the same way: a **When** line that names the situation it applies to, numbered steps to run in order, and a final **Success check** that tells you when to stop.
+
+They are grouped by what has gone wrong. Pick the page that matches your situation, then the playbook whose **When** line matches. The `RP-NN` identifiers are stable and bookmarkable — they do not change as new playbooks are added.
+
+### Pick a Playbook
+
+| Page | Playbooks | Use it when |
+|---|---|---|
+| 🔌 **[Reconnect the Reader](/guides/diagnose-and-recover/recovery-playbooks/reconnect-the-reader)** | RP-01, RP-07 | The reader itself is unreachable — 123RFID Desktop cannot see it over USB, or the broker still lists it as connected but nothing arrives |
+| 🔗 **[Restore MQTT Connectivity](/guides/diagnose-and-recover/recovery-playbooks/restore-mqtt-connectivity)** | RP-02, RP-03 | The reader is on the network, but commands go unanswered — an inactive endpoint or a topic mismatch |
+| 🎛️ **[Recover from Configuration Problems](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems)** | RP-04, RP-05, RP-08 | The reader answers, but its configured state is wrong — inventory blocking an operation, a silent data channel, or drift from your baseline |
+| ⬆️ **[Recover from Firmware Problems](/guides/diagnose-and-recover/recovery-playbooks/recover-from-firmware-problems)** | RP-06, RP-09 | [`set_os`](/api-reference/mqtt/mgmt/set-os) failed, on one reader or across part of a fleet |
+| 🔄 **[Factory Reset and Re-Bootstrap](/guides/diagnose-and-recover/recovery-playbooks/factory-reset-and-re-bootstrap)** | — | No MQTT path is left, or the reader must start again from bootstrap |
+
+If you know the symptom but not the area, start from [Diagnose and Recover](/guides/diagnose-and-recover): every symptom there routes to a playbook or a failure mode. If you want to know *why* the failure happened rather than how to clear it, read the matching entry in the [failure-mode catalog](/guides/diagnose-and-recover/diagnose-by-system-area).
+
+## Symptom-Area Triage Flows
+
+When a symptom does not map cleanly to a playbook, start from the matching area below.
+
+### Connection {#connection}
+
+- **The reader never appears on the broker.** Check that it has joined Wi-Fi and has an address, that the broker's host name resolves on its network, that the port is open, and that the endpoint's credentials match the broker. See [Network and Connectivity](/guides/diagnose-and-recover/diagnose-by-system-area/network-and-connectivity).
+- **It connects, then disconnects seconds later.** Look for an authentication or access-rule rejection in the broker's log, or another client using the same client ID. See [FM-NET-03](/guides/diagnose-and-recover/diagnose-by-system-area#fm-net-03).
+- **It disconnects now and then.** Look at the Wi-Fi link, and at a firewall that drops idle connections sooner than the endpoint's keep-alive.
+- **The TLS handshake fails.** The installed CA does not match the broker's certificate chain, the certificate has expired, the host name does not match, or the reader's clock is wrong. See [FM-SEC-01](/guides/diagnose-and-recover/diagnose-by-system-area#fm-sec-01).
+
+### RFID Reads {#rfid}
+
+- **An inventory runs but no tags are read.** Confirm the tags are in the field, that no post-filter excludes them, and the operating mode's settings. See [RFID Read Performance](/guides/diagnose-and-recover/diagnose-by-system-area/rfid-read-performance).
+- **The read rate is low.** Check the physical setup first: tag orientation, distance and nearby metal. Then the Gen2 session and population settings, and the metadata you enable. See [Improve Read Performance](/guides/read-tags-and-barcodes/improve-read-performance).
+- **Unexpected tags appear.** Check the filter patterns, offsets and lengths, and check that a wildcard subscription is not delivering another reader's tags: the serial number is in the topic.
+- **The inventory stops on its own.** Check the operating mode's stop conditions and trigger; a released trigger ending an inventory can be normal. See [Configure Trigger and Stop Conditions](/guides/read-tags-and-barcodes/configure-trigger-and-stop-conditions).
+
+### Tag Data {#tag-data}
+
+- **No tag data arrives.** Check that the data endpoint is active with two publish topics, that you subscribe to its tag-data topic with the right serial form, and that the radio is running. See [RP-05](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-05).
+- **Fields are missing.** Each optional field needs its flag in `tagMetaDataToEnable`; `channel` and `phase` are left out when reads are aggregated. See [Choose Which Tag Fields Are Reported](/guides/read-tags-and-barcodes/choose-tag-data-fields).
+- **The same tag appears many times.** Expected; deduplicate in your application. See [Consume Tag Data](/guides/build-your-integration/consume-tag-data).
+- **Timestamps look wrong.** Compare `get_status` `systemTime` with the correct time, and check `ntp.offset`.
+- **Messages go missing.** At QoS 0 a lost tag-data message is not resent, and a message over 6144 bytes is dropped without an error. See [Manage Tag Data Throughput](/guides/build-your-integration/manage-tag-data-throughput).
+
+### Battery and Power {#battery}
+
+- **The battery drains quickly.** Continuous inventory and extra per-tag metadata use more power. Check `stateOfHealth` in `get_status` or `heartBeatEVT`: `MODERATE` or `CRITICAL` means the battery has degraded. Consider the `OPTIMAL_BATTERY` profile, and stop inventories when they are not needed.
+- **The reader shuts down unexpectedly.** Check the last `heartBeatEVT` and the `BATTERY` and `POWER` alerts before the shutdown. If the battery looked healthy, contact Zebra support.
+- **A firmware update is refused with code `14`.** Charge the reader or connect external power. See [FM-FW-04](/guides/diagnose-and-recover/diagnose-by-system-area#fm-fw-04).
+
+### Out of Scope
+
+- **Why a failure happened:** see the matching entry in the [failure-mode catalog](/guides/diagnose-and-recover/diagnose-by-system-area#catalog).
+- **A wrong regulatory region:** no MQTT command changes the region. See [Factory Reset and Re-Bootstrap](/guides/diagnose-and-recover/recovery-playbooks/factory-reset-and-re-bootstrap).
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

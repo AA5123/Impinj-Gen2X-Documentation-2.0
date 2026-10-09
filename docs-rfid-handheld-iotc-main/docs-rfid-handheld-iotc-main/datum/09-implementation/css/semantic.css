@@ -1,0 +1,209 @@
+/* =============================================================================
+   SEMANTIC COLOR TOKENS — GENERATED, DO NOT EDIT
+   Layer 2 of 3: primitives -> semantic -> component.
+
+   Source of truth:  03-tokens/semantic/color/*.json
+   Generator:        tools/build-tokens.py
+   Spec:             02-foundations/color/02-semantic-families.md
+
+   Load AFTER 09-implementation/css/primitives.css. Every value here is a var()
+   reference to a primitive step; nothing is a literal.
+
+   THIS IS THE LAYER COMPONENTS CONSUME. Referencing --primary-*, --gray-* or
+   any other primitive from a component bypasses every contrast guarantee the
+   system makes. The scale has 12 steps per color and only some combinations
+   are legal — 23 step pairs fall below 3:1 and --gray-9 will not carry white
+   text in light mode. Rules cannot stop a component author picking a bad pair;
+   a token API that only exposes good pairs makes the mistake unrepresentable.
+
+   Seven families, per 02-foundations/color/02-semantic-families.md:
+     surface   text   border   brand+action   status   data   utility
+   plus the `technical` alias namespace. `data` ships no tokens — see
+   02-foundations/color/02-semantic-families.md §6 for why.
+
+   Every pairing was chosen by measurement, not convention, and is re-checked
+   by `python3 tools/verify-color.py`.
+
+   EVERY token is declared in BOTH rules below. See the module docstring in
+   tools/build_semantic.py for why that is required rather than redundant.
+   ============================================================================= */
+
+:root, .light, .light-theme, [data-theme='light'] {
+
+  /* SURFACES — what sits behind content */
+  --surface-page:                 var(--color-background);  /* Page canvas */
+  --surface-subtle:               var(--gray-2);  /* Panel, sidebar, header, card, code block, striped row */
+  --surface-element:              var(--gray-3);  /* Input, unfilled control, at rest */
+  --surface-element-hover:        var(--gray-4);  /* Same, hovered */
+  --surface-element-active:       var(--gray-5);  /* Same, pressed or selected */
+  --surface-accent:               var(--primary-2);  /* Accent-tinted panel */
+
+  /* TEXT AND CONTENT — informational hierarchy */
+  --text-primary:                 var(--gray-12);  /* Body copy, headings */
+  --text-secondary:               var(--gray-11);  /* Supporting copy, metadata, captions */
+  --text-placeholder:             var(--gray-11);  /* Input placeholder */
+  --text-disabled:                var(--gray-9);  /* Inactive control label */
+  --text-inverse:                 var(--gray-1);  /* Text on utility.inverse-surface */
+  --text-link:                    var(--primary-11);  /* Link text, accent-colored text */
+  --text-link-hover:              var(--primary-12);  /* Link text, hovered */
+
+  /* BORDERS AND DIVIDERS — structure */
+  --border-subtle:                var(--gray-6);  /* Divider, callout edge, non-interactive separator */
+  --border-default:               var(--gray-7);  /* Input and control borders */
+  --border-control:               var(--gray-11);  /* The boundary of an interactive control that must be perceivable on its own — a text input, a select, an outlined button */
+  --border-strong:                var(--gray-8);  /* Hovered control border */
+  --border-focus:                 var(--primary-11);  /* Focus ring */
+
+  /* BRAND AND ACTION — identity vs interaction */
+  --brand-primary:                var(--primary-9);  /* Brand identity color — the seed, #004CBA, unchanged in both themes */
+  --action-primary:               var(--primary-9);  /* Primary button fill */
+  --action-primary-hover:         var(--primary-10);  /* Primary button, hovered */
+  --action-primary-text:          var(--primary-contrast);  /* Label on action.primary */
+  --action-secondary:             var(--gray-3);  /* Secondary button fill */
+  --action-secondary-hover:       var(--gray-4);  /* Secondary button, hovered */
+  --action-secondary-text:        var(--gray-12);  /* Label on action.secondary */
+  --action-danger:                var(--caution-9);  /* Destructive button fill */
+  --action-danger-hover:          var(--caution-10);  /* Destructive button, hovered */
+  --action-danger-text:           var(--caution-contrast);  /* Label on action.danger */
+
+  /* STATUS AND FEEDBACK — five statuses, four subroles each */
+  --status-success-background:    var(--tip-2);  /* Success container fill */
+  --status-success-border:        var(--tip-6);  /* Success container edge */
+  --status-success-icon:          var(--tip-11);  /* Success icon and type label */
+  --status-success-text:          var(--tip-12);  /* Success message text */
+  --status-info-background:       var(--primary-2);  /* Info container fill */
+  --status-info-border:           var(--primary-6);  /* Info container edge */
+  --status-info-icon:             var(--primary-11);  /* Info icon and type label */
+  --status-info-text:             var(--primary-12);  /* Info message text */
+  --status-error-background:      var(--caution-2);  /* Error container fill */
+  --status-error-border:          var(--caution-6);  /* Error container edge */
+  --status-error-icon:            var(--caution-11);  /* Error icon and type label */
+  --status-error-text:            var(--caution-12);  /* Error message text, form validation */
+  --status-warning-background:    var(--warning-2);  /* Warning container fill */
+  --status-warning-border:        var(--warning-6);  /* Warning container edge */
+  --status-warning-icon:          var(--warning-11);  /* Warning icon and type label */
+  --status-warning-text:          var(--warning-12);  /* Warning message text */
+  --status-critical-background:   var(--critical-2);  /* Critical container fill — one severity rung above error: active, ongoing harm rather than a recoverable failure */
+  --status-critical-border:       var(--critical-6);  /* Critical container edge */
+  --status-critical-icon:         var(--critical-11);  /* Critical icon and type label */
+  --status-critical-text:         var(--critical-12);  /* Critical message text */
+
+  /* DATA TYPE — badge colors with no existing status/technical home */
+  --data-type-object-background:  var(--teal-2);  /* `object` badge fill */
+  --data-type-object-text:        var(--teal-12);  /* `object` badge label */
+
+  /* UTILITY — the controlled escape hatch */
+  --utility-selection:            var(--primary-a5);  /* Text selection highlight */
+  --utility-code-highlight:       var(--gray-a3);  /* Inline code and keyboard-key background */
+  --utility-inverse-surface:      var(--gray-12);  /* Inverted surface — tooltip, dark-on-light chip */
+  --utility-highlight:            var(--warning-a4);  /* Highlighter-style emphasis over existing text — the yellow-marker effect */
+  --utility-search-match:         var(--warning-a5);  /* Search-match indicator — one alpha step stronger than highlight, so an active match reads as more emphatic than a passive one */
+  --utility-syntax-string:        var(--tip-11);  /* Code/JSON string literal. STEP 11, NOT 12, corrected 2026-08-30. Step 12 is the high-contrast text rung and across these hues it is near-black (#1f3a2a here); set beside the #172029 plain code ink it reads as ink rather than as green, so the JSON type colour scheme stopped being visible in code at all. Step 11 is the scale's low-contrast TEXT rung -- chromatic and still AA. tip-11 #09804e measures 4.72:1 on --surface-subtle and 4.99:1 on white. It is byte-identical to json-type-badge.string.text, which is the point: a string literal and a `string` badge are one concept and are now one value. */
+  --utility-syntax-number:        var(--primary-11);  /* Code/JSON numeric literal. Step 11, for the reason recorded on syntax-string. primary-11 #195ece measures 5.62:1 on --surface-subtle, and equals json-type-badge.integer.text and .number.text. */
+  --utility-syntax-boolean:       var(--warning-12);  /* Code/JSON boolean literal, and THE ONE ROLE THAT CANNOT FOLLOW THE OTHERS TO STEP 11. warning-11 #9c6f00 measures 4.24:1 on --surface-subtle and 4.48:1 on white -- under 4.5:1, and code at 14px weight 600 is not large text, so it cannot carry this. There is no warning step between #9c6f00 and #47391c to reach for. boolean therefore stays on step 12 and reads dark rather than amber, in the code AND on its badge -- which at least keeps the two identical, which is the contract that matters. Revisit only by adding a compliant chromatic warning step to the primitive scale, never by shipping 4.24:1. */
+  --utility-syntax-punctuation:   var(--gray-11);  /* Code/JSON structural chrome (braces, brackets, colons, commas). Drawn from the gray scale at step 11: the one syntax role that is deliberately recessive, and NEUTRAL rather than chromatic so it reads as hierarchy instead of as a faded colour. */
+  --utility-required-indicator:   var(--critical-9);  /* Required-field asterisk. Drawn from the critical scale at its solid step 9 (same step --critical-indicator already names for a radio dot / checkbox mark), not text.* or status.critical.*, because it is a single glyph rather than a label sitting on a container. json-type-badge.json's `array` also draws from the critical scale (its background/icon subroles) -- the two share a hue family deliberately, matching the resolved doc's original placeholder colors for `array` and the required asterisk, which were hue-adjacent to begin with. */
+
+  /* TECHNICAL — alias namespace for machine-emitted content */
+  --technical-value:              var(--text-primary);  /* A measured or reported value — "24.5 degC", "1.8 V" */
+  --technical-identifier:         var(--text-secondary);  /* Serial number, MAC address, part number, firmware version */
+  --technical-code:               var(--text-primary);  /* Inline code, command, path. Pair with utility.code-highlight as the background. */
+  --technical-system:             var(--text-secondary);  /* System state string emitted by a device — "READY", "CALIBRATING" */
+  --technical-telemetry:          var(--text-secondary);  /* Streamed or logged output */
+  --technical-syntax-string:      var(--utility-syntax-string);  /* JSON/code string literal. Resolves the gap json-block.md §4 documented: string, number and boolean used to collapse onto technical.value alone. Aliases utility.syntax-string (tip-11) rather than a primitive directly, the same one-hop-through-a-semantic-token shape every other technical.* entry already uses. */
+  --technical-syntax-number:      var(--utility-syntax-number);  /* JSON/code number literal. Aliases utility.syntax-number (primary-11), text-safe on every shipped surface. */
+  --technical-syntax-boolean:     var(--utility-syntax-boolean);  /* JSON/code boolean literal. Aliases utility.syntax-boolean (warning-12), text-safe on every shipped surface. */
+  --technical-syntax-punctuation: var(--utility-syntax-punctuation);  /* JSON/code structural chrome — braces, brackets, colons, commas. Aliases utility.syntax-punctuation (caution-11), distinct from both the literal-value roles above and from identifier/system/telemetry's shared text.secondary. */
+}
+
+/* -----------------------------------------------------------------------------
+   DARK THEME
+   ----------------------------------------------------------------------------- */
+
+.dark, .dark-theme, [data-theme='dark'] {
+
+  /* SURFACES — what sits behind content */
+  --surface-page:                 var(--color-background);
+  --surface-subtle:               var(--gray-2);
+  --surface-element:              var(--gray-3);
+  --surface-element-hover:        var(--gray-4);
+  --surface-element-active:       var(--gray-5);
+  --surface-accent:               var(--primary-2);
+
+  /* TEXT AND CONTENT — informational hierarchy */
+  --text-primary:                 var(--gray-12);
+  --text-secondary:               var(--gray-11);
+  --text-placeholder:             var(--gray-11);
+  --text-disabled:                var(--gray-9);
+  --text-inverse:                 var(--gray-1);
+  --text-link:                    var(--primary-11);
+  --text-link-hover:              var(--primary-12);
+
+  /* BORDERS AND DIVIDERS — structure */
+  --border-subtle:                var(--gray-6);
+  --border-default:               var(--gray-7);
+  --border-control:               var(--gray-11);
+  --border-strong:                var(--gray-8);
+  --border-focus:                 var(--primary-11);
+
+  /* BRAND AND ACTION — identity vs interaction */
+  --brand-primary:                var(--primary-9);
+  --action-primary:               var(--primary-8);  /* light: var(--primary-9) */
+  --action-primary-hover:         var(--primary-9);  /* light: var(--primary-10) */
+  --action-primary-text:          var(--primary-contrast);
+  --action-secondary:             var(--gray-3);
+  --action-secondary-hover:       var(--gray-4);
+  --action-secondary-text:        var(--gray-12);
+  --action-danger:                var(--caution-8);  /* light: var(--caution-9) */
+  --action-danger-hover:          var(--caution-9);  /* light: var(--caution-10) */
+  --action-danger-text:           var(--caution-contrast);
+
+  /* STATUS AND FEEDBACK — five statuses, four subroles each */
+  --status-success-background:    var(--tip-2);
+  --status-success-border:        var(--tip-6);
+  --status-success-icon:          var(--tip-11);
+  --status-success-text:          var(--tip-12);
+  --status-info-background:       var(--primary-2);
+  --status-info-border:           var(--primary-6);
+  --status-info-icon:             var(--primary-11);
+  --status-info-text:             var(--primary-12);
+  --status-error-background:      var(--caution-2);
+  --status-error-border:          var(--caution-6);
+  --status-error-icon:            var(--caution-11);
+  --status-error-text:            var(--caution-12);
+  --status-warning-background:    var(--warning-2);
+  --status-warning-border:        var(--warning-6);
+  --status-warning-icon:          var(--warning-11);
+  --status-warning-text:          var(--warning-12);
+  --status-critical-background:   var(--critical-2);
+  --status-critical-border:       var(--critical-6);
+  --status-critical-icon:         var(--critical-11);
+  --status-critical-text:         var(--critical-12);
+
+  /* DATA TYPE — badge colors with no existing status/technical home */
+  --data-type-object-background:  var(--teal-2);
+  --data-type-object-text:        var(--teal-12);
+
+  /* UTILITY — the controlled escape hatch */
+  --utility-selection:            var(--primary-a5);
+  --utility-code-highlight:       var(--gray-a3);
+  --utility-inverse-surface:      var(--gray-12);
+  --utility-highlight:            var(--warning-a4);
+  --utility-search-match:         var(--warning-a5);
+  --utility-syntax-string:        var(--tip-11);
+  --utility-syntax-number:        var(--primary-11);
+  --utility-syntax-boolean:       var(--warning-12);
+  --utility-syntax-punctuation:   var(--gray-11);
+  --utility-required-indicator:   var(--critical-11);  /* light: var(--critical-9) */
+
+  /* TECHNICAL — alias namespace for machine-emitted content */
+  --technical-value:              var(--text-primary);
+  --technical-identifier:         var(--text-secondary);
+  --technical-code:               var(--text-primary);
+  --technical-system:             var(--text-secondary);
+  --technical-telemetry:          var(--text-secondary);
+  --technical-syntax-string:      var(--utility-syntax-string);
+  --technical-syntax-number:      var(--utility-syntax-number);
+  --technical-syntax-boolean:     var(--utility-syntax-boolean);
+  --technical-syntax-punctuation: var(--utility-syntax-punctuation);
+}

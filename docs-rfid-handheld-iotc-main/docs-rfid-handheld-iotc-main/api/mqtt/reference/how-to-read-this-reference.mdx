@@ -1,0 +1,87 @@
+---
+id: how-to-read-this-reference
+title: "How to Read This Reference"
+sidebar_label: "How to Read This Reference"
+sidebar_position: 1
+draft: false
+description: "How MQTT API operation pages are organized, how the names on these pages map to the wire and to the AsyncAPI contract, and how examples and placeholders are labeled."
+sidebar_custom_props: { emoji: "🔤", card: "How operation pages are organized, and how names map to the wire." }
+doc_type: reference
+page_meta:
+  - "Audience: All personas"
+  - "Use: jump to the right section of an operation page, and translate between page names, wire values, and contract keys"
+---
+
+Every operation page in this reference has the same sections in the same order. Once you know the shape, you can go straight to the section that answers your question instead of reading from the top.
+
+## Command Pages {#the-command-shape}
+
+The 20 command pages describe what you send to the reader. Their sections appear in this order. Ten appear on every command page; three appear only where the operation needs them.
+
+| # | Section | On every page? | What it answers |
+| --- | --- | --- | --- |
+| 1 | **Overview** | Yes | What the command does |
+| 2 | **Details** | Yes | The endpoint, the reported API version, and whether the command changes state |
+| 3 | **When to Use** | Yes | Whether this command is the right one for your task |
+| 4 | **Topic Mapping** | Yes | Where to publish the command, and where the reply arrives |
+| 5 | **Key Fields** | Yes | The few fields that matter most |
+| 6 | **Request Payload** | Yes | Every request field, its type, and whether it is required |
+| 7 | **Request Semantics** | 12 of 20 | How the request fields work together |
+| 8 | **Response Payload** | Yes | Every response field |
+| 9 | **Response Semantics** | 9 of 20 | How to interpret the returned data |
+| 10 | **Lifecycle** | 3 of 20 | The stages between acceptance and completion |
+| 11 | **Response Codes** | Yes | The codes this command can return, and what to do about each |
+| 12 | **Examples** | Yes | Example payloads |
+| 13 | **Notes and Caveats** | Yes | Behavior that the sections above do not cover |
+
+### Why Three Sections Are Conditional {#why-three-sections-are-conditional}
+
+- **Request Semantics** appears on the commands whose request needs explanation: [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi), [`delete_wifi_profile`](/api-reference/mqtt/mgmt/delete-wifi-profile), [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint), [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate), [`delete_certificate`](/api-reference/mqtt/mgmt/delete-certificate), [`config_events`](/api-reference/mqtt/mgmt/config-events), [`set_os`](/api-reference/mqtt/mgmt/set-os), [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode), [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter), [`control_operation`](/api-reference/mqtt/ctrl/control-operation), and two getters, [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) and [`get_installed_certificates`](/api-reference/mqtt/mgmt/get-installed-certificates).
+- **Response Semantics** appears on the nine getters, because a getter's result is its response.
+- **Lifecycle** appears on `install_certificate`, `set_os`, and [`reboot`](/api-reference/mqtt/mgmt/reboot), the three commands that acknowledge with [code `1`](/api-reference/mqtt/response-codes#code-1) before their work finishes. Its subsections differ by command:
+
+| Page | Lifecycle subsections |
+| --- | --- |
+| [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate#lifecycle) | Acknowledgment → Progress → Confirmation |
+| [`set_os`](/api-reference/mqtt/mgmt/set-os#lifecycle) | Acknowledgment → Progress → Session Impact → Confirmation |
+| [`reboot`](/api-reference/mqtt/mgmt/reboot#lifecycle) | Acknowledgment → Session Impact → Persistence |
+
+## Event Pages {#the-event-shape}
+
+The three event pages, [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event), [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event), and [`alerts`](/api-reference/mqtt/events/alerts-event), describe what the reader publishes without being asked. Each has nine sections:
+
+**Overview → Details → When to Use → Topic Mapping → Key Fields → Event Payload → Event Semantics → Examples → Notes and Caveats**
+
+An event has no request and no reply, so these pages have no request, response, or response-code sections. Under Event Semantics, `heartBeatEVT` adds Emission, Shaping, and Field Support subsections, and `alerts` adds Emission, Branches, and Field Support subsections.
+
+## The Tag Data Page {#the-tag-data-shape}
+
+The [`dataEVT`](/api-reference/mqtt/data/tag-data-event) page follows the event shape and adds sections for tag data:
+
+**Overview → Details → When to Use → Topic Mapping → Key Fields → Emission → Telemetry Payload → Field Support → Telemetry Semantics → Shaping → Delivery and Loss → Volume and Limits → Examples → Notes and Caveats**
+
+## The Response Codes Page {#the-response-codes-page}
+
+[Response Codes](/api-reference/mqtt/response-codes) is neither a command nor an event. Its sections are Overview, The Response Object, How to Read a Code, Response Code Catalog, Codes by Command, and Notes and Caveats.
+
+## Names on These Pages {#identifier-crosswalk}
+
+Pages use the names that appear on the wire. The AsyncAPI contract uses its own keys for the same messages. Use this table to move between them.
+
+| Name on these pages | How the message identifies itself on the wire | Contract message key | Contract operation key |
+| --- | --- | --- | --- |
+| [`mqttConnEVT`](/api-reference/mqtt/events/mqtt-connection-event) | No kind field; recognized by `connectionState` | `epConnectionEvent` | `send_epConnectionEvent` |
+| [`heartBeatEVT`](/api-reference/mqtt/events/heartbeat-event) | `"eventName": "heartbeat"` | `heartBeatEvent` | `send_heartBeatEvent` |
+| [`alerts`](/api-reference/mqtt/events/alerts-event) | No kind field; recognized by `type`, `state`, `id`, and `priority` | `alertEvent` | `send_alertEvent` |
+| [`dataEVT`](/api-reference/mqtt/data/tag-data-event) | No kind field; recognized by `type` and `data` | `dataEvent` | `send_dataEvent_data1`, `send_dataEvent_data2`, `send_dataEvent_shared` |
+| A command, for example [`get_status`](/api-reference/mqtt/mgmt/get-status) | `"command": "get_status"` | `getStatusCommand`, `getStatusResponse` | `receive_get_status` |
+
+The contract states direction from the reader's point of view: a `receive_*` operation is a command that the reader receives, and a `send_*` operation is a message that the reader publishes.
+
+## Placeholders and Examples {#placeholders-and-examples}
+
+- **Placeholders** appear in angle brackets inside code: `<tenantId>`, `<serial>`, `<broker-host>`. Replace each one, including the brackets, with your own value.
+- **Example payloads** are mostly the contract's published examples, copied exactly. Some request payloads on command pages are built to the contract's schema to show a particular combination of fields. The contract's examples carry sample credentials such as `test@123` and `xxxxxx`, private-network addresses, and reader serial numbers as they were shipped. Where a page changes a value, for example to mask a password or use a documentation-only address, the example's title says so. Treat none of these values as working settings.
+- **Example values in prose,** such as the tenant `acme` and the topic serial `RFD40-211545201D0034`, also come from the contract.
+
+**Related:** 📖 [MQTT API](/api-reference/mqtt) · 📕 [Message Envelopes and Correlation](/api-reference/mqtt/protocol-reference/message-envelope) · 📕 [Response Codes](/api-reference/mqtt/response-codes)

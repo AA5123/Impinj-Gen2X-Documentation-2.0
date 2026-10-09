@@ -1,0 +1,92 @@
+---
+id: rfid-read-performance
+title: "RFID Read Performance"
+sidebar_label: "RFID Read Performance"
+sidebar_position: 5
+description: "Diagnose RFID reading end to end: a radio that is not reading at all or an inventory that will not start or stop, and reads that come back missing, incomplete, inconsistent, or too expensive in battery."
+sidebar_custom_props: { emoji: "⏯️", card: "A radio that will not read, and reads that come back wrong or expensive." }
+doc_type: how-to
+page_meta:
+  - "Audience: Fleet Operator, Solution Builder"
+  - "Read time: 5 min"
+---
+
+
+**Scope.** This page covers both ways RFID reading goes wrong. The reader may be **not reading at all**, or inventory **will not start or stop** — faults, rejection codes and broken radio state. Or the reader **is reading, but the quality of the result is wrong** — tags are missed, unique counts come back incomplete, nearby readers interfere with one another, the battery does not last the shift, or the same scan gives a different answer twice.
+
+:::note[Which half of this page do you want?]
+**A broken operation** — inventory is refused, inventory will not stop, no `dataEVT` arrives at all, or `dataEVT` is missing fields it should carry. That is a fault, not a tuning problem. Start at **First Two Commands**.
+
+**A disappointing one** — tags are coming back and you are unhappy with *which* tags. Start at **Read Quality: Find Your Symptom**.
+:::
+
+## First Two Commands
+
+[`get_status`](/api-reference/mqtt/mgmt/get-status) tells you what the radio is doing right now: `radioActivity` is `ACTIVE` while it performs an operation and `INACTIVE` otherwise. [`get_operating_mode`](/api-reference/mqtt/ctrl/get-operating-mode) tells you what it was configured to do. Most faults in this area are a disagreement between those two answers.
+
+## Start With
+
+| Symptom | Go to |
+|---|---|
+| `control_operation START` returns code `11` — inventory is already running | [FM-OPS-01](/guides/diagnose-and-recover/diagnose-by-system-area#fm-ops-01) |
+| `control_operation STOP` returns code `12` | Not a failure: the radio was already idle |
+| [`control_operation`](/api-reference/mqtt/ctrl/control-operation) returns code `23` | A value outside the enum, such as lowercase `start`; `controlType` and `operation` are upper case |
+| [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) is rejected with code `11` | [RP-04: Stop inventory cleanly](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-04), then re-apply |
+| [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) returns code `23` | A value outside its enum; check the spelling and case against the reference page |
+| The profile is `FAST_READ` and no tag data arrives | The contract states that data events are not currently supported with `FAST_READ`; use another profile ([Choose a Performance Profile](/guides/read-tags-and-barcodes/choose-a-performance-profile)) |
+| START succeeds but no `dataEVT` events arrive at all | [RP-05: Tag data not flowing](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-05) |
+| `dataEVT` arrives but fields such as `peakRssi`, `TID`, `channel` or `phase` are missing | [FM-DATA-01](/guides/diagnose-and-recover/diagnose-by-system-area#fm-data-01) |
+| The same EPC repeats and no other tag in the field ever appears | [FM-OPS-02](/guides/diagnose-and-recover/diagnose-by-system-area#fm-ops-02) |
+| The operation stops on its own, unexpectedly | Check `radioStopConditions` and the trigger — a released trigger stopping the radio is normal ([Configure Trigger and Stop Conditions](/guides/read-tags-and-barcodes/configure-trigger-and-stop-conditions)) |
+| Inventory will not start, or a command returns code `3` persistently | [Reader and Hardware](/guides/diagnose-and-recover/diagnose-by-system-area/reader-and-hardware#radio-faults) |
+
+## The Ordering Rule Behind Most Rejections
+
+[`control_operation`](/api-reference/mqtt/ctrl/control-operation) is a switch; [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) is the configuration. They have non-overlapping responsibilities, and the configuration command requires an idle radio. Configure first, then START. When a mode change is refused mid-shift, the fix is to STOP, apply, and START again — not to retry the mode change.
+
+## No Data at All Is Usually Not a Radio Problem
+
+When START is accepted and nothing arrives, work outward from the radio rather than inward:
+
+1. Is the data endpoint active, with its tag-data topic in the **second** publish position? An inactive endpoint publishes nowhere, and a data endpoint with one publish topic streams nothing ([RP-05](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-05)).
+2. Are you subscribed to the topic the reader publishes on, such as `<tenantId>/DATA/clients/data1event/<serial>`, with the serial form the reader uses?
+3. Is a post-filter excluding everything? An over-restrictive include filter produces exactly this symptom.
+4. Only then: are the tags actually in the field, and is `transmitPower` what you think it is?
+
+## Read Quality: Find Your Symptom
+
+Once tags are coming back, the question changes from "is it broken?" to "is it good enough?". This half of the page diagnoses and routes; it does not define the performance profiles — [Choose a Performance Profile](/guides/read-tags-and-barcodes/choose-a-performance-profile) is canonical for that.
+
+:::note[Applies to]
+RFD40 and RFD90 handheld RFID readers. Other RFID-capable mobile computers may expose a smaller subset of these performance controls.
+:::
+
+```text
+My problem:
+├── Tags are missed at the edge → check range/setup
+├── Nearby readers interfere → DENSE_READERS
+├── Unique counts are incomplete → CYCLE_COUNT
+├── Battery drains too quickly → OPTIMAL_BATTERY
+├── Reads are inconsistent → check tag/setup first, then RF tuning
+└── Reads are fast but incomplete → don't optimize for raw throughput
+```
+
+| Symptom | Direction | Go to |
+|---|---|---|
+| Tags are missed at the edge of the field | Check range and physical setup before changing anything in the radio | [Improve Read Performance](/guides/read-tags-and-barcodes/improve-read-performance) |
+| Nearby readers interfere | Start with the `DENSE_READERS` profile | [Choose a Performance Profile](/guides/read-tags-and-barcodes/choose-a-performance-profile) |
+| Unique counts are incomplete | Start with the `CYCLE_COUNT` profile | [Choose a Performance Profile](/guides/read-tags-and-barcodes/choose-a-performance-profile) |
+| Battery drains too quickly | Start with the `OPTIMAL_BATTERY` profile | [Choose a Performance Profile](/guides/read-tags-and-barcodes/choose-a-performance-profile) |
+| Reads are inconsistent | Check the tag and physical setup first, then RF tuning | [Improve Read Performance](/guides/read-tags-and-barcodes/improve-read-performance), then [Advanced RF Configuration](/guides/read-tags-and-barcodes/configure-advanced-radio-settings#advanced-rf-configuration) |
+| Reads are fast but incomplete | Do not optimize for raw throughput; pick the profile that matches the actual goal | [Choose a Performance Profile](/guides/read-tags-and-barcodes/choose-a-performance-profile) |
+
+## Before You Change Anything
+
+Two rules apply to every row above, and both belong to the pages the rows link to rather than to this one:
+
+- **Physical setup comes before RF configuration.** Tag type, placement, orientation, metal and liquid, obstructions, reader position and read distance are checked first; power, session, DPO and RF mode / link profile come after. [Improve Read Performance](/guides/read-tags-and-barcodes/improve-read-performance) sets out that order, and explains why "a tag was missed, so choose a slower link profile" is the wrong reflex.
+- **Change one setting at a time and measure.** [Test and Validate Performance](/guides/read-tags-and-barcodes/improve-read-performance#test-and-validate-performance) is the canonical method for performance testing; anything else that describes how to test defers to it.
+
+What a performance profile actually changes underneath — transmit power, inventory session, DPO, and RF mode / link profile — is explained in [Configure Advanced Radio Settings](/guides/read-tags-and-barcodes/configure-advanced-radio-settings).
+
+**Related:** ⚠️ [Diagnose by System Area](/guides/diagnose-and-recover/diagnose-by-system-area) · 🛟 [Recovery Playbooks](/guides/diagnose-and-recover/recovery-playbooks) · 📘 [Choose a Performance Profile](/guides/read-tags-and-barcodes/choose-a-performance-profile) · 📙 [Start and Stop Inventory](/guides/read-tags-and-barcodes/start-and-stop-inventory) · 📘 [Choose an Operating Mode](/guides/read-tags-and-barcodes/choose-a-performance-profile#choose-an-operating-mode) · 🩺 [Diagnose and Recover](/guides/diagnose-and-recover)

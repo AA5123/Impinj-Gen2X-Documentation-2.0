@@ -1,0 +1,46 @@
+---
+id: factory-reset-and-re-bootstrap
+title: "Factory Reset and Re-Bootstrap"
+sidebar_label: "Factory Reset and Re-Bootstrap"
+sidebar_position: 5
+draft: false
+description: "When a reader has no MQTT path left, or must start again, bootstrap it again with 123RFID Desktop and re-apply its baseline over MQTT. The factory-reset procedure itself is not in the available sources."
+sidebar_custom_props: { emoji: "🔄", card: "Start a reader again from bootstrap when no MQTT path is left." }
+doc_type: how-to
+page_meta:
+  - "Audience: Fleet operators"
+  - "Read time: 4 min"
+---
+
+Some failures leave no MQTT path to fix them: every management endpoint points at an unreachable broker, a TLS change failed on the only endpoint, or the reader needs a different regulatory region, which no MQTT command can change. Recovery then starts again from bootstrap.
+
+## When You Need This {#when}
+
+- No MQTT command reaches the reader, and [RP-02](/guides/diagnose-and-recover/recovery-playbooks/restore-mqtt-connectivity#rp-02) could not restore an endpoint.
+- The reader must operate in a different regulatory region.
+- The reader is being moved to another deployment, or retired.
+
+## Before You Begin {#before-you-begin}
+
+- Keep the reader's baseline: the configuration it should have, per domain. See [Keep Configuration Consistent](/guides/scale-to-a-fleet/keep-configuration-consistent#baseline).
+- Have 123RFID Desktop, a USB-C cable and a Windows computer.
+
+## Step 1: Reset the Reader, If Needed {#reset}
+
+The MQTT API has no factory-reset command, and the available sources do not describe how to factory-reset a reader or what a reset clears. Follow the reader's product guide, or ask Zebra support. Often a reset is not needed: 123RFID Desktop can correct the endpoint and Wi-Fi settings of a reader it can connect to.
+
+## Step 2: Bootstrap Again {#bootstrap}
+
+Connect the reader to 123RFID Desktop over USB-C, and set its region, Wi-Fi profile and first MQTT endpoint, as in [Bootstrap a Reader with 123RFID Desktop](/guides/manage-your-reader/bootstrap-reader). Confirm over MQTT with [`get_version`](/api-reference/mqtt/mgmt/get-version).
+
+## Step 3: Re-Apply the Baseline {#re-apply}
+
+Apply the reader's baseline domain by domain, in the order in [Provision Readers](/guides/scale-to-a-fleet/provision-readers#apply-baseline): certificates, Wi-Fi, endpoints, event reporting (then a restart), operating mode and post-filters. Verify each domain by reading it back.
+
+**Success check:** the reader matches its baseline in every domain you can read, and its heartbeats and alerts arrive.
+
+## Retiring a Reader {#retire}
+
+After you reset a reader that leaves your deployment, remove its broker credentials and access rules, so that its serial number cannot connect again.
+
+**Related:** 📙 [Bootstrap a Reader with 123RFID Desktop](/guides/manage-your-reader/bootstrap-reader) · 🛟 [Recovery Playbooks](/guides/diagnose-and-recover/recovery-playbooks) · 📙 [Provision Readers](/guides/scale-to-a-fleet/provision-readers) · 📙 [Escalate to Support](/guides/diagnose-and-recover/escalate-to-support)

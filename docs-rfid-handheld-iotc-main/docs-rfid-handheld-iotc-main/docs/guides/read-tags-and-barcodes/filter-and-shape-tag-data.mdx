@@ -1,0 +1,23 @@
+---
+id: filter-and-shape-tag-data
+title: "Filter and Shape Tag Data"
+sidebar_label: "Filter and Shape Tag Data"
+sidebar_position: 3
+draft: false
+description: "Pre-filter tags with Select, post-filter reported tags, and choose which tag fields are reported."
+sidebar_custom_props: { emoji: "🎯", card: "Pre-filters, post-filters, and reported tag fields." }
+---
+
+Three settings shape what reaches your application. A pre-filter decides which tags take part in the inventory at all. A post-filter decides which read tags each data endpoint reports. The metadata flags decide which fields each tag record carries.
+
+| To change | Use | Acts |
+|---|---|---|
+| Which tags the radio inventories | `select` in the operating mode | On the air, before the inventory round |
+| Which read tags an endpoint reports | [`set_post_filter`](/api-reference/mqtt/ctrl/set-post-filter) | On the reader, after the tag is read |
+| Which fields each record carries | `tagMetaDataToEnable` in the operating mode | On each tag record |
+
+While a `PREFIX` post-filter is in use, `select` pre-filters cannot be applied.
+
+## In This Section
+
+<HubCards />

@@ -1,0 +1,403 @@
+---
+id: index
+title: "Diagnose by System Area"
+sidebar_label: "Diagnose by System Area"
+sidebar_position: 2
+description: "The layered model for locating a fault — network link, MQTT session, application — and the catalog of twenty failure modes (FM-XX-NN), each with its cause, a check and a fix."
+sidebar_custom_props: { emoji: "⚠️", card: "The layered model for locating an IOTC fault — Wi-Fi link, MQTT session." }
+---
+
+
+Two things you need before you can act on a fault: **which layer of the path is broken**, and **which known failure mode you are looking at**. This page carries both. The first half is the layered model — one path, three layers, and the signals each one produces when it breaks. The second half is the catalog of twenty cataloged failure modes, grouped by the surface they occur on.
+
+Read the model first if you do not yet know where the fault is. Jump straight to the catalog if you already have an error code or a specific signal.
+
+Identifiers are stable. `FM-XX-NN` codes do not change as new entries are added; link to them directly.
+
+:::note[How this page is sourced]
+The `FM-*` entries are an **authored** synthesis. Corrective steps that bottom out in a command response code trace to the [Response Codes](/api-reference/mqtt/response-codes) reference and are authoritative; the fault taxonomy, the layer model, the signals, and the groupings are curated operational knowledge, not a schema export.
+:::
+
+---
+
+## Where Things Fail: One Path, Three Layers {#where-things-fail}
+
+Diagnose any IOTC failure by first identifying **which layer of the connection path is broken.** A reader runs IOTC in its own firmware and reaches the broker over a single Wi-Fi edge, so the path is short — but each layer fails differently. Get the layer right and the symptom maps to a small set of failure modes. Get it wrong and you debug in the wrong subsystem.
+
+```d2
+direction: down
+R: "Reader\n(IOTC firmware)"
+AP: Access Point
+B: "Broker\n(MQTT terminates)" { shape: queue }
+A: "Application\n(consumes events)"
+R -> AP: "Wi-Fi — Layer 1 (Wi-Fi link)"
+AP -> B: "LAN / WAN — Layer 2 (MQTT session)"
+B -> A: "pub/sub — Layer 3 (application)"
+```
+
+The reader reaches the broker over its network link, usually Wi-Fi; the contract also describes Ethernet. Everything between the access point and the broker is network infrastructure outside the MQTT API. Failures cluster into three layers: the **Wi-Fi link**, the **MQTT/broker session**, and the **application**.
+
+### Layer-to-Signal Mapping
+
+Each layer produces characteristic signals when it fails. Diagnose by checking these signals in order.
+
+#### Reader ↔ Wi-Fi
+
+- **[`get_wifi`](/api-reference/mqtt/mgmt/get-wifi)**: `accessPoint.status` is `CONNECTED` and `ipv4Configuration.ipAddress` is set when the reader has joined a network. (`get_status.deviceStatus.radioConnection` reports the RFID radio module, not Wi-Fi.)
+- **`alerts` with `id: "NETWORK_EVENT"`**, when enabled: network state changes.
+- **Heartbeats stop with no Last Will**: the reader, its session or the path needs attention. A clean disconnect also produces no Will, so the missing Will does not prove the reader is connected.
+
+#### Reader ↔ Broker (MQTT)
+
+- **`mqttConnEVT`**: broker-perceived connection state (CONNECTED / DISCONNECTED).
+- **No `CONNECTED` `mqttConnEVT` at all**: the reader cannot reach or authenticate to the broker — firewall, wrong endpoint, or bad credentials — or you are not subscribed to the endpoint's connection-state topic.
+- **No commands reach the reader**: the command topic does not match the endpoint's subscribe topic.
+
+#### Broker ↔ Application
+
+- **Application sees nothing even though `mqttConnEVT` is CONNECTED**: topic routing or broker ACLs are wrong.
+- **No `dataEVT`** while inventory is running: the DATA endpoint is inactive or a post-filter is excluding tags.
+
+### A Decision Tree
+
+```d2
+classes: { bad: { style: { fill: "#fce8e6"; stroke: "#d93025"; font-color: "#c5221f" } } }
+direction: down
+S: "No tag data in application"
+q1: "Heartbeats\narriving?" { shape: diamond }
+q2: "mqttConnEVT\nCONNECTED?" { shape: diamond }
+q3: "Inventory running?\n(radioActivity)" { shape: diamond }
+q4: "DATA endpoint\nactive?" { shape: diamond }
+fmnet: "Wi-Fi / broker\nreachability" { class: bad }
+sub: "Check MGMT / CTRL\nsubscription"
+ctrl: "START not fired;\nverify CTRL"
+rp05: "Activate DATA\nendpoint" { class: bad }
+fmdata: "Filter excluding\ntags" { class: bad }
+S -> q1
+q1 -> q2: "no"
+q1 -> q3: "yes"
+q2 -> fmnet: no
+q2 -> sub: yes
+q3 -> ctrl: no
+q3 -> q4: yes
+q4 -> rp05: no
+q4 -> fmdata: yes
+```
+
+### Why "Which Layer" Comes First
+
+Failures are scoped by layer. A Wi-Fi authentication failure has nothing to do with the broker; you waste time inspecting broker logs. A broker ACL problem has nothing to do with the radio; you waste time power-cycling the reader. Starting with "which layer?" → "which signal?" gets you to a one-page failure mode quickly. The symptom index in [Diagnose and Recover](/guides/diagnose-and-recover) is organized around exactly this hierarchy, and [Reader and Hardware](/guides/diagnose-and-recover/diagnose-by-system-area/reader-and-hardware) splits the same surface into the six areas you can work independently.
+
+### Three Signals to Learn
+
+Three commands and events together cover most of the diagnostic surface:
+
+| Signal | What it tells you | When to use |
+|---|---|---|
+| [`get_status`](/api-reference/mqtt/mgmt/get-status) | Power, radio, clock, battery, connection state | First check on any new symptom |
+| `mqttConnEVT` | Broker-perceived connection state | When the application cannot tell whether the reader is offline |
+| `heartBeatEVT` | Arriving at its interval while the reader, its session and the path work | The primary liveness signal; its absence means something needs attention |
+
+If all three are healthy and the symptom persists, the problem is downstream of the broker — broker ACLs, downstream pipeline, application bug.
+
+### A Systematic Approach {#systematic-approach}
+
+Once you know the layer, work the symptom in five steps rather than guessing:
+
+1. **Identify the layer.** Use the layer-to-signal mapping above to place the failure in the Wi-Fi link, the MQTT/broker session, or the application — and, for power or radio faults, the reader itself. Asking "which layer?" first is far more productive than "what is wrong?".
+2. **Gather the minimum data** for that layer:
+   - *Power / radio:* battery and charge state plus the radio fields of [`get_status`](/api-reference/mqtt/mgmt/get-status) (`radioActivity`, `radioConnection`), and recent `alerts`.
+   - *Wi-Fi link:* [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi), and broker reachability tested from a control machine.
+   - *MQTT / TLS:* [`get_status`](/api-reference/mqtt/mgmt/get-status), recent `mqttConnEVT` events, and certificate validity.
+   - *Application / topics:* your logs, the failing operation's `requestId`, and the topics you subscribed to.
+3. **Isolate the variable.** Change one thing at a time — swap to a known-good Wi-Fi profile, a known-good tag, or a wildcard subscription. Multi-variable changes mask which fix worked.
+4. **Test the hypothesis.** State it concretely ("the reader cannot resolve the broker hostname"), design an unambiguous test (a DNS query from a host on the same segment), and run it.
+5. **Verify the fix.** Re-exercise the original failure path and confirm the failure is gone — then decide whether the fix is narrow (this device, this moment) or general (the fleet, the future).
+
+---
+
+## The Failure-Mode Catalog {#catalog}
+
+Twenty cataloged failure modes covering bootstrap, network, configuration, inventory, data, firmware, events, security, and fleet identity. Each entry names the failure, explains the underlying cause, lists the signals that confirm it, gives the corrective steps (or points to a recovery playbook), and links to the concept chapter that explains the surface in depth.
+
+The entries are grouped:
+
+- [Network (FM-NET)](#fm-net) — paths between sled, broker, and Wi-Fi.
+- [Configuration (FM-CFG)](#fm-cfg) — endpoint and operating-mode validation failures.
+- [Inventory operations (FM-OPS)](#fm-ops) — radio-state and singulation problems.
+- [Tag data (FM-DATA)](#fm-data) — `dataEVT` payload completeness.
+- [Firmware (FM-FW)](#fm-fw) — [`set_os`](/api-reference/mqtt/mgmt/set-os) rejection conditions.
+- [Events (FM-EVT)](#fm-evt) — heartbeats, alerts, and connection events.
+- [Security (FM-SEC)](#fm-sec) — TLS handshake and certificate install issues.
+- [Fleet (FM-FLEET)](#fm-fleet) — identity-level cross-device anomalies.
+
+---
+
+## Network {#fm-net}
+
+### FM-NET-01: Network Path Between Sled and Broker {#fm-net-01}
+
+**Symptom.** The reader has joined Wi-Fi (123RFID Desktop shows the connection) but never reaches the broker. No `CONNECTED` `mqttConnEVT` arrives.
+
+**Cause.** A network-layer problem between the sled's Wi-Fi segment and the broker. Common causes: subnet isolation across VLANs, firewall rules blocking outbound 1883/8883, DNS resolution failing on the sled's network, or a captive portal intercepting traffic.
+
+**Confirm.** From a host on the sled's same Wi-Fi segment, `nc -vz <broker-host> 1883` (or 8883). If it fails or times out, the path is the problem, not the sled.
+
+**Fix.** Open the firewall to allow MQTT egress from the sled's segment to the broker port. If DNS is the issue, use the broker's IP address in 123RFID Desktop. Bypass captive portals or move the sled to a network without them.
+
+**See.** [Prepare network and broker](/guides/quick-start#prepare) · [Where things fail](#where-things-fail) · [Network and Connectivity](/guides/diagnose-and-recover/diagnose-by-system-area/network-and-connectivity)
+
+### FM-NET-02: MDM Endpoint Will Not Connect {#fm-net-02}
+
+**Symptom.** MDM endpoint configured and activated via 123RFID Desktop; sled has Wi-Fi; broker logs show no connection attempt from the sled IP.
+
+**Cause.** Wrong port (1883 vs 8883), wrong protocol (`MQTT` vs `MQTT_TLS`), incorrect credentials, broker-side ACL rejection, or TLS certificate not yet installed.
+
+**Confirm.** Watch broker logs while activating the endpoint. If you see no attempt, the sled is not trying. If you see an attempt followed by an immediate disconnect, credentials or ACL are wrong.
+
+**Fix.** Drop to plain `MQTT` on `1883` first to isolate TLS from authentication issues. Verify credentials against what the broker expects. If TLS is required, install the broker CA with [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) (type `mqtt`) before the endpoint uses it. See also [FM-NET-03](#fm-net-03) for the reconnect loop variant.
+
+**See.** [Bootstrap a Reader with 123RFID Desktop](/guides/manage-your-reader/bootstrap-reader) · [TLS and certificates](/guides/core-concepts/the-security-model)
+
+### FM-NET-03: Reconnect Loop {#fm-net-03}
+
+**Symptom.** Sled connects to the broker, then disconnects within seconds, retries, connects again. The `mqttConnEVT` stream shows alternating CONNECTED / DISCONNECTED messages.
+
+**Cause.** A client-ID collision (in MQTT 3.1.1 the broker disconnects the older of two clients with the same client ID), a broker access rule rejecting the reader's topics, or a firewall that drops idle connections sooner than the keep-alive interval.
+
+**Confirm.** Broker logs show repeated connect/disconnect cycles. The disconnect reason in broker logs often names the cause (`client kicked by new connection`, `topic ACL deny`).
+
+**Fix.** Give each reader its own client ID; never set the same `clientId` on several readers. Check that the broker's access rules allow the tenant's topics. Match `mqttParams.keepAlive` to your network's idle timeouts; the contract's binding uses 300 seconds.
+
+**See.** [MQTT Connection](/guides/diagnose-and-recover/diagnose-by-system-area/mqtt-connection) · [Monitor Reader Connectivity](/guides/operate-and-monitor/monitor-reader-connectivity)
+
+### FM-NET-04: Wi-Fi Enterprise Auth Failure {#fm-net-04}
+
+**Symptom.** A Wi-Fi profile configured for `WPA2Enterprise` or `WPA3Enterprise` does not connect: `get_wifi` never shows it `CONNECTED`, or the reader loses its MQTT connection after switching to it.
+
+**Cause.** Missing or expired certificate chain on the device, wrong logical name referenced in a `set_wifi` `certificate[]` entry's `value`, EAP method mismatch (the AP requires PEAP but the profile uses TLS), or revoked client certificate.
+
+**Confirm.** Run [`get_installed_certificates`](/api-reference/mqtt/mgmt/get-installed-certificates) and check the `wifi` certificates: that they exist, and that `validTill` has not passed. Compare their names with what the profile references, bearing in mind that the contract does not settle how installed names map to references.
+
+**Fix.** Install the correct CA, client cert, and client key via [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) (type `wifi`). Use the certificate names exactly. Choose the `authentication` method (`tls`, `ttls` or `peap`) the network's RADIUS server expects.
+
+**See.** [Configure Wi-Fi](/guides/manage-your-reader/configure-wi-fi) · [TLS and certificates](/guides/core-concepts/the-security-model)
+
+---
+
+## Configuration {#fm-cfg}
+
+### FM-CFG-01: Endpoint Name Collision {#fm-cfg-01}
+
+**Symptom.** [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) with `operation: "add"` returns response code `10` (`IOT_ERROR_CONFIG_ALREADY_EXIST`).
+
+**Cause.** An endpoint with the same `endpointName` already exists on the device — either created earlier, restored from a saved configuration, or created by an MDM push.
+
+**Confirm.** Run [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) and inspect `endpointResponse.savedEndpoints.epNames` for the colliding name.
+
+**Fix.** Use a different name, or change the existing endpoint with `operation: "update"`, or delete it first and then add it again. An active endpoint must be deactivated before it can be changed (code `35`). A code `10` after a retry can mean that your first `add` succeeded.
+
+**See.** [Endpoints, Topics, and Channels](/guides/core-concepts/endpoints-topics-and-channels) · [Response Codes](/api-reference/mqtt/response-codes)
+
+### FM-CFG-02: Topic Count Caps {#fm-cfg-02}
+
+**Symptom.** [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) returns response code `25` (`IOT_ERROR_PUBLISH_TOPICS_EXCEEDED`) or `26` (`IOT_ERROR_SUBSCRIBE_TOPIC_EXCEEDED`).
+
+**Cause.** Per-endpoint topic caps are tight: `publishTopics` allows at most **3** entries, `subscribeTopics` allows at most **1**. Sending more returns one of these codes.
+
+**Fix.** Reduce the topic arrays to within the caps. If your design needs more topics, split the traffic across several endpoints, each with its own role — for example, a `DATA1` endpoint for tag data.
+
+**See.** [Endpoints, Topics, and Channels](/guides/core-concepts/endpoints-topics-and-channels)
+
+### FM-CFG-03: Advanced Profile Incomplete {#fm-cfg-03}
+
+**Symptom.** [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) returns response code `22` (`IOT_CTRL_ADVANCED_PROFILE_NOT_SET`).
+
+**Cause.** The `profiles` value is `ADVANCED` but no `advancedConfigurations` block was supplied. `ADVANCED` is the only profile that takes explicit `transmitPower`, `linkProfile`, `session` and `dynamicPower`; for the other profiles the reader chooses the link profile internally.
+
+**Fix.** Either provide the `advancedConfigurations` block alongside `profiles: ADVANCED`, or switch to a preset profile (`BALANCED_PERFORMANCE`, `CYCLE_COUNT`, `DENSE_READERS`, or `OPTIMAL_BATTERY`).
+
+**See.** [Choose an Operating Mode](/guides/read-tags-and-barcodes/choose-a-performance-profile#choose-an-operating-mode)
+
+---
+
+## Inventory Operations {#fm-ops}
+
+### FM-OPS-01: Inventory State Mismatch {#fm-ops-01}
+
+**Symptom.** `control_operation START` returns response code `11` (`IOT_ERROR_INVENTORY_IN_PROGRESS`), or [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) returns the same code.
+
+**Cause.** An RFID inventory is already running. Both `control_operation START` and [`set_operating_mode`](/api-reference/mqtt/ctrl/set-operating-mode) require the radio to be IDLE.
+
+**Confirm.** `get_status.deviceStatus.radioActivity` reports `ACTIVE`.
+
+**Fix.** Send [`control_operation`](/api-reference/mqtt/ctrl/control-operation) with `ctrlOprPayload.operation: "STOP"`, wait for response code `0`, then retry. The full sequence is in [RP-04](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-04).
+
+**See.** [Start and Stop Inventory](/guides/read-tags-and-barcodes/start-and-stop-inventory) · [RP-04](/guides/diagnose-and-recover/recovery-playbooks/recover-from-configuration-problems#rp-04)
+
+### FM-OPS-02: Single-Tag Dominance {#fm-ops-02}
+
+**Symptom.** Inventory runs; `dataEVT` events arrive; but the same EPC repeats and other tags in the field never appear.
+
+**Cause.** Usually physical: the other tags are out of the field, badly oriented, or shielded. The Gen2 session and population settings also affect how often each tag responds; see [How the Radio Reads Tags](/guides/core-concepts/how-the-radio-reads-tags).
+
+**Fix.** Check the physical setup first: tag orientation, distance and nearby metal. Then try the Gen2 settings: a different `query.session` (in typical Gen2 use, `SESSION_1` encourages tags to respond again sooner than `SESSION_2` or `SESSION_3`), and a `query.tagPopulation` close to the real number of tags. Change one setting at a time and measure; see [Improve Read Performance](/guides/read-tags-and-barcodes/improve-read-performance).
+
+**See.** [Choose an Operating Mode](/guides/read-tags-and-barcodes/choose-a-performance-profile#choose-an-operating-mode) · [RFID Read Performance](/guides/diagnose-and-recover/diagnose-by-system-area/rfid-read-performance)
+
+---
+
+## Tag Data {#fm-data}
+
+### FM-DATA-01: Missing Metadata Fields {#fm-data-01}
+
+**Symptom.** `dataEVT` arrives but `peakRssi`, `TID`, `USER`, `MAC`, `HOSTNAME`, `channel`, `phase` or `seenCount` is absent, or `seenCount` is always `1`.
+
+**Cause.** Two mechanisms. (a) Each field is switched on by a flag in `tagMetaDataToEnable`; the flag `RSSI` switches on `peakRssi`. (b) `channel` and `phase` are reported only when every read is reported on its own, and then `seenCount` is `1`; when reads are aggregated, `channel` and `phase` are left out and `seenCount` counts the reads. The contract describes this by a `reportFilter` duration, but no command sets it.
+
+**Fix.** Set the flags you need in `operatingMode.operatingModes.tagMetaDataToEnable` with `set_operating_mode`. Treat `channel` and `phase` as optional even with their flags on. See [Choose Which Tag Fields Are Reported](/guides/read-tags-and-barcodes/choose-tag-data-fields).
+
+**See.** [The Tag Data Stream](/guides/core-concepts/the-tag-data-stream)
+
+---
+
+## Firmware {#fm-fw}
+
+### FM-FW-01: Concurrent Update Attempt {#fm-fw-01}
+
+**Symptom.** [`set_os`](/api-reference/mqtt/mgmt/set-os) returns response code `4` (`IOT_STATUS_FW_UPDATE_IN_PROGRESS`).
+
+**Cause.** Another firmware update is already running. [`set_os`](/api-reference/mqtt/mgmt/set-os) is asynchronous: once accepted (code `1`), the update runs on. During that time the reader refuses a second `set_os`, and every other command, with code `4`.
+
+**Fix.** Wait for the `FIRMWARE_UPDATE` alert whose `updateStatus` equals `FW update success`, and confirm with `get_version`, before you send anything else. Do not wait for `state: "CLEAR"`; observed updates reported only `ONESHOT`. There is no command that cancels an update.
+
+**See.** [Update Firmware and Restart the Reader](/guides/manage-your-reader/update-firmware-and-restart)
+
+### FM-FW-02: Flash Exhausted {#fm-fw-02}
+
+**Symptom.** [`set_os`](/api-reference/mqtt/mgmt/set-os) returns response code `8` (`IOT_ERROR_LOW_FLASH_SIZE`).
+
+**Cause.** The reader does not have enough free flash to download the firmware file. The contract does not say what else uses the flash.
+
+**Fix.** The contract's recommended action is to free flash space or use a smaller firmware package, then retry [`set_os`](/api-reference/mqtt/mgmt/set-os). Which items free flash is not specified in the available sources.
+
+**See.** [Update Firmware and Restart the Reader](/guides/manage-your-reader/update-firmware-and-restart)
+
+### FM-FW-03: Firmware Source Unreachable {#fm-fw-03}
+
+**Symptom.** [`set_os`](/api-reference/mqtt/mgmt/set-os) returns response code `9` (`IOT_STATUS_FILE_NOT_FOUND`).
+
+**Cause.** The URL in `OSUpdateDetails.url` does not resolve to a downloadable file from the sled's network segment, or the server requires authentication that has not been satisfied.
+
+**Confirm.** From a host on the sled's Wi-Fi segment, `curl -I <url>` to verify reachability and check the response status. If using HTTPS with `authenticationType: CERTIFICATE`, verify the CA cert is installed under type `filestore`.
+
+**Fix.** Verify the URL is correct and reachable from the sled's segment. If the server is HTTPS-authenticated, install the CA cert via [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) (type `filestore`) and reference it as `caCertificateFile` in `OSUpdateDetails`.
+
+**See.** [Update Firmware and Restart the Reader](/guides/manage-your-reader/update-firmware-and-restart)
+
+### FM-FW-04: Battery-Low Gate {#fm-fw-04}
+
+**Symptom.** [`set_os`](/api-reference/mqtt/mgmt/set-os) returns response code `14` (`IOT_ERROR_FW_UPDATE_FAIL_LOW_BATTERY`).
+
+**Cause.** Battery charge is below the firmware-update safety threshold. The firmware update is gated against the risk of mid-update power loss.
+
+**Confirm.** [`get_status`](/api-reference/mqtt/mgmt/get-status) shows a low `batteryStatus.chargePercentage`, and `batteryStatus.chargeStatus` `0`, charger not connected. The contract does not state the threshold.
+
+**Fix.** Charge the reader or connect external power, then retry [`set_os`](/api-reference/mqtt/mgmt/set-os). For fleet rollouts, see [RP-09](/guides/diagnose-and-recover/recovery-playbooks/recover-from-firmware-problems#rp-09) on staging by battery level.
+
+**See.** [Update Firmware and Restart the Reader](/guides/manage-your-reader/update-firmware-and-restart) · [RP-09](/guides/diagnose-and-recover/recovery-playbooks/recover-from-firmware-problems#rp-09)
+
+---
+
+## Events {#fm-evt}
+
+### FM-EVT-01: Connection Events Not Routed {#fm-evt-01}
+
+**Symptom.** Broker logs show the reader connecting and disconnecting, but the application's subscriber receives no `mqttConnEVT`.
+
+**Cause.** `mqttConnEVT` and the Last Will are published on each endpoint's connection-state topic, its `publishTopics[2]`, conventionally `<tenantId>/MGMT/clients/rfid/<serial>`. Either the application subscribes to the event topic instead, or the endpoint has fewer than three publish topics. `mqttConnEVT` is not controlled by any `config_events` flag.
+
+**Confirm.** Run [`get_endpoint_config`](/api-reference/mqtt/mgmt/get-endpoint-config) and read each active endpoint's `publishTopics`. Subscribe to the tenant's topics with a wildcard to see where the connection events arrive.
+
+**Fix.** Subscribe to the connection-state topic. If an endpoint has no third publish topic, add one through the staged procedure in [Configure MQTT Endpoints](/guides/manage-your-reader/configure-mqtt-endpoints).
+
+**See.** [Monitor Reader Connectivity](/guides/operate-and-monitor/monitor-reader-connectivity) · [Endpoints and Configuration](/guides/diagnose-and-recover/diagnose-by-system-area/endpoints-and-configuration)
+
+### FM-EVT-02: Heartbeat Verbosity {#fm-evt-02}
+
+**Symptom.** `heartBeatEVT` arrives at the configured interval, but `data.inventoryStatus` or `data.batteryAlert` blocks are absent.
+
+**Cause.** A heartbeat must carry `eventName` and `eventNumber`; `upTime` and the `data` blocks are optional. The `inventoryStatus` and `batteryAlert` blocks appear only when their switches in `heartbeatConfiguration` are on.
+
+**Fix.** Set `heartbeatConfiguration.inventoryStatus: true` and `batteryStatus: true` with `config_events`, then reboot the reader: `config_events` changes take effect after a reboot.
+
+**See.** [Monitor Reader Connectivity](/guides/operate-and-monitor/monitor-reader-connectivity)
+
+---
+
+## Security {#fm-sec}
+
+### FM-SEC-01: TLS Verification Mismatch {#fm-sec-01}
+
+**Symptom.** TLS handshake between sled and broker fails. The sled disconnects immediately after the TCP connection is established. No `mqttConnEVT` shows CONNECTED.
+
+**Cause.** The endpoint's `verificationType` does not match the broker's certificate. `VERIFY_HOST_AND_PEER` checks the certificate chain against the installed CA and that the certificate matches the broker host.
+
+**Fix.** Install the broker's CA with [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) (type `mqtt`), use `VERIFY_HOST_AND_PEER`, and check that the endpoint's `url` matches the host name in the broker's certificate. For a test broker with a self-signed certificate, install that certificate as the CA rather than turning verification off; the contract states that `VERIFY_NONE` must not be used in production.
+
+**See.** [TLS and certificates](/guides/core-concepts/the-security-model)
+
+### FM-SEC-02: Certificate Install Failure {#fm-sec-02}
+
+**Symptom.** [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) returns response code `9` (file not found), or `alerts` reports the certificate-install failure.
+
+**Cause.** With `certSource: HTTP`, the source URL is unreachable or the file is missing. With `certSource: DIRECT`, the inline PEM content is malformed. For HTTPS sources, the filestore CA is required before the chain can be verified.
+
+**Fix.** For HTTP source: verify the URL with `curl -I` from the sled's segment. For DIRECT: validate the PEM with `openssl x509 -in cert.pem -text -noout`. For HTTPS source: install the filestore CA first via [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) (type `filestore`).
+
+**See.** [TLS and certificates](/guides/core-concepts/the-security-model)
+
+### FM-SEC-03: Logical Name Mismatch {#fm-sec-03}
+
+**Symptom.** [`install_certificate`](/api-reference/mqtt/mgmt/install-certificate) reports success (a `FILE_TYPE_CERT` `SAVE SUCCESS` `downloadInfo` alert), but the downstream operation that uses the cert (a TLS-enabled [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) or [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi)) still fails the TLS handshake.
+
+**Cause.** The configuration refers to certificates by name — `caCertificateFile`, `clientCert` and `clientKey` on an endpoint, or the `value` of a `certificate` entry on an Enterprise Wi-Fi profile. If the reference does not match an installed certificate, the reader cannot use it. The contract does not settle how the `name` sent at install relates to these references.
+
+**Confirm.** Run [`get_installed_certificates`](/api-reference/mqtt/mgmt/get-installed-certificates) to list installed names. Compare letter-for-letter against the names referenced in the endpoint or Wi-Fi configuration.
+
+**Fix.** Make the reference and the installed certificate agree, and confirm on a test reader which name form your firmware expects. See [Install and Manage Certificates](/guides/manage-your-reader/install-and-manage-certificates#list).
+
+**See.** [TLS and certificates](/guides/core-concepts/the-security-model)
+
+---
+
+## Fleet {#fm-fleet}
+
+### FM-FLEET-01: Identity Collision {#fm-fleet-01}
+
+**Symptom.** Two readers appear in fleet telemetry with the same serial number, or [`get_version`](/api-reference/mqtt/mgmt/get-version) on one device reports a serial number that does not match the physical label.
+
+**Cause.** Usually a record-keeping error: two readers recorded under one serial number, or the wrong reader chosen during a swap. The contract also records three forms of serial number in its sources — bare, model-prefixed and compact — so the same reader can appear under two forms.
+
+**Confirm.** Power off both candidates, power on one at a time, run [`get_version`](/api-reference/mqtt/mgmt/get-version), and compare `readerVersion.serialNumber` against the physical label and the SKU sticker. The two values must match.
+
+**Fix.** Correct your records once you know which reader is which, and normalize serial numbers to one form. If `get_version` reports a serial number that does not match the label, contact Zebra support.
+
+**See.** [The Configuration Model](/guides/core-concepts/the-configuration-model) · [Reader and Hardware](/guides/diagnose-and-recover/diagnose-by-system-area/reader-and-hardware)
+
+---
+
+## Out of Scope
+
+- **Recovery procedures.** The steps that clear a failure live in [Recovery Playbooks](/guides/diagnose-and-recover/recovery-playbooks) (RP-01 through RP-09).
+- **Why the system behaves the way it does.** Covered in the explanation chapters in [Manage Your Reader](/guides/manage-your-reader), [Read Tags and Barcodes](/guides/read-tags-and-barcodes), and [Operate and Monitor](/guides/operate-and-monitor).
+
+## In This Section
+
+{/* H1, 2026-09-09 — was a hand-written list of the same children. HubCards reads them
+    off the sidebar, so each card's icon and description come from that page's own
+    `sidebar_custom_props.emoji` and `description` front matter — the canonical copies
+    this list was a second, driftable transcription of. */}
+
+<HubCards />
+

@@ -1,0 +1,82 @@
+---
+id: mqtt-in-the-iot-connector
+title: "MQTT in the IoT Connector"
+sidebar_label: "MQTT in the IoT Connector"
+sidebar_position: 2
+description: "The MQTT 3.1.1 ideas the IoT Connector relies on, publish and subscribe, topics, QoS, retained messages and the Last Will, and what the MQTT API contract declares for each."
+sidebar_custom_props: { emoji: "📡", card: "The MQTT ideas the IoT Connector relies on, and what the contract declares for each." }
+doc_type: explanation
+page_meta:
+  - "Audience: Integrators new to MQTT"
+  - "Read time: 7 min"
+---
+
+The IoT Connector speaks MQTT 3.1.1. This page explains the MQTT ideas the MQTT API relies on and, for each, what the contract declares. Where a sentence describes MQTT 3.1.1 in general rather than this API, it says so.
+
+## Publish and Subscribe {#publish-and-subscribe}
+
+In MQTT, a client publishes a message to a **topic**, and a **broker** delivers it to every client that has subscribed to a matching topic. Publishers and subscribers do not know about each other; the broker routes by topic. The reader and your applications are all clients of the same broker.
+
+Two consequences shape every integration:
+
+- **A reply is not returned on the connection that sent the command.** Your application publishes a command to one topic and receives the reader's reply on another. The reader echoes your `requestId` in the reply, and that is the only thing that pairs the two.
+- **Subscribe before you publish.** The contract states that replies and events are not retained, so anything published before your subscription is active is lost and is not delivered again.
+
+## Topics {#topics}
+
+Every topic on this API has three segments:
+
+```text
+<tenantId> / <middle segment> / <deviceSerialNumber>
+```
+
+You configure only the middle segment, per endpoint, in its `publishTopics` and `subscribeTopics`. The reader prepends the tenant ID and appends its own serial number. Conventional middle segments include `MGMT/clients/cmnd` for commands and `MGMT/clients/resp` for replies, so a command topic looks like `acme/MGMT/clients/cmnd/RFD40-211545201D0034`.
+
+Because the serial number is always the last segment, an MQTT single-level wildcard (`+`) in that position subscribes to one topic across every reader in a tenant, for example `acme/MGMT/clients/event/+`. See [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure).
+
+## Quality of Service {#qos}
+
+In MQTT 3.1.1, QoS 0 delivers a message at most once, QoS 1 at least once, and QoS 2 exactly once. QoS is an agreement between one client and the broker, not between the reader and your application: it does not tell you whether a command succeeded. The reader supports QoS 0 and 1.
+
+The contract declares these levels:
+
+| Traffic | QoS |
+|---|---|
+| Commands and replies | 1 |
+| `alerts` | 1 |
+| `heartBeatEVT` | 0 |
+| `mqttConnEVT` | 0 |
+| `dataEVT` | Set per topic: 0 or 1; 0 in the default endpoint configurations |
+
+At QoS 1 a command can arrive twice, and the reader executes every copy: it keeps no request history. See [Delivery and Retry Semantics](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics).
+
+## Retained Messages {#retained-messages}
+
+In MQTT 3.1.1, a publisher can mark a message retained, and the broker then delivers the latest retained message on a topic to each new subscriber. The contract declares commands, replies, alerts, heartbeats and tag data as not retained. For the connection-state message it is not settled: the contract declares it not retained on the channel and retained on the operation.
+
+## Sessions and Keep-Alive {#sessions}
+
+The reader's MQTT session settings are part of each endpoint's `mqttParams`: `cleanSession`, the keep-alive interval `keepAlive` in seconds, and the reconnect delays `reconnectDelayMin` and `reconnectDelayMax`. In MQTT 3.1.1, a clean session discards any stored session state when the connection closes. See [Connection and Session](/api-reference/mqtt/protocol-reference/connection-and-session).
+
+## The Last Will {#last-will}
+
+In MQTT 3.1.1, a client can register a Last Will when it connects: a message the broker publishes on the client's behalf if the connection ends without a clean disconnect. The reader registers the `DISCONNECTED` form of `mqttConnEVT` as its Last Will. Because the broker publishes it, it carries no timestamp, and a clean disconnect suppresses it. See [Monitor Reader Connectivity](/guides/operate-and-monitor/monitor-reader-connectivity).
+
+## Endpoints {#endpoints}
+
+An endpoint is a named MQTT connection configuration stored on the reader. Each active endpoint has its own session to the broker, and its `epType` says which class of traffic it carries:
+
+| `epType` | Carries |
+|---|---|
+| `MGMT` | Device-management commands, replies and events |
+| `MGMT_EVT` | Management events, on a separate endpoint |
+| `CTRL` | RFID control commands and replies |
+| `DATA1` | Tag and barcode data |
+| `DATA2` | A second tag-data endpoint. Currently not supported |
+| `MDM` | A mobile-device-management form of the management endpoint |
+
+No published example exercises `MGMT_EVT` or `DATA2`; `DATA2` is currently not supported. The contract notes that a `MGMT_EVT` endpoint currently publishes its events on its subscribe topic, which the API owners record as a firmware defect. See [Endpoints, Topics, and Channels](/guides/core-concepts/endpoints-topics-and-channels).
+
+The standard itself is published by OASIS: [MQTT Version 3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html).
+
+**Related:** 📘 [How the IoT Connector Works](/guides/core-concepts/how-the-iot-connector-works) · 📘 [Endpoints, Topics, and Channels](/guides/core-concepts/endpoints-topics-and-channels) · 📘 [Commands, Responses, and Events](/guides/core-concepts/commands-responses-and-events) · 📕 [Topics and Channels](/api-reference/mqtt/protocol-reference/topic-structure) · 📕 [Delivery and Retry Semantics](/api-reference/mqtt/protocol-reference/qos-and-delivery-semantics)

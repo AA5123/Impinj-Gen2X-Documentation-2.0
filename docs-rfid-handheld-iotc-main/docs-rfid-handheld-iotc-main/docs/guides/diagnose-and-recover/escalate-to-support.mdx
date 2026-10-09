@@ -1,0 +1,60 @@
+---
+id: escalate-to-support
+title: "Escalate to Support"
+sidebar_label: "Escalate to Support"
+sidebar_position: 5
+draft: false
+description: "What to capture before you open a Zebra case: reader model and serial, the get_version and get_status responses, the failing request and its reply, the MQTT topic, the connection events around the failure — and what to redact before you attach any of it."
+sidebar_custom_props: { emoji: "🛟", card: "What to capture before you open a Zebra case: reader model and serial." }
+doc_type: how-to
+page_meta:
+  - "Audience: All personas"
+  - "Read time: 2 min"
+---
+
+
+A support case without evidence takes a round trip before anyone can act on it: the first
+reply is a request for the things below. Capture them while the symptom is still
+reproducible and the multi-day thread collapses into a single exchange.
+
+## What to Capture
+
+| Evidence | Where it comes from | Why it shortens the round trip |
+|---|---|---|
+| **Reader model and serial** | RFD40 or RFD90, and the serial from the device panel | Says which sled you have and which physical unit the case is about |
+| **Firmware version**, the exact string | [`get_version`](/api-reference/mqtt/mgmt/get-version) | The exact build decides whether the behavior you saw is expected |
+| **Reader state while the symptom is happening** | [`get_status`](/api-reference/mqtt/mgmt/get-status) | Any reply at all proves the broker path works; `radioActivity`, `powerSource` and `batteryStatus` then say what the reader reported about itself at that moment |
+| **The failing command's exact published payload**, including the `requestId` you used | Your client, verbatim — not retyped from memory | `requestId` is the only way to pair a reply with its request; without it a reply cannot be tied to the request that caused it |
+| **The reply, verbatim**, including `response.code` and `description` | Your client's subscription. See [Response codes](/api-reference/mqtt/response-codes) | The code names the failure class, which is what determines whether the fault is yours, the reader's, or a precondition you had not met |
+| **The MQTT topic** the message was published to or received on | Your endpoint and subscription configuration | Separates "the reader never got it" from "the reader answered somewhere you were not listening" |
+| **`mqttConnEVT` and `alerts` events** from a window around the failure | Your event stream | A `CONNECTED` that is minutes old with nothing since is a different fault from an alternating CONNECTED / DISCONNECTED stream |
+| **What you expected, and what happened instead** | You | Distinguishes a defect from a configuration or expectation mismatch before anyone reproduces anything |
+
+## Capture It in This Order
+
+Order matters, because the later items are only meaningful once you know which reader and
+which firmware produced them.
+
+1. The reader's serial number and the [`get_version`](/api-reference/mqtt/mgmt/get-version) response.
+2. A [`get_status`](/api-reference/mqtt/mgmt/get-status) response taken **while the symptom is
+   happening** — a status taken after a reboot describes a reader that no longer has the problem.
+3. The failing command's exact published payload and the `requestId` you used.
+4. The reply you received, verbatim, including `response.code` and `description`.
+5. The `mqttConnEVT` and `alerts` events from a window around the failure.
+6. The MQTT topic involved, and a one-line statement of what you expected instead.
+
+:::caution[Redact before you attach]
+
+Screenshots and log extracts routinely carry a Wi-Fi SSID, a device MAC address,
+internal IP addresses, an endpoint hostname with a tenant identifier, or a device
+serial. Remove anything you would not publish before attaching it to a public thread.
+
+:::
+
+## Then Open the Case
+
+With the evidence in hand, [Get Help](/resources/support/get-help/) has the routes: the
+self-service surface to try first, the reference page that is the authority on the command
+you called, and the Zebra channels for a case, a download, or a question to the community.
+
+**Related:** 🛟 [Get Help](/resources/support/get-help/) · 🧭 [Diagnose a Problem](/guides/diagnose-and-recover#diagnose-a-problem) · 📙 [Send Commands and Handle Responses](/guides/build-your-integration/send-commands-and-handle-responses) · 📕 [Response Codes](/api-reference/mqtt/response-codes)

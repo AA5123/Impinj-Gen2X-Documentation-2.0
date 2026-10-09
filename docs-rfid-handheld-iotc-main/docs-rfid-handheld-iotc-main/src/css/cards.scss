@@ -1,0 +1,864 @@
+// =============================================================================
+// CARDS — item 3F of the 2026-08-14 Dyte-parity brief:
+// "minimal card boxes to Dyte geometry, and line icons replacing emoji on cards".
+// Two things live here and nothing else does: the BOX geometry, and the
+// EMOJI -> GLYPH map that turns the 106 distinct emoji able to reach a card
+// into 34 line icons. Those 106 come from THREE sources, not one — they are
+// enumerated with their counts under THE POPULATION below, and every emoji
+// figure in this file was re-counted from the tree this session rather than
+// carried over from an earlier draft.
+//
+// DELETING THIS FILE REVERTS THE WHOLE VISIBLE CHANGE. Drop it plus the one
+// `@use 'cards'` line that pulls it in (`src/css/sidebar-icons.scss`, top of
+// file) and every card goes back to what it renders today: its own emoji, at
+// Infima's `.card` geometry. That is not a claim about intent, it is structural —
+// the swizzle at `src/theme/DocCard/index.js` keeps the emoji as the icon span's
+// TEXT CONTENT and this file is the only thing that hides it (see THE FALLBACK
+// below). Nothing under `docs/` is touched by item 3F: the 133
+// `sidebar_custom_props.emoji` front-matters in `docs/**` and the 26
+// `customProps.emoji` entries in `sidebars/guides.ts` are the KEY of the map, so they
+// must stay. (26 entries, 21 of them distinct — the two numbers answer different
+// questions and this file used to print the second under the first one's name.)
+//
+// MEASURED, NOT GUESSED. `.homepage-card` on docs.dyte.io/guides at 1440x900,
+// DPR 2, light, against our build at the same viewport. The geometry figures are
+// quoted from the brief's measurement table rather than re-derived here; the two
+// hover figures are read off the brief's raw rule dump, which is the only place
+// Dyte's `:hover` declarations appear; and every contrast ratio below was
+// computed this session from the per-theme hexes in the design system's surface
+// table, with the WCAG 2.x `(L1+0.05)/(L2+0.05)`. The brief and those dumps live
+// in a gitignored working directory, so they are described rather than cited by
+// path: a `path:line` into an untracked tree resolves on this machine and FAILS
+// `lint:refs` in CI, which is the defect that skipped eleven deploys on
+// 2026-08-11 (see the CI_DIVERGENT_REASONS note in `scripts/lint-refs.mjs`).
+//
+//   property        Dyte                    ours before            this file
+//   padding         12px                    32px                   --card-pad
+//   border-radius   8px                     12.8px                 --api-radius
+//   box-shadow      none                    rgba(0,0,0,.15) 0 1.5px 3px   none
+//   border          1px rgb(245,245,247)    1px rgb(235,237,240)   --card-border
+//   background      rgb(251,251,251)        #fff                   --card-surface
+//   hover fill      rgb(245,245,247)        lift + shadow + accent border   --card-hover
+//   hover border    untouched               swapped to the accent  untouched
+//   icon box        48x48, margin .25rem    an emoji glyph         48x48
+//
+// The 98.39px two-line card height in the brief is not set here and must not be:
+// it FALLS OUT of the padding, exactly as the brief says.
+//
+// The `hover fill` row is measured too, from the same dump: Dyte's
+// `.homepage-card:hover` sets `background-color` and NOTHING else, and the value
+// it sets is `--docs-color-secondary-800` = rgb(245,245,247) in light. Note what
+// that means — it is the SAME token Dyte's resting `border-color` reads, so
+// Dyte's own 1px edge dissolves into its own hover fill. We copy the treatment
+// (background only) and NOT that: see BORDER below.
+//
+// WHY EVERY VALUE HERE IS A TOKEN, AND WHICH TOKEN EACH ONE IS
+// (the border used to be the exception on this list — it no longer is; it is
+// `--card-border` now, and the reason is the last bullet)
+// - radius: `--api-radius` is 8px (`src/css/api.scss:22`), which is Dyte's
+//   measured 8px to the pixel and the outer rung of the closed radius ladder in
+//   `zebra-design-system.md` §2.1(1). The 12.8px it replaces is
+//   `--ifm-card-border-radius` = `calc(var(--ifm-global-radius) * 2)`
+//   (`node_modules/infima/dist/css/default/default.css:298`), i.e. twice the
+//   6.4px token §2.1(3) forbids on a content surface. So this single line also
+//   clears the `index.module.css` off-ladder radius that §2.1(1) records.
+// - THE THREE PLANES are each the §6.4 surface ladder's own named role, used for
+//   the thing it is named for: `card` for the resting fill, `step` for the hover
+//   fill, `frame` for the edge (the ladder and its per-theme values are the table
+//   at `_meta/governance/site-rulebooks/zebra-design-system.md:2527-2533`). No
+//   literal, and no `[data-theme]` block, because all three flip per theme
+//   already. Scope that claim to the PLANES: the one ink on either card family
+//   that is not a ladder rung — the homepage tile's brand-blue title — does need a
+//   per-theme declaration, and has one, in `src/pages/index.module.css`. See the
+//   `hover` bullet for why.
+// - background: `--card-surface` = `--ifm-card-background-color`, Infima's own
+//   card plane, with `--ifm-background-surface-color` behind it — the same pair
+//   `src/css/api.scss:1867` already uses, so a missing Infima declaration cannot
+//   silently resolve the fill to `transparent`. That is `#fff` in light and
+//   `#242526` in dark. It replaces `--surface-tinted`, which is emphasis-100 in
+//   light and `--api-surface` in dark: in DARK the two are the same colour
+//   (`--surface-tinted` IS `--api-surface` there, which is
+//   `--ifm-background-surface-color`), so dark does not move at all. In LIGHT it
+//   lands 4/255 lighter than Dyte's measured `rgb(251,251,251)` where
+//   emphasis-100 landed 6/255 darker — the nearer of the two rungs either side of
+//   Dyte's fill, and the only one of the two that leaves the hover anywhere to
+//   go (see below). The callout plane (`.theme-admonition` in
+//   `src/css/custom.scss`) keeps `--surface-tinted` and so now differs from a card
+//   in light; that is deliberate — a callout has no hover state to reserve
+//   headroom for. (Cited by selector, not `path:line`: that file is being edited
+//   in parallel and a line number into it would be stale before it landed.)
+//
+//   THE DELIBERATE DEVIATION, RECORDED HERE BECAUSE THE VALUE IS DECLARED HERE.
+//   The brief's item 3F gives `background` as Dyte `rgb(251,251,251)`, ours-before
+//   `#fff`, action "very light fill" — and this file ships `#fff`, the exact
+//   ours-before value the brief asked to be changed. THAT ROW OF ITEM 3F IS
+//   THEREFORE UNMET, BY CHOICE, and the consequence is measurable: in light
+//   `--card-surface` is byte-identical to `--ifm-background-color` (both `#fff`),
+//   so card fill vs page is 1.000:1 and A LIGHT CARD AT REST IS DRAWN BY NOTHING
+//   BUT THE HAIRLINE, at 1.363:1 (#dadde1 on #fff). Why it is still the right
+//   value: it is what BUYS the perceivable hover. The alternative rung,
+//   emphasis-100 `#f5f6f7`, draws the resting card at 1.082:1 against the page —
+//   an edge case for "very light fill" at best — and leaves the whole light hover
+//   range between it and emphasis-200 at dL* 3.16, half of the dL* 6.32 the `#fff`
+//   rest yields. Dyte is in the same position it put us in: its own
+//   `rgb(251,251,251)` fill reads 1.035:1 against its own white page, i.e. its
+//   resting card is equally invisible; the difference is that Dyte then spends its
+//   headroom on a dL* 2.03 hover and we spend ours on dL* 6.32. So: the light
+//   resting card reads as an outlined box, not a tinted one, and that is a
+//   decision, not an oversight. Anyone reversing it must re-measure the hover
+//   step, because the two values are one choice.
+// - hover: `--card-hover` = `--ifm-color-emphasis-200`, the ladder's `step` rung,
+//   which is ONE RUNG DEEPER THAN DYTE'S OWN HOVER on purpose. Dyte's measured
+//   pair is `rgb(251,251,251)` -> `rgb(245,245,247)`: 1.052:1, dL* 2.03 — a hover
+//   you cannot see. Ours is `#fff` -> `#ebedf0` = 1.173:1, dL* 6.32 in light and
+//   `#242526` -> `#444950` = 1.692:1, dL* 16.20 in dark. Same direction, same
+//   ladder, one rung further — 3.11x Dyte's own step on dL* in light — because a
+//   hover that cannot be perceived is not a hover. (dL* everywhere in this file is
+//   CIE L* from sRGB via XYZ D65, the method that also gives emphasis-100 ->
+//   emphasis-200 = dL* 3.16. Dyte's step used to be printed here as dL* 1.7 and
+//   the multiple as ~4x; neither reproduces under that method, and 2.03 / 3.11x
+//   are what it yields. The 1.052:1 ratio does reproduce.)
+//
+//   WHICH RUNG IS SAFE IS DECIDED BY THE INK, SO EVERY INK IS ENUMERATED HERE.
+//   This bullet used to argue emphasis-200 was "the deepest rung light can take"
+//   from ONE text layer (the description line) in ONE theme (light). That partial
+//   check is how a WCAG 1.4.3 failure shipped in the DARK hover state: the
+//   homepage tile's title is the one ink on either card family that does not come
+//   off the emphasis ramp, and it was evaluated in neither theme. Every text layer
+//   that can sit on either fill, per theme, WCAG 2.x `(L1+0.05)/(L2+0.05)` on the
+//   hexes named in this block:
+//
+//     LIGHT              rest #fff   hover #ebedf0   floor  why that floor
+//     tile title         8.466       7.218           4.5    18px/700 = 13.5pt
+//     tile description   5.720       4.877           4.5    15px/400
+//     DocCard title      9.073       7.735           3.0    20px/700 = 15pt
+//     DocCard descr.     9.073       7.735           4.5    14px/400
+//
+//     DARK               rest #242526  hover #444950  floor
+//     tile title         8.064         4.765          4.5
+//     tile description  11.268         6.658          4.5
+//     DocCard title     13.092         7.735           3.0
+//     DocCard descr.    13.092         7.735           4.5
+//
+//   Both DocCard rows are ONE ink in both states, emphasis-800, because the hover
+//   rule cancels stock's flip to emphasis-700 (see the pin bullet below). The flip
+//   would have read 4.877:1 light and 6.658:1 dark on the hover fill — still over
+//   both floors, so cancelling it is a parity fix, not a conformance one.
+//
+//   Nothing on either card is large-scale except the DocCard title (20px bold =
+//   15pt, over WCAG's 14pt-bold threshold), so 4.5:1 is the floor for six of the
+//   eight rows. The tile's own title is 18px bold = 13.5pt, i.e. BELOW that
+//   threshold — root font-size is Infima's `100%`
+//   (`node_modules/infima/dist/css/default/default.css:150`) with no project
+//   override, so 1.125rem really is 18px.
+//
+//   THE HOMEPAGE TILE FAMILY WAS REMOVED on 2026-08-15 by the landing-page
+//   rewrite, so the pin described below no longer exists in
+//   `src/pages/index.module.css` and the DocCard title is now the only
+//   non-ramp concern here. Retained as the record of why the ramp is shaped
+//   this way. Formerly: the tile title was pinned per theme, and this
+//   is the reason: it reads `--ifm-color-primary` in light (#004C97) but
+//   `--ifm-color-primary-light` in dark (#87C2F2), because unpinned it takes
+//   `--ifm-color-primary` = #6CB4EE in dark, which is 6.874:1 on the resting fill
+//   and 4.061:1 on emphasis-200 — a 1.4.3 FAILURE that this hover CREATES. Before
+//   the hover touched `background` at all, that title held 6.874:1 in both states.
+//   The DocCard family needs no pin — its ink is a ramp rung — but it did need
+//   stock's hover ink flip CANCELLED, and the hover rule below is what cancels it.
+//   Stock hands the container BOTH `--ifm-link-color` emphasis-800 and
+//   `--ifm-link-hover-color` emphasis-700
+//   (`node_modules/@docusaurus/theme-classic/lib/theme/DocCard/Layout/styles.module.css:9-10`);
+//   Infima's `a:hover` consumes the second
+//   (`node_modules/infima/dist/css/default/default.css:1236-1237`), `--ifm-heading-color`
+//   is `inherit` (`…/infima/dist/css/default/default.css:193`), and neither stock
+//   `DocCard/Heading` nor `DocCard/Description` declares a `color` of its own — so
+//   uncancelled, hovering a DocCard moved the ink of the h2 AND the p as well as the
+//   fill, and "background only" was false for this family. Cancelled, one ink carries
+//   both layers in both states. Dyte does the same thing to get the same result: its
+//   `.homepage-card` pins `--ifm-link-hover-color` (read off the brief's raw rule
+//   dump, the same source as the hover figures above).
+//
+//   The badges on the tile are insulated by construction — each paints its own
+//   OPAQUE tint (`--api-badge-*-tint` in `src/css/custom.scss`), so the card fill
+//   never reaches their text; worst of the eight is 7.553:1 light / 8.420:1 dark.
+//
+//   MOVING THE FILL INSTEAD OF THE INK HAS NO ANSWER ON THE LADDER. To raise
+//   #6CB4EE the dark fill has to get DARKER — lighter is arithmetically hopeless,
+//   since #6CB4EE's own luminance is 0.42004 and clearing 4.5:1 upward would need a
+//   fill above luminance 1.0 — and the only rung darker is emphasis-100 = #1c1e21:
+//   rest->hover 1.088:1 (dL* -3.44), under the 1.1:1 this hover is held to, and
+//   1.029:1 from the #1b1b1d page, so the card would dissolve INTO the page under
+//   the pointer, which is the light-theme problem inverted.
+//   Two further routes were measured and rejected on grounds other than the
+//   measurement, so they are recorded rather than implied away:
+//     - a fill OFF the ladder would work — Infima's own `--ifm-hover-overlay`
+//       (dark `rgba(255,255,255,.05)`) composited over `#242526` is `#2F3031`,
+//       which gives the title 5.920:1 and a 1.161:1 step. Rejected because it is a
+//       composite the §6.4 ladder does not contain, so the two card families would
+//       hover onto a plane nothing else in the house uses.
+//     - growing the tile title to 1.25rem (20px/700 = 15pt bold) would also have
+//       conformed, by crossing WCAG's 14pt-bold threshold so 3:1 applies to
+//       4.061:1. Rejected because it fights Dyte's 12px padding and buys
+//       conformance without buying legibility.
+//
+//   emphasis-200 remains the DEEPEST rung either theme can take, now for a whole
+//   reason instead of a partial one: at emphasis-300 (#dadde1) the light
+//   description line falls to 4.198:1, below 4.5:1.
+//
+//   This is a BACKGROUND-ONLY hover: the lift, the shadow and the accent border
+//   are all removed, per the brief. Hover carries no information here — the whole
+//   card is one link — so nothing depends on colour alone; and because background
+//   is ALL that changes, the forced palette erases the entire state change, which
+//   is why FORCED COLOURS below now ships a cue instead of a claim.
+// - BORDER: `--card-border` = `--ifm-color-emphasis-300`, the ladder's `frame`
+//   rung and the same value the house already paints on its other card: the
+//   callout's border is `--api-frame`, the token `src/css/api.scss` declares as
+//   emphasis-300, chosen there over the internal-hairline token `--api-border` for
+//   the reason recorded beside `.theme-admonition` in `src/css/custom.scss` —
+//   "2.68:1 there / 3.01:1 vs the page". BOTH halves of that pair were re-derived
+//   here and both hold: emphasis-300 in dark is #606770, which reads 2.685:1 on the
+//   dark card plane #242526 and 3.007:1 on the dark page #1b1b1d.
+//   It is one rung out from the emphasis-200 stock paints
+//   (`node_modules/@docusaurus/theme-classic/lib/theme/DocCard/Layout/styles.module.css:14`),
+//   and pinned there by ONE INVARIANT: `--card-border` must never resolve to
+//   `--card-hover`, or the edge vanishes at the moment the pointer arrives. At
+//   emphasis-300 the edge measures 1.363:1 on the light plane and 2.685:1 on the
+//   dark one at rest, 1.162:1 and 1.586:1 against the hover fill — present in all
+//   four states. It is one rung further from Dyte's measured `rgb(245,245,247)`
+//   than the emphasis-200 it replaces, and deliberately: in light the card fill IS
+//   the page colour, so the border is the only thing drawing the card, and 6/255
+//   of hairline draws nothing.
+//
+//   THREE OF DYTE'S MEASURED VALUES ARE DELIBERATELY NOT HIT, not one. This bullet
+//   used to call the border "the one", and its own two neighbours contradicted it.
+//   Named, so the count cannot drift again:
+//     1. `background` — `#fff` where Dyte measures `rgb(251,251,251)`, 4/255
+//        lighter. See the deviation note under `background` above; this is also the
+//        one that leaves item 3F's "very light fill" action unmet.
+//     2. `hover fill` — emphasis-200 `#ebedf0` where Dyte measures
+//        `rgb(245,245,247)`, one ladder rung deeper, to buy a dL* 6.32 step in
+//        place of Dyte's dL* 2.03.
+//     3. `border` — emphasis-300 `#dadde1` where Dyte measures
+//        `rgb(245,245,247)`, so that the edge cannot collapse into the hover fill
+//        the way Dyte's own does (Dyte paints its resting border and its hover fill
+//        from the SAME token).
+//   Reported as deviations rather than buried. Of the rest of item 3F's table,
+//   `padding`, `border-radius` and `box-shadow` are hit exactly on both card
+//   families, `height` is left to fall out of the padding as the brief instructs,
+//   and `icon box` is met on the DocCard family ONLY — the homepage tile renders no
+//   icon element for a 48x48 box to size (see THE ICON BOX below).
+//
+// WHY `!important` ON PADDING, AND NOWHERE ELSE. Stock `DocCard/Layout` puts
+// `card padding--lg` on the container
+// (`node_modules/@docusaurus/theme-classic/lib/theme/DocCard/Layout/index.js:19`)
+// and Infima declares `.padding--lg { padding: 2rem !important }`
+// (`node_modules/infima/dist/css/default/default.css:870-872`). An `!important`
+// utility cannot be outranked by specificity, so nothing weaker than `!important`
+// can move that padding, and `Layout` is not swizzled. Every other declaration in
+// this file wins on specificity alone: `.theme-doc-card-container` doubled is
+// (0,2,0) against the (0,1,0) of both Infima's `.card` and the theme's own
+// `.cardContainer` CSS module, so it wins STRUCTURALLY and not on stylesheet
+// order — the same reason `custom.scss` doubles `.footer.footer--dark`.
+//
+// ---------------------------------------------------------------------------
+// THE ICONS
+//
+// This is the SECOND CONSUMER of the `--sb-icon-*` registry in
+// `src/css/sidebar-icons.scss`, not a second icon system: same 24x24 authoring
+// grid, same `stroke-width: 1.8`, same mask-plus-`background-color: currentColor`
+// paint, same 20px painted box. The 19 glyphs item 3F needed were added to that
+// registry beside the original 15 rather than declared here, because a registry
+// split across two files is a registry nobody can enumerate.
+//
+// THE POPULATION: 101 REACHABLE EMOJI, 34 ICONS, AND WHY MANY-TO-ONE IS THE
+// DESIGN. Three sources reach a card, and the population is the union of them,
+// not the sum:
+//   - `docs/**` front-matter — 111 `sidebar_custom_props: { emoji: … }` keys
+//     carrying 91 DISTINCT emoji;
+//   - `sidebars/*.ts` — 20 distinct `customProps.emoji` values across the four
+//     sidebar files, of which 8 appear in no front-matter and so are only
+//     reachable here;
+//   - the swizzle's own `getFallbackEmojiIcon` (`src/theme/DocCard/index.js:48`)
+//     — 3 synthesised marks for an item with no emoji of its own, 2 of which
+//     appear in neither list above (the third is also a front-matter key).
+// 91 + 8 + 2 = 101 emoji can reach a card, against 106 keys in the map below —
+// so the map is a SUPERSET and the union is covered.
+//
+// COUNTS RE-DERIVED 2026-08-15, and the equation is no longer exact by design. It
+// read 97 + 7 + 2 = 106 before the IA restructure, which retired some pages and their
+// emoji. The map was deliberately NOT pruned to match: an unused key costs three
+// bytes, a missing one costs a card its glyph, so drift in this direction is the safe
+// one. Re-derive rather than trust these figures:
+//   grep -rhoE 'emoji: *"[^"]*"' docs --include='*.md' --include='*.mdx' | sort -u | wc -l
+// Authoring 101 bespoke
+// marks would produce 101 weights, 101 optical centres and no vocabulary; 34
+// shared marks make the tiles scannable, which is the entire point of an icon.
+// The map below is therefore grouped BY ICON, so the family each glyph carries is
+// readable at a glance and a re-point is one edit.
+//
+// THE FALLBACK, AND HOW IT IS GUARANTEED. An emoji with no entry in the map
+// matches no attribute selector, so it gets no `--card-icon`, no mask and no
+// `font-size: 0` — it renders as the emoji, exactly as today, and a card can never
+// show an empty box. The guarantee is STRUCTURAL rather than a fallback branch
+// somebody has to maintain: BOTH rules that could hide the emoji are generated
+// from the map's own keys — the per-key rule inside the `@each`, and the shared
+// paint rule whose entire selector list is accumulated during that same walk — so
+// neither can exist for an emoji the map does not name. Adding an emoji to a page
+// therefore cannot break a card; at worst it has no glyph yet. (Coverage is
+// nevertheless complete today — 101 reachable emoji against 34 icons, checked against
+// all three sources that reach a card: `docs/**` front-matter, `sidebars/*.ts`, and
+// the swizzle's own fallbacks.)
+//
+// WHY `font-size: 0` AND NOT `color: transparent`. The emoji is the element's own
+// text and has to be hidden once a glyph paints. `color: transparent` cannot do
+// it: the glyph is painted by `background-color: currentColor`, so transparent
+// ink would make the icon transparent too. `font-size: 0` removes the text and
+// leaves `currentColor` alone. Belt and braces: the mask clips the element's
+// whole rendering, text included, so even a browser that clamped the font size to
+// a minimum could only show emoji pixels inside the glyph's own silhouette.
+//
+// FORCED COLOURS, THE ICONS: nothing here, deliberately, and for the same reason
+// given in the closing note of `src/css/sidebar-icons.scss` — the mask takes its
+// paint from `currentColor`, which the forced palette remaps along with the text it
+// belongs to. That claim is INHERITED rather than re-measured here, and it deserves
+// the forced-colours check the brief asks for: if the forced palette overrides
+// `background-color` before the mask reads it, the glyph disappears. Cards and
+// sidebar rows share ONE mechanism, so if that claim ever measures false it must
+// be fixed in one place for both, never rescued here alone.
+//
+// FORCED COLOURS, THE HOVER: THIS CARD HAD NO CUE AT ALL AND NOW HAS ONE. Worked
+// through property by property, because the earlier claim that stock's ink change
+// carried the state is wrong. In forced-colors mode the UA substitutes system
+// colours for `background-color`, `border-color`, `color`, `outline-color`,
+// `text-decoration-color` and `fill`/`stroke`; it does NOT touch geometry, and it
+// does not touch `text-decoration-line`. Applied to this rule set:
+//   - `background`: rest `--card-surface` and hover `--card-hover` both become
+//     Canvas. The one thing this hover changes is therefore erased.
+//   - `border-color`: the hover restates `--card-border` unchanged, so there is no
+//     change to survive — and even a changed value would be forced.
+//   - `color`: does not move — the hover rule cancels stock's emphasis-800 ->
+//     emphasis-700 flip. Keeping the flip would not have bought a cue HERE either:
+//     both ends are forced to the same LinkText/CanvasText, so the two states would
+//     still come out identical. Hence this block rather than a reliance on ink.
+//   - `box-shadow` / `transform`: both `none` in both states by design.
+// The cue restored is `text-decoration: underline` on the title, at the foot of
+// this file. It is chosen over the alternatives on three grounds: the line survives
+// because only its COLOUR is forced; it costs no layout, unlike a `border-width`
+// step, so the card cannot reflow under the pointer; and it cannot collide with the
+// `:focus-visible` outline the way a second `outline` would, so a keyboard user who
+// also hovers keeps the ring. `transform: translateY()` would survive too — it is
+// what the pre-parity card accidentally relied on — but a lift is the one thing the
+// brief removes, and reintroducing it even under a media query would put motion
+// back on the surface that was flattened. Underline is also simply the right
+// affordance: the card IS a link.
+// =============================================================================
+
+// The two Sass modules the map walk below needs, addressed through `sass:` rather
+// than the global `append()` / `unquote()` names Dart Sass has deprecated.
+@use 'sass:list';
+@use 'sass:string';
+
+:root {
+  // Role tokens, per §2.4(1) ("padding MUST be named by role"). SIX values, one
+  // declaration site — but only FOUR of the six cross into
+  // `src/pages/index.module.css` (which cannot @use a Sass partial and so reads
+  // them as custom properties): `--card-pad`, `--card-border`, `--card-surface`
+  // and `--card-hover`. `--card-icon-box` and `--card-icon-glyph` are read ONLY
+  // in this file, because the homepage tile has no icon element for them to size:
+  // `src/pages/index.tsx` no longer renders any of them — it was rewritten on
+  // 2026-08-15 and all six are now read only in this file.
+  // The count used to be written as six-read-by-both, in both files; it is four and
+  // two, and the split is structural: item 3F's `icon box` row is met on the
+  // DocCard family alone, as the BORDER bullet in the header now records.
+  --card-pad: 0.75rem;        // 12px — Dyte's measured .homepage-card padding
+  --card-icon-box: 48px;      // 48x48 — Dyte's measured icon box. px and not rem: an icon
+                              // dimension under the unit rule's carve-out, and the operand
+                              // the 24px target-size claim below is checked against.
+  // The PAINTED glyph inside that box. 20px, not 48 and not 24, because the
+  // registry's geometry contract authors every glyph at stroke-width 1.8 on a
+  // 24 grid: 1.8 x (20/24) = 1.5px rendered, which is the single-stroke weight
+  // the brief asks for and the exact weight the sidebar already paints
+  // (the geometry rule at the foot of `src/css/sidebar-icons.scss`). Painting the
+  // same asset at 48px would render a 3.6px stroke and give the site two icon
+  // weights. That is also why it stays px: the contract is written in px on both
+  // sides, so a rem box would make the rendered stroke depend on the root font-size
+  // and the two consumers would drift apart at any root but 16px.
+  --card-icon-glyph: 20px;
+
+  // ── H1 · THE ICON TILE, added 2026-09-09 ────────────────────────────────────────────
+  // The owner's ask: "I need rectangular boxes with icons and text instead of lists to each
+  // of their child items/pages." What that changes structurally is that the glyph stops
+  // being a decoration floating beside a title and becomes a TILE — a filled, rounded square
+  // in its own column, with the title and description stacked in the second column. The card
+  // then reads as one object at a glance instead of as a heading with an ornament.
+  //
+  // 44px, NOT --card-icon-box's 48. The tile is a real painted surface where the old box was
+  // an invisible bounding area, so its size is now a visual decision rather than a spacing
+  // one: 44px is the platform minimum touch target and it leaves the two-line description
+  // room to sit beside it without the row growing.
+  --card-tile: 44px;
+  // 22px, half the tile. The glyph is painted through the same mask as everywhere else, so
+  // this also sets its rendered stroke: 1.8 x (22/24) = 1.65px, within a rounding of the
+  // 1.5px the sidebar paints. See --card-icon-glyph above for why that contract matters.
+  --card-tile-glyph-size: 22px;
+  // The info family's fill and glyph, so the tile borrows a pair the palette has already
+  // audited rather than inventing a tint. Both flip with the theme on their own.
+  --card-tile-surface: var(--status-info-background);
+  --card-tile-glyph: var(--status-info-icon);
+
+  // THE THREE PLANES. Each is the §6.4 ladder's own role — `card`, `step`,
+  // `frame` — and the derivation for all three is in the header block above.
+  // They are declared TOGETHER, in one place, for one reason: the worst bug this
+  // pair of rules ever had was not a wrong value, it was a RELATIONSHIP between
+  // two values — and a relationship cannot be maintained from separate call
+  // sites in two different files.
+  //
+  //   INVARIANT 1: --card-border MUST NEVER RESOLVE TO --card-hover.
+  //
+  // If it does, the 1px edge disappears at the moment the pointer arrives, in
+  // both card families and both themes — which is exactly the bug this pair
+  // replaces (the edge and the hover fill were both emphasis-200). Anything that
+  // re-points either token has to re-check the other one here, and that is the
+  // point of the two lines being adjacent.
+  //
+  //   INVARIANT 2: EVERY INK PAINTED ON --card-hover MUST STILL CLEAR ITS OWN
+  //   WCAG 1.4.3 FLOOR ON IT — and one of those inks lives in another file.
+  //
+  // The inks are the tile title, the tile description, the DocCard title and the
+  // DocCard description; the enumerated table with all eight measured ratios and
+  // each row's floor is in the `hover` bullet of the header block. Three of the
+  // four come off the emphasis ramp and move with this token. THE FOURTH DOES NOT:
+  // the homepage tile's title is brand ink, pinned per theme in
+  // `src/pages/index.module.css`, and at `--ifm-color-primary` in dark (#6CB4EE) it
+  // reads 4.061:1 on emphasis-200 — a FAILURE. That is why re-pointing this one
+  // token obliges a check in a file that does not declare it, and why the pin
+  // there names this invariant back.
+  --card-surface: var(--ifm-card-background-color, var(--ifm-background-surface-color));
+  --card-border: var(--ifm-color-emphasis-300);
+  --card-hover: var(--ifm-color-emphasis-200);
+}
+
+// ---- THE MAP. Emoji in, glyph name out; the ONLY place the mapping lives.
+// Grouped by icon, alphabetically, so the family is legible. The KEY is the
+// literal emoji string as it reaches the DOM (variation selector U+FE0F and
+// keycap U+20E3 included — an attribute selector is an exact string match, so a
+// stripped VS16 would silently stop matching).
+$emoji-icons: (
+  '⚠️': 'alert-triangle',
+  '📣': 'bell', '🚨': 'bell',
+  '🔋': 'bolt', '🤖': 'bolt', '🪄': 'bolt',
+  '⚖️': 'book', '📎': 'book', '📕': 'book', '📚': 'book', '🔖': 'book',
+  '🎓': 'book-open', '📖': 'book-open', '🔤': 'book-open',
+  '📡': 'broadcast', '📶': 'broadcast', '📻': 'broadcast', '🛰️': 'broadcast',
+  '📈': 'chart', '📊': 'chart', '📐': 'chart',
+  '✅': 'check-circle',
+  '⏱️': 'clock', '⏲️': 'clock', '🗓️': 'clock', '🗒️': 'clock',
+  '☁️': 'cloud', '🟦': 'cloud', '🟧': 'cloud', '🟩': 'cloud',
+  '👋': 'compass', '🗺️': 'compass', '🧭': 'compass',
+  '📟': 'device', '📱': 'device', '📲': 'device', '🖥️': 'device', '🤚': 'device',
+  '📄️': 'file', '📜': 'file', '🧾': 'file', '🪪': 'file',
+  '🎯': 'filter', '🔎': 'filter', '🧹': 'filter',
+  '🌐': 'globe',
+  '📇': 'grid', '🗂️': 'grid', '🗃': 'grid', '🚚': 'grid',
+  '❓': 'help-circle', '🛟': 'help-circle', '🤔': 'help-circle',
+  '🏗️': 'layers', '🏛️': 'layers', '🛷': 'layers', '🧩': 'layers',
+  '🔗': 'link',
+  '📋': 'list', '🔢': 'list',
+  '🔐': 'lock', '🔑': 'lock', '🔒': 'lock', '🛡️': 'lock',
+  '⏯️': 'play', '▶️': 'play', '🐍': 'play', '🔘': 'play', '🚀': 'play',
+  '🔌': 'plug', '🚰': 'plug',
+  '💓': 'pulse', '🩺': 'pulse',
+  '↔️': 'refresh', '⬆️': 'refresh', '🔀': 'refresh', '🔁': 'refresh', '🔃': 'refresh', '🔄': 'refresh', '🛫': 'refresh',
+  '👁️': 'search', '🔍': 'search',
+  '🌳': 'sitemap', '🧬': 'sitemap',
+  '⚙️': 'sliders', '🎛️': 'sliders',
+  '🎚️': 'sliders-vertical',
+  '0️⃣': 'steps', '1️⃣': 'steps', '2️⃣': 'steps', '3️⃣': 'steps', '4️⃣': 'steps', '5️⃣': 'steps', '6️⃣': 'steps', '7️⃣': 'steps', '8️⃣': 'steps',
+  '🆕': 'tag', '🏷️': 'tag', '📥': 'tag', '📷': 'tag',
+  '🗑️': 'trash',
+  '🎭': 'users', '🤝': 'users',
+  '🔧': 'wrench', '🛠️': 'wrench', '🥾': 'wrench', '🩹': 'wrench',
+);
+
+// ---- EMOJI -> `--sb-icon-*`, one CSS rule per key, plus ONE rule that paints.
+// The selector list is accumulated while the map is walked, so the seven paint
+// declarations are written once instead of 106 times (the same "geometry written
+// once" shape as the geometry rule in `src/css/sidebar-icons.scss`, and ~28KB of
+// duplicated declarations it does not emit).
+//
+// `--card-icon` is set on the icon span itself, not inherited from an ancestor,
+// because the emoji is that span's own text and the attribute identifying it is on
+// that same element. `.theme-doc-card-icon >` is load-bearing rather than
+// decorative: it is stock's icon wrapper, so the class can never paint anywhere
+// but inside a card.
+$card-icon-selectors: ();
+
+@each $emoji, $icon in $emoji-icons {
+  $selector: '.theme-doc-card-icon > .docCardIcon[data-card-emoji="#{$emoji}"]';
+  $card-icon-selectors: list.append($card-icon-selectors, string.unquote($selector), comma);
+
+  #{$selector} { --card-icon: var(--sb-icon-#{$icon}); }
+}
+
+#{$card-icon-selectors} {
+  display: block;
+  width: var(--card-icon-glyph);
+  height: var(--card-icon-glyph);
+  font-size: 0;                 // hides the emoji text — see WHY `font-size: 0` above
+  background-color: currentColor;
+  -webkit-mask: var(--card-icon) center / var(--card-icon-glyph) var(--card-icon-glyph) no-repeat;
+          mask: var(--card-icon) center / var(--card-icon-glyph) var(--card-icon-glyph) no-repeat;
+}
+
+// ---- THE ICON BOX. Stock renders the icon inside
+// `<span class="theme-doc-card-icon …">`
+// (`node_modules/@docusaurus/theme-classic/lib/theme/DocCard/Heading/Icon/index.js:12-17`)
+// and gives that span `font-size: 1.6rem; margin-right: 0.6rem` from its own CSS
+// module
+// (`node_modules/@docusaurus/theme-classic/lib/theme/DocCard/Heading/Icon/styles.module.css:9-10`).
+// `.theme-doc-card-container` is a ThemeClassNames constant
+// (`node_modules/@docusaurus/theme-common/lib/utils/ThemeClassNames.js:90-96`), so
+// the descendant form below is (0,2,0) and outranks that module class structurally
+// rather than by stylesheet order.
+//
+// `font-size` is deliberately NOT declared here: it is what sizes an UNMAPPED
+// emoji, and stock's 1.6rem inside a 48px box is already right for one. The
+// 48x48 box also puts the icon well over the 24px target-size floor.
+//
+// `flex: 0 0 auto` is required for the same reason it is in `sidebar-icons.scss`:
+// the heading is `display: inline-flex`
+// (`node_modules/@docusaurus/theme-classic/lib/theme/DocCard/Heading/styles.module.css:9-10`),
+// so this span is a flex ITEM and a long title would otherwise shrink it.
+// `margin-inline` beats stock's `margin-right` longhand on specificity — logical
+// and physical margins that map to the same box side cascade as one property — so
+// no second declaration is needed.
+.theme-doc-card-container .theme-doc-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--card-icon-box);
+  height: var(--card-icon-box);
+  margin-inline: 0.25rem;   // 4px — Dyte's measured icon-box margin-inline
+  line-height: 1;
+}
+
+// ---- THE TYPE. Two declarations, and they are NEW: until the 2026-08-16
+// typography contract this file declared no card type at all, so both sizes fell
+// through to stock CSS modules —
+// `.cardTitleText { font-size: 1.2rem }` = 19.2px
+// (`node_modules/@docusaurus/theme-classic/lib/theme/DocCard/Heading/Text/styles.module.css:9`)
+// and `.cardDescription { font-size: 0.8rem }` = 12.8px
+// (`node_modules/@docusaurus/theme-classic/lib/theme/DocCard/Description/styles.module.css:9`).
+// 19.2px is on no rung of the ratified scale, and 12.8px is UNDER BOTH floors that
+// scale sets: the 13px below which nothing that is prose may fall (contract ruling 10)
+// and the 14px `--zebra-fs-ui` floor that governs anything a reader reads as SENTENCES.
+// 13px is the caption rung, not the sentence floor — which is what the contract's
+// ruling 16 is about.
+//
+// The title is an `<h2>` in the markup but a card label on the page, so the ruling
+// puts it on the H3 rung rather than h2's 24px; the token says that, where a bare
+// 1.25rem would only say the number. The description is prose, so it lands on the
+// 14px body floor, which is the rung --zebra-fs-ui declares
+// (`src/css/custom.scss:157-162`: "anything a reader reads as SENTENCES … may not go
+// below --zebra-fs-ui"). Of the three tokens holding 0.875rem it is the only one whose
+// role note names that floor; --ifm-h6-font-size is a heading and --zebra-fs-code is mono.
+//
+// Both selectors are (0,2,0) against the (0,1,0) of the stock modules, the same
+// structural win the icon-box rule above relies on, so neither needs `!important`
+// and neither depends on stylesheet order.
+//
+// THE HEADER'S CONTRAST TABLE IS STAMPED FROM THESE TWO VALUES. The eight ratios do
+// not move with size — the inks and the fills are unchanged — but the DocCard title's
+// FLOOR is derived from its size: 20px/700 is 15pt, still over WCAG's 14pt-bold
+// threshold, so 3:1 still applies rather than 4.5:1. Re-pointing either size means
+// re-deriving that row.
+// ---- H1's TILE. `max(0px, …)` guards the concentric subtraction: if --radius-container ever
+// drops below --radius-inset the calc goes negative, which is invalid and would drop the whole
+// declaration rather than clamping. 12 - 4 = 8px today.
+.docCardIconTile {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--card-tile);
+  height: var(--card-tile);
+  border-radius: max(0px, calc(var(--radius-container) - var(--radius-inset)));
+  background: var(--card-tile-surface);
+  color: var(--card-tile-glyph);
+}
+
+// The tile carries `theme-doc-card-icon` as well, so the emoji-to-Lucide mask map above still
+// matches it — that selector is `.theme-doc-card-icon > .docCardIcon[data-card-emoji=…]` and
+// needs the wrapper class to be present on the tile. Which means the icon-box rule further up
+// ALSO matches and would size the tile at 48px with a 4px inline margin. This wins at (0,3,0)
+// against that rule's (0,2,0).
+.theme-doc-card-container .docCardIconTile.docCardIconTile {
+  width: var(--card-tile);
+  height: var(--card-tile);
+  margin-inline: 0;
+}
+
+// The glyph inside the tile is painted at the tile's own scale, not --card-icon-glyph's 20px.
+// FOUR CLASSES, AND THE ARITHMETIC IS THE REASON. The emoji-to-Lucide map above generates
+// `.theme-doc-card-icon > .docCardIcon[data-card-emoji="…"]`, and an attribute selector counts
+// in the SAME column as a class — so that rule is (0,3,0), not the (0,2,1) it looks like. A
+// plain `.docCardIconTile > .docCardIcon` is (0,2,0) and loses; measured, the glyph rendered at
+// --card-icon-glyph's 20px instead of the tile's 22px. Three classes would only TIE and then
+// depend on which of the two blocks in this file happens to come last, which is not a property
+// worth resting on. Four wins outright.
+.theme-doc-card-container .docCardIconTile.docCardIconTile > .docCardIcon {
+  width: var(--card-tile-glyph-size);
+  height: var(--card-tile-glyph-size);
+  -webkit-mask-size: var(--card-tile-glyph-size) var(--card-tile-glyph-size);
+          mask-size: var(--card-tile-glyph-size) var(--card-tile-glyph-size);
+}
+
+// The second column. `min-width: 0` is what lets the text actually wrap: without it a flex
+// item's automatic minimum is its min-content width, so a long unbroken title would widen the
+// card instead of clamping.
+/* ── THE TWO-LINE RESERVATION LIVES HERE, NOT ON EITHER TEXT — corrected 2026-09-10 ──────
+ * Owner report: "the vertical spacing between the card title and card description is too much;
+ * reduce it to the exact spacing in the design system you presented."
+ *
+ * The GAP was never wrong: the mockup's `.hcard h5 { margin-bottom: 3px }` on a 12.5px title is
+ * 0.24em, and 0.25rem on this 20px title is the same proportion. What was wrong is where the
+ * equal-height reservation sat. `min-height: 2.5em` was on the TITLE, so a one-line title
+ * reserved a second, empty line — 25px of blank between the title and the description it
+ * introduces, which is what reads as too much space.
+ *
+ * THE RESERVATION IS GONE, AND THE GRID DOES ITS JOB — corrected 2026-09-10, second owner
+ * report: "reduce the height of the cards, and ensure that the card titles and card
+ * descriptions, as one unit, are centred both vertically and horizontally within the card."
+ *
+ * A `min-height` here reserved the THEORETICAL worst case — two title lines, the gap, two
+ * description lines, 94.6px — on every card on every hub, whether or not any card on that hub
+ * needed it. Measured across all 50 hubs: 33 have no card taller than one title line and two
+ * description lines, and one tops out at two title lines and one description line. Those 34
+ * pages were paying 25px of reserved blank for a case that never occurs on them.
+ *
+ * Equal height now comes from `grid-auto-rows: 1fr` on the list (see THE GRID below), which
+ * sizes every row to the tallest card's OWN content — so the cards still match exactly, and
+ * the height is the smallest one that fits the page's real text rather than the largest one
+ * the clamps allow. The 16 hubs that genuinely carry a two-line title beside a two-line
+ * description keep 120.6px, because on those pages that IS the content.
+ */
+.docCardBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.25rem;
+  /* CENTRED, NOT TOP-ALIGNED — 2026-09-10. Every card in the grid is stretched to one height
+     (see THE GRID below), so a card whose text is shorter than the tallest has slack. This
+     puts that slack half above the stack and half below it instead of all of it underneath,
+     which is what "centred vertically within the card" asks for. There is no horizontal slack
+     to divide: the stack already fills the column between the tile and the card's own padding,
+     so the text is centred on that axis by construction. */
+  justify-content: center;
+}
+
+/* THE HEADING'S OWN BOTTOM MARGIN GOES — the flex column owns the spacing now. Infima gives
+   every <h2> `margin-bottom: 16px`, and `.docCardBody` adds its 4px gap on top, so a two-line
+   title sat 20px clear of the description it introduces and the card read as two blocks rather
+   than one. Measured before the change: heading margin 0 0 16px, body gap 4px. */
+.theme-doc-card-container .theme-doc-card-heading {
+  margin-block-end: 0;
+}
+
+/* ═══ EVERY CARD IS THE SAME HEIGHT, BY CONSTRUCTION — 2026-09-10 ═══════════════════════════
+ *
+ * Owner instruction: "all boxes should have the same height (even if the text occupies only one
+ * row)", and "all text within these boxes should be crafted such that they occupy two rows —
+ * not one, and not three".
+ *
+ * Infima's grid already stretches the cards in ONE flex line to the tallest of them, so a pair
+ * matched and the next pair did not. Equal height across the WHOLE grid cannot come from
+ * stretching, because the lines do not know about each other — it has to come from a fixed
+ * reservation. That reservation is ONE `min-height` on `.docCardBody` (see its own note); each
+ * text is only CLAMPED to two lines here, so neither can overflow and neither reserves space of
+ * its own between itself and its neighbour. */
+.theme-doc-card-container .theme-doc-card-title {
+  font-size: var(--ifm-h3-font-size);   // 20px — the H3 rung, replacing stock's off-scale 1.2rem
+  // TWO LINES, NOT ONE, and this cancels Infima's `.text--truncate`, which stock's Heading
+  // applies: `white-space: nowrap; overflow: hidden; text-overflow: ellipsis`. On a 44px-tile
+  // card the title column is ~230px, and the site's titles are things like "Management,
+  // Control, Events, and Data" — every one of them ellipsised at the first line. A clamp keeps
+  // the shape (a card is a fixed object) while letting the title be readable.
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: clip;
+  line-height: 1.25;
+}
+
+.theme-doc-card-container .theme-doc-card-description {
+  font-size: var(--zebra-fs-ui);        // 14px — the body floor, replacing stock's 12.8px
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: clip;
+  line-height: 1.45;
+}
+
+// THE CARD IS NOT UNDERLINED. `.markdown a[href]:not(.doc-control)` in custom.scss is (0,3,1)
+// and underlines every link in prose — including these, now that they are rendered by
+// <HubCards> inside .markdown. A doubled class here only TIES that at (0,3,1) and loses on
+// source order, because cards.scss is loaded before custom.scss. Tripled is (0,4,1) and wins
+// outright, which is the smallest selector that can.
+a[href].theme-doc-card-container.theme-doc-card-container.theme-doc-card-container {
+  text-decoration: none;
+}
+
+/* ═══ THE GRID — ONE HEIGHT FOR EVERY CARD ON THE PAGE, DRIVEN BY ITS OWN CONTENT ═════════
+ *
+ * <DocCardList> emits `<section class="row">` with one `<article class="col col--6">` per card
+ * (node_modules/@docusaurus/theme-classic/lib/theme/DocCardList/index.js). Infima's `.row` is a
+ * WRAPPING FLEX line, and flexbox stretches items within ONE line only: the first two cards
+ * matched each other, the next two matched each other, and the two pairs did not match. The
+ * previous fix for that was a fixed `min-height` on `.docCardBody` — see its note for why that
+ * is the wrong instrument and what it cost.
+ *
+ * CSS Grid can do what flexbox cannot. `grid-auto-rows: 1fr` makes every implicit row the same
+ * height, and in an auto-height grid that shared height resolves to the tallest row's own
+ * max-content — so all four rows of a 7-card hub match, and they match at the height the
+ * TALLEST CARD ACTUALLY NEEDS. No reservation, no theoretical worst case, and nothing to keep
+ * in step with the type tokens.
+ *
+ * THE GEOMETRY IS UNCHANGED, and that is checkable. Infima's row/col pair bleeds the section
+ * 1rem each way and pads each column back 1rem, which nets a 2rem gutter between cards and no
+ * bleed at the edges; `.docCardListItem` adds `margin-bottom: 2rem` for the row gap. A grid
+ * with `gap: 2rem` and no bleed lands on the identical numbers — measured before and after at
+ * 1440px: cards at x 336 and x 756, 388px wide, row pitch 32px. The trailing 2rem the last
+ * row's item margin used to contribute is restated as the grid's own bottom margin so the
+ * space under a hub grid does not change either.
+ *
+ * `:has()` and not a swizzle: DocCardList would have to be swizzled purely to add a class, and
+ * the gate is exact — `> .col > .theme-doc-card-container` matches this list and nothing else
+ * on the site (every other `.row` on a docs page holds no card). Infima drops `.col` to full
+ * width at 996px, so the grid does the same at the same breakpoint. */
+.markdown section.row:has(> .col > .theme-doc-card-container) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 2rem;
+  margin: 0 0 2rem;
+}
+
+.markdown section.row:has(> .col > .theme-doc-card-container) > .col {
+  /* The flex sizing and the gutter padding are the grid's job now. `max-width` has to go with
+     them: Infima pins `.col--6` to 50%, which inside a two-track grid would shrink each card to
+     half its own track. */
+  flex: none;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+}
+
+@media (max-width: 996px) {
+  .markdown section.row:has(> .col > .theme-doc-card-container) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// ---- THE BOX.
+// Doubled class = (0,2,0). See WHY `!important` ON PADDING in the header for why
+// exactly one declaration in this file carries it.
+.theme-doc-card-container.theme-doc-card-container {
+  // H1 — TWO COLUMNS: the tile, then the text stack. `flex-start` and not `center`, because a
+  // card whose description wraps to two lines would otherwise float its tile into the middle
+  // of the block instead of aligning it with the title.
+  display: flex;
+  flex-direction: row;
+  /* CENTRE, NOT FLEX-START — 2026-09-10. The note this replaces argued for `flex-start` so a
+     two-line description would not float the tile into the middle of the block. That was the
+     right call while the body reserved two empty lines and the tile sat beside a stack that
+     was always 94.6px tall. With the reservation gone the stack is only as tall as its own
+     text, the tile is 44px, and whichever is shorter is the one with slack — so the two are
+     centred on each other and the pair is centred in the card. On a card whose text is taller
+     than the tile this is what "as one unit" means; on one whose text is shorter the tile no
+     longer hangs above it. */
+  align-items: center;
+  gap: 0.875rem;
+  padding: var(--card-pad) !important;
+  border-radius: var(--radius-container);
+  border: 1px solid var(--card-border);   // frame rung — in light the border IS the card
+  background: var(--card-surface);        // #fff light / #242526 dark
+  box-shadow: none;                       // drops Infima's --ifm-global-shadow-lw
+                                          // and the theme module's 0 1.5px 3px
+  // Background-only hover, so only the background transitions. `--motion-base` is
+  // the house duration token (declared in `src/css/custom.scss`) and the site-wide
+  // prefers-reduced-motion blanket already shortens it, so no local rule is needed.
+  transition: background-color var(--motion-base) ease, border-color var(--motion-base) ease;
+}
+
+// THE HOVER. One thing changes, the fill. Three of the other four declarations
+// cancel a change stock would otherwise make: its own `:hover`
+// (`node_modules/@docusaurus/theme-classic/lib/theme/DocCard/Layout/styles.module.css`)
+// swaps `border-color` to `--ifm-color-primary` and deepens the shadow to
+// `0 3px 6px`, and its container hands Infima's `a:hover` an emphasis-700
+// `--ifm-link-hover-color` that would move the title and description ink too. The
+// fourth, `transform`, cancels nothing today: nothing in the tree lifts this card
+// any more, and it is kept as the explicit statement of the brief's "no lift" so a
+// lift cannot come back unnoticed.
+//
+// Each of the three reads the token the RESTING state reads — `--card-border` for
+// the edge, `--ifm-link-color` for the ink — so "untouched" is true BY
+// CONSTRUCTION rather than by two values being kept in step by hand. The edge
+// stays 1.162:1 against the hover fill in light and 1.586:1 in dark; the four ink
+// figures and their floors are the DocCard rows of the header's table.
+.theme-doc-card-container.theme-doc-card-container:hover {
+  // THE PRESENTED PAIR, EXACTLY — corrected 2026-09-10 at the owner's report that "the on-hover
+  // background indicator/colour isn't the same one presented in your design".
+  // It was not: this painted `--card-hover` (--ifm-color-emphasis-200) over
+  // `--ifm-color-emphasis-400`, two rungs of Infima's own ramp, which this site deliberately
+  // does not map onto the datum neutrals — ten rungs onto four, non-monotonic — so it put a
+  // colour on screen the design system never audited. The mockup's rule is one line:
+  //     .hcard:hover { background: var(--surface-subtle); border-color: var(--border-default) }
+  // and both of those are real tokens here, theme-scoped, so the pair is now the SAME PAIR in
+  // both themes rather than a light-mode approximation of it.
+  background: var(--surface-subtle);
+  border-color: var(--border-default);
+  color: var(--ifm-link-color);           // unchanged from rest: cancels stock's ink flip
+  box-shadow: none;                       // drops the module's hover 0 3px 6px
+  transform: none;                        // no lift
+}
+
+// The card is a link that carried no project focus rule, so it fell through to
+// the UA outline. Give it the §8.2(1) house recipe — 2px of the one ring token at
+// a 2px offset — the same pair `src/css/custom.scss` paints on the seven chrome
+// surfaces. At a 2px offset the ring sits outside the 1px border, so the hairline
+// cannot swallow it.
+.theme-doc-card-container.theme-doc-card-container:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+// THE FORCED-COLOURS HOVER CUE. Reasoning in full under FORCED COLOURS, THE HOVER
+// in the header; the short version is that this card's hover changes `background`
+// and nothing else, and the forced palette maps both fills to Canvas — so without
+// this rule a forced-colours user gets no hover feedback whatsoever.
+//
+// `text-decoration-line` is the one visual channel the forced-colours substitution
+// does not reach (it forces `text-decoration-color` only), so the underline paints
+// in whatever ink the palette has already chosen for the title. It is put on
+// `.theme-doc-card-title` — the title TEXT span, stock's
+// `ThemeClassNames.docs.docCard.title`
+// (`node_modules/@docusaurus/theme-common/lib/utils/ThemeClassNames.js:94`) — and
+// not on the heading, so the line does not run under the 48px icon box.
+//
+// `!important` is not needed and is not used: stock sets
+// `--ifm-link-hover-decoration: none` on the container, but that token is consumed
+// by Infima's `a:hover` rule on the LINK element, and this declaration is on a
+// descendant span, so the two never compete.
+//
+// Scoped to the media query on purpose. In the ordinary palette this hover must
+// stay background-only, per the brief, and an underline there would be a second
+// changed property.
+@media (forced-colors: active) {
+  .theme-doc-card-container:hover .theme-doc-card-title {
+    text-decoration: underline;
+  }
+}

@@ -1,0 +1,152 @@
+---
+id: network
+title: "Network"
+sidebar_label: "Network"
+sidebar_position: 2
+draft: false
+description: "The network objects: the set_wifi payload and its access point, security and credential members, IPv4 addressing, the delete_wifi_profile payload, and the get_wifi and get_eth read-backs."
+sidebar_custom_props: { emoji: "📶", card: "Wi-Fi profile, credential, IPv4 and Ethernet schemas." }
+doc_type: reference
+page_meta:
+  - "Audience: API consumer"
+  - "Use: look up the members, types and limits of a network object"
+---
+
+These objects are sent with [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi) and [`delete_wifi_profile`](/api-reference/mqtt/mgmt/delete-wifi-profile), and returned by [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi) and [`get_eth`](/api-reference/mqtt/mgmt/get-eth). **Default** is the value the reader uses when you omit the member. The procedures are in [Configure Wi-Fi](/guides/manage-your-reader/configure-wi-fi).
+
+## Wi-Fi Profile {#wifi-profile}
+
+### `cfgWifiPayload` {#cfgWifiPayload}
+
+The `wifiConfig` object of [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi).
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `interfaceName` | string | No |  |  | The Wi-Fi interface, such as wlan0. When omitted, the reader uses its single Wi-Fi interface |
+| `enableInterface` | boolean | No |  |  | Whether the interface is enabled. No default is documented |
+| `operation` | enum: `CREATE`, `MODIFY` | Yes |  |  | CREATE for a new network, or MODIFY for one the reader already has |
+| `accessPoint` | object ([`wifiAccessPoint`](#wifiAccessPoint)) | Yes |  |  | The profile's network, connection behavior, addressing and security |
+
+### `wifiAccessPoint` {#wifiAccessPoint}
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `connect` | boolean | No |  |  | true switches to this profile now; false only saves it |
+| `isPreferred` | boolean | Yes |  |  | Whether the reader always connects to this profile when it is available |
+| `autoConn` | boolean | No |  |  | Reserved for backward compatibility; the contract states it will be removed |
+| `essid` | string | Yes |  |  | The network name, which selects the profile |
+| `enableSecurity` | boolean | No |  |  | Whether the network is secured. `true` requires `security`. How an open-network profile is expressed is not confirmed |
+| `ipv4Configuration` | object ([`ipv4Configuration`](#ipv4Configuration)) | No |  |  | IPv4 addressing. The command's source states that static IPv4 and IPv6 are not available in the current API version |
+| `security` | object ([`wifiSecurity`](#wifiSecurity)) | No |  |  | The security type and credentials. Required when enableSecurity is true |
+
+- `essid` is required, and case-sensitive.
+- When `enableSecurity` is `true`, `security` must carry both `securityType` and the matching member of `securityDetails`.
+
+### `wifiSecurity` {#wifiSecurity}
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `securityType` | [`wifiSecurityType`](/api-reference/mqtt/schemas/enumerations#wifiSecurityType) | Yes |  |  | The network's security type, which selects the member of securityDetails |
+| `securityDetails` | object | Yes |  |  | The credentials, in the one member named by securityType |
+
+### `wifiSecurityDetails` {#wifiSecurityDetails}
+
+Exactly one member, the one named by `securityType`, may be present.
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `WPA2Personal` | object ([`wpaPersonalCredentials`](#wpaPersonalCredentials)) | No |  |  | Credentials for WPA2-Personal |
+| `WPA3Personal` | object ([`wpaPersonalCredentials`](#wpaPersonalCredentials)) | No |  |  | Credentials for WPA3-Personal |
+| `WPA2Enterprise` | object | No |  |  | Credentials for WPA2-Enterprise |
+| `WPA3Enterprise` | object | No |  |  | Credentials for WPA3-Enterprise |
+
+`WPA2Enterprise` and `WPA3Enterprise` carry the members of [`wpaEnterpriseCredentials`](#wpaEnterpriseCredentials), each with its own `protocol` values.
+
+### `wpaPersonalCredentials` {#wpaPersonalCredentials}
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `password` | string (`wpaPreSharedKey`) | Yes |  |  | The pre-shared key, 8 to 63 characters |
+
+### `wpaEnterpriseCredentials` {#wpaEnterpriseCredentials}
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `authentication` | [`wifiEapMethod`](/api-reference/mqtt/schemas/enumerations#wifiEapMethod) | Yes |  |  | The outer EAP method: tls, ttls or peap |
+| `innerAuthentication` | [`wifiInnerEapMethod`](/api-reference/mqtt/schemas/enumerations#wifiInnerEapMethod) | No |  |  | The inner method. Omit it for tls; for ttls and peap it is mschapv2, the default |
+| `identity` | string | No |  |  | The user name. Required for ttls and peap |
+| `anonymousIdentity` | string | No |  |  | The outer identity sent before the tunnel is set up |
+| `password` | string | No |  |  | The password, for ttls and peap |
+| `passphrase` | string | No |  |  | A passphrase. How it differs from password is not documented |
+| `certificate` | array of `certificateRef` | No |  |  | Installed certificates, by component and name |
+| `protocol` | [`wpa2EnterpriseProtocol`](/api-reference/mqtt/schemas/enumerations#wpa2EnterpriseProtocol) or [`wpa3EnterpriseProtocol`](/api-reference/mqtt/schemas/enumerations#wpa3EnterpriseProtocol) | No |  |  | The cipher suite: WPA2_Enterprise_CCMP for WPA2, or one of five WPA3 values |
+
+`certificate` entries are [`certificateRef`](/api-reference/mqtt/schemas/certificates#certificateRef) objects, at most four, one per component.
+
+## IPv4 Addressing {#ipv4}
+
+### `ipv4Configuration` {#ipv4Configuration}
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `ipAddress` | string | No |  |  | The IPv4 address |
+| `subnetMask` | string | No |  |  | The subnet mask, in dotted-quad form |
+| `gateway` | string | No |  |  | The default gateway |
+| `enableDhcp` | boolean | No |  |  | Whether DHCP assigns the address; when true, the other members are read-back values only |
+| `dnsServer` | string | No |  |  | The DNS server; 0.0.0.0 means none is configured |
+| `domainName` | string | No |  |  | The network's domain name |
+
+## Delete a Profile {#delete}
+
+### `delWifiProfile` {#delWifiProfile}
+
+The `wifiProfileInfo` object of [`delete_wifi_profile`](/api-reference/mqtt/mgmt/delete-wifi-profile).
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `essid` | string | Yes |  |  | The network name of the profile to delete |
+
+## Read-Backs {#read-backs}
+
+### `wifiProfiles` {#wifiProfiles}
+
+The `wifiProfiles` object of the [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi) reply. When the Wi-Fi interface is disabled, the reply carries a single `wifiConfig.interfaceDetails` object instead.
+
+| Field | Type | Required | Default | Limits | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `wifiConfig` | array of `wifiConfigResponse` | No |  |  | One record per saved profile |
+
+Each record's `interfaceDetails`:
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `interfaceName` | string | The Wi-Fi interface, such as `wlan0` |
+| `status` | [`interfaceEnableState`](/api-reference/mqtt/schemas/enumerations#interfaceEnableState) | Whether the interface is enabled: `Enabled` or `Disabled`. The contract's own examples also show `ENABLED` and an empty string |
+| `hostname` | string | The reader's host name |
+| `macAddress` | string | The interface's MAC address |
+| `accessPoint.essid` | string | The profile's network name |
+| `accessPoint.status` | [`connectionState`](/api-reference/mqtt/schemas/enumerations#connectionState) | `CONNECTED` when the reader has joined this network |
+| `accessPoint.securityType` | [`wifiSecurityType`](/api-reference/mqtt/schemas/enumerations#wifiSecurityType) | The profile's security type |
+| `accessPoint.isPreferred` | boolean | Whether the profile is preferred |
+| `accessPoint.autoConn` | boolean | Reserved for backward compatibility; the contract states it will be removed |
+| `ipv4Configuration` | [`ipv4Configuration`](#ipv4Configuration) | The addressing, on the connected profile |
+| `securityDetails` | [`wifiSecurityDetails`](#wifiSecurityDetails) | The credentials, masked |
+
+### `ethConfigResponse` {#ethConfigResponse}
+
+The `ethConfig` object of the [`get_eth`](/api-reference/mqtt/mgmt/get-eth) reply. When the interface is disabled, it carries only `interfaceName` and `status`.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `interfaceDetails.interfaceName` | string | The Ethernet interface, such as `eth0` |
+| `interfaceDetails.status` | [`interfaceEnableState`](/api-reference/mqtt/schemas/enumerations#interfaceEnableState) | Whether the interface is enabled |
+| `interfaceDetails.hostname` | string | The reader's host name |
+| `interfaceDetails.macAddress` | string | The interface's MAC address |
+| `interfaceDetails.linkStatus.status` | [`connectionState`](/api-reference/mqtt/schemas/enumerations#connectionState) | Whether the physical link is up |
+| `interfaceDetails.linkStatus.linkSpeed` | string | The link speed, as free text such as `100Mbps` |
+| `interfaceDetails.ipv4Configuration` | [`ipv4Configuration`](#ipv4Configuration) | The addressing |
+| `interfaceDetails.security` | object | 802.1X security details. Not populated in the current API version |
+
+The reader reports states in more than one letter case; compare without regard to case. The MQTT API has no command that changes Ethernet settings.
+
+**Related:** 📕 [`set_wifi`](/api-reference/mqtt/mgmt/set-wifi) · 📕 [`get_wifi`](/api-reference/mqtt/mgmt/get-wifi) · 📕 [`get_eth`](/api-reference/mqtt/mgmt/get-eth) · 📕 [Enumerations](/api-reference/mqtt/schemas/enumerations) · 📙 [Configure Wi-Fi](/guides/manage-your-reader/configure-wi-fi)

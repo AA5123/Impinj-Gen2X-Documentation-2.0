@@ -1,0 +1,26 @@
+---
+id: mdm-interface
+title: "MDM Interface"
+sidebar_label: "MDM Interface"
+sidebar_position: 10
+description: "Reference for the IOTC MDM endpoint: the bootstrap default that 123RFID Desktop creates first, plus 42Gears SureMDM integration."
+sidebar_custom_props: { emoji: "📱", card: "The bootstrap MDM default, plus 42Gears SureMDM." }
+doc_type: reference
+# IA v3 §1.7: the contract-linked compatibility stub. No sidebar row, noindex, out of the sitemap and search.
+unlisted: true
+# In no sidebar row, so this attaches the MQTT panel, as index.mdx does.
+displayed_sidebar: api-mqtt
+page_meta:
+  - "Audience: API consumer"
+  - "Use: look up the MDM endpoint type"
+---
+
+This page mirrors the [MQTT API](/api-reference/mqtt) reference for convenience. That reference is authoritative for field names, enums, and error codes; if the two ever differ, trust it.
+
+The [MDM](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types) endpoint lets a management platform manage the reader over its own MQTT broker. Configure it with [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) by selecting `epType: MDM`. It uses the same [topic slots](/api-reference/mqtt/protocol-reference/endpoints-and-topic-slots) as [`MGMT`](/api-reference/mqtt/protocol-reference/connection-and-session#endpoint-types). See [What Changes When You Scale](/guides/scale-to-a-fleet/what-changes-when-you-scale).
+
+### `epType: MDM` (Generic MDM)
+
+A standardized, lightweight set of IOTC management APIs that any MDM platform can implement. 123RFID Desktop creates this endpoint first and enrolls the sled; every other endpoint is then added remotely through it. Most parameters remain user-configurable through the 123RFID applications. 42Gears (SureMDM) is a current implementation of the Generic MDM API set.
+
+**Related:** 📘 [What Changes When You Scale](/guides/scale-to-a-fleet/what-changes-when-you-scale) · 📕 [`config_endpoint`](/api-reference/mqtt/mgmt/config-endpoint) · 📕 [Endpoints and Topic Slots](/api-reference/mqtt/protocol-reference/endpoints-and-topic-slots) · 📕 [MQTT API](/api-reference/mqtt)

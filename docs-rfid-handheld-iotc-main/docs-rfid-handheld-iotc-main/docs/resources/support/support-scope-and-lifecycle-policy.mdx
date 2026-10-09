@@ -1,0 +1,31 @@
+---
+id: support-scope-and-lifecycle-policy
+title: "Support Scope and Lifecycle Policy"
+sidebar_label: "Support Scope and Lifecycle Policy"
+sidebar_position: 4
+draft: false
+description: "What this documentation covers, how the MQTT API contract is versioned, and where Zebra's product support and lifecycle terms are published."
+sidebar_custom_props: { emoji: "⚖️", card: "What the documentation covers, and where support terms live." }
+doc_type: reference
+page_meta:
+  - "Audience: All personas"
+  - "Use: check what is covered, and for how long"
+---
+
+## What This Documentation Covers {#scope}
+
+| Covered | Not covered |
+|---|---|
+| The RFD40 Standard, RFD40 Premium, RFD40 Premium Plus, RFD40-M Premium Plus, RFD9030 and RFD9090 readers | Fixed readers, which are a different product line |
+| The MQTT API: 20 commands and 4 events |  |
+| Bootstrap with 123RFID Desktop | Your broker, cloud platform or application, except where their interaction with the reader is described |
+
+## How the MQTT API Is Versioned {#versioning}
+
+The MQTT API is defined by one contract, whose version is the IoT Connector API version it describes, currently 1.22.0. Its earlier revisions only added or relaxed, but version 1.22.0, regenerated from the IoT Connector API definition, also narrows what the contract accepts. How deprecated fields and values are marked, and what the contract does not yet specify about removal, is in [Versioning and Compatibility](/api-reference/mqtt/versioning-and-deprecation-policy). What each version changed is in the [Changelog](/api-reference/mqtt/changelog).
+
+## Product Support and Lifecycle {#lifecycle}
+
+Zebra's terms for product support, warranty, firmware releases and end of life are not published in the available sources. See [Zebra Support and Downloads](https://www.zebra.com/us/en/support-downloads.html), or ask your Zebra contact.
+
+**Related:** 🛟 [Get Help](/resources/support/get-help) · 📕 [Versioning and Compatibility](/api-reference/mqtt/versioning-and-deprecation-policy) · 📕 [Supported Readers and Features](/resources/supported-readers-and-features)
